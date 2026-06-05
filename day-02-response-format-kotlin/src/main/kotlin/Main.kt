@@ -40,47 +40,104 @@ fun main(args: Array<String>) {
     println("Prompt: $prompt")
     println()
 
-    val withoutLimits = sendChatCompletion(
-        client = client,
-        config = config,
-        messages = listOf(
-            ChatMessage(role = "user", content = prompt),
+    val variants = listOf(
+        RequestVariant(
+            title = "WITHOUT LIMITS",
+            description = "Обычный запрос без явного контроля ответа.",
+            messages = listOf(ChatMessage(role = "user", content = prompt)),
         ),
-    )
+        RequestVariant(
+            title = "FORMAT ONLY",
+            description = "Добавлен только явный формат ответа: JSON.",
+            messages = controlledMessages(
+                prompt = prompt,
+                extraInstructions = """
+                    Верни ответ строго в формате JSON:
+                    {
+                      "summary": "главная мысль",
+                      "details": ["деталь 1", "деталь 2", "деталь 3"]
+                    }
 
-    println("=== WITHOUT LIMITS ===")
-    println(withoutLimits)
-    println()
-
-    val controlledUserPrompt = """
-        $prompt
-
-        Верни ответ в строго заданном формате:
-        {
-          "summary": "одно короткое предложение",
-          "rules": ["правило 1", "правило 2", "правило 3"],
-          "finish": "END"
-        }
-
-        Ограничение длины: не больше 80 слов.
-        Условие завершения: значение поля finish должно быть ровно "END".
-        Не добавляй текст до или после JSON.
-    """.trimIndent()
-
-    val withLimits = sendChatCompletion(
-        client = client,
-        config = config,
-        messages = listOf(
-            ChatMessage(
-                role = "system",
-                content = "Ты отвечаешь кратко и строго соблюдаешь формат, который попросил пользователь.",
+                    Не добавляй текст до или после JSON.
+                """.trimIndent(),
             ),
-            ChatMessage(role = "user", content = controlledUserPrompt),
+        ),
+        RequestVariant(
+            title = "LENGTH ONLY",
+            description = "Добавлено только ограничение длины: не больше 80 слов.",
+            messages = controlledMessages(
+                prompt = prompt,
+                extraInstructions = """
+                    Ограничение длины: ответь не больше чем 80 словами.
+                    Формат ответа свободный.
+                """.trimIndent(),
+            ),
+        ),
+        RequestVariant(
+            title = "FINISH ONLY",
+            description = "Добавлено только условие завершения: последняя строка END.",
+            messages = controlledMessages(
+                prompt = prompt,
+                extraInstructions = """
+                    Условие завершения: заверши ответ отдельной последней строкой:
+                    END
+
+                    Формат и длина ответа свободные.
+                """.trimIndent(),
+            ),
+        ),
+        RequestVariant(
+            title = "ALL LIMITS",
+            description = "Добавлены формат JSON, лимит 80 слов и завершение END.",
+            messages = controlledMessages(
+                prompt = prompt,
+                extraInstructions = """
+                    Верни ответ в строго заданном формате:
+                    {
+                      "summary": "одно короткое предложение",
+                      "rules": ["правило 1", "правило 2", "правило 3"],
+                      "finish": "END"
+                    }
+
+                    Ограничение длины: не больше 80 слов.
+                    Условие завершения: значение поля finish должно быть ровно "END".
+                    Не добавляй текст до или после JSON.
+                """.trimIndent(),
+            ),
         ),
     )
 
-    println("=== WITH LIMITS ===")
-    println(withLimits)
+    variants.forEach { variant ->
+        val answer = sendChatCompletion(
+            client = client,
+            config = config,
+            messages = variant.messages,
+        )
+
+        println("=== ${variant.title} ===")
+        println(variant.description)
+        println(answer)
+        println()
+    }
+}
+
+private fun controlledMessages(prompt: String, extraInstructions: String): List<ChatMessage> {
+    return listOf(
+        ChatMessage(
+            role = "system",
+            content = "Ты отвечаешь на тот же пользовательский запрос, но строго соблюдаешь дополнительные ограничения.",
+        ),
+        ChatMessage(
+            role = "user",
+            content = """
+                Основной запрос:
+                $prompt
+
+                Дополнительные ограничения:
+                $extraInstructions
+            """.trimIndent(),
+        ),
+    )
 }
 
 private fun sendChatCompletion(
@@ -186,4 +243,10 @@ private data class LlmConfig(
 private data class ChatMessage(
     val role: String,
     val content: String,
+)
+
+private data class RequestVariant(
+    val title: String,
+    val description: String,
+    val messages: List<ChatMessage>,
 )
