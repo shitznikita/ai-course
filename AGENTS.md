@@ -39,3 +39,9 @@ This repository stores AI course assignments. Keep every assignment small, revie
 day-01-llm-rest-kotlin/scripts/run-eliza.sh --args="Ответь кратко: что такое REST API?"
 ```
 
+- For Day 2:
+
+```bash
+./gradlew :day-02-response-format-kotlin:build
+day-02-response-format-kotlin/scripts/run-eliza.sh
+```
