@@ -17,3 +17,4 @@ rootProject.name = "ai-course"
 
 include("day-01-llm-rest-kotlin")
 include("day-02-response-format-kotlin")
+include("day-03-reasoning-methods-kotlin")

@@ -45,3 +45,10 @@ day-01-llm-rest-kotlin/scripts/run-eliza.sh --args="Ответь кратко: �
 ./gradlew :day-02-response-format-kotlin:build
 day-02-response-format-kotlin/scripts/run-eliza.sh
 ```
+
+- For Day 3:
+
+```bash
+./gradlew :day-03-reasoning-methods-kotlin:build
+day-03-reasoning-methods-kotlin/scripts/run-eliza.sh
+```
