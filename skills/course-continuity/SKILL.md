@@ -15,6 +15,7 @@ Use this skill as the durable memory for the AI course repo. Keep future work co
 - Preferred provider: Eliza API using the working company quota/key from Day 1.
 - Keep solutions simple, explicit, and suitable for video + code submission.
 - Do not use ready-made AI agents or high-level LLM SDKs instead of direct REST requests.
+- For day-assignment changes, the user wants the agent to push the branch and create a GitHub pull request automatically after committing; the user will approve/merge on GitHub.
 
 ## Repository
 
@@ -24,6 +25,7 @@ Use this skill as the durable memory for the AI course repo. Keep future work co
 - Use one folder per day: `day-01-...`, `day-02-...`, `day-03-...`.
 - Use one branch/PR per assignment or substantial revision.
 - Before committing, verify `.env`, `.certs/`, build outputs, IDE files, and secrets are ignored.
+- After committing day work, push the branch and create a PR into `main` when credentials/tools/policy allow it.
 
 ## Common Implementation Pattern
 
@@ -147,7 +149,9 @@ Observed useful result: prompt-first can be very detailed but still wrong; compa
 8. Implement direct REST via `java.net.http.HttpClient`.
 9. Add a day README with plan, checklist, setup, run commands, video scenario, requirement check.
 10. Build and run with Eliza if feasible.
-11. Commit. Do not push if repo privacy cannot be verified; tell user the exact push command.
+11. Commit.
+12. Push the branch and create a PR into `main` automatically when allowed.
+13. If push/PR is blocked by sandbox policy, missing credentials, missing GitHub CLI, or inability to verify safe/private destination, explain the blocker and provide the exact command or compare URL.
 
 ## Video Guidance
 
@@ -165,4 +169,4 @@ Never show the real `.env` token in the video.
 
 - Never commit `.env`, `.certs/`, tokens, OAuth values, private SSH keys, or real secrets.
 - Internal Eliza URLs exist in code/docs, so assume private repo unless user explicitly approves public sharing.
-- If pushing is blocked by policy, provide the exact user-run command instead of bypassing.
+- If pushing or PR creation is blocked by policy, missing credentials, or missing tooling, provide the exact user-run command instead of bypassing.
