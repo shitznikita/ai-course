@@ -78,3 +78,4 @@ day-03-reasoning-methods-kotlin/scripts/run-eliza.sh
 Дополнительный skill для GitHub и курса:
 
 - [skills/github-course-workflow/SKILL.md](skills/github-course-workflow/SKILL.md)
+- [skills/course-continuity/SKILL.md](skills/course-continuity/SKILL.md)
