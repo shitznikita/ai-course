@@ -12,6 +12,7 @@ ai-course/
   day-02-response-format-kotlin/ # День 2: формат и ограничения ответа
   day-03-reasoning-methods-kotlin/ # День 3: разные способы рассуждения
   day-04-temperature-kotlin/ # День 4: temperature
+  day-05-model-versions-kotlin/ # День 5: версии моделей
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -23,6 +24,7 @@ ai-course/
 - [День 2: Формат ответа](day-02-response-format-kotlin/README.md)
 - [День 3: Разные способы рассуждения](day-03-reasoning-methods-kotlin/README.md)
 - [День 4: Температура](day-04-temperature-kotlin/README.md)
+- [День 5: Версии моделей](day-05-model-versions-kotlin/README.md)
 
 ## Запуск дня 1
 
@@ -78,6 +80,20 @@ day-04-temperature-kotlin/scripts/run-eliza.sh
 
 ```bash
 ./gradlew :day-04-temperature-kotlin:build
+```
+
+## Запуск дня 5
+
+Для Eliza/OpenRouter:
+
+```bash
+day-05-model-versions-kotlin/scripts/run-eliza.sh
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-05-model-versions-kotlin:build
 ```
 
 ## Правила безопасности

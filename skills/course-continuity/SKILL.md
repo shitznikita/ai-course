@@ -152,6 +152,22 @@ LLM_MODEL=deepseek/deepseek-v3.1-terminus
 
 The code should print sanitized REST request bodies without API keys. The comparison section should stay local and should not add a fourth temperature experiment request.
 
+### Day 5: Model versions
+
+Folder: `day-05-model-versions-kotlin`.
+
+Purpose: same prompt sent to weak, medium, and strong cloud LLM models via Eliza/OpenRouter-compatible REST API. Measure response time, usage tokens, and cost.
+
+Chosen models:
+
+```text
+WEAK: google/gemma-3-4b-it (4B)
+MEDIUM: meta-llama/llama-3.3-70b-instruct (70B)
+STRONG: nousresearch/hermes-3-llama-3.1-405b (405B)
+```
+
+Free `:free` variants may hit rate limits; standard paid routes are cheap for short prompts and more reliable for recording.
+
 ## Starting A New Day
 
 1. Confirm only essentials if needed: stack, provider, key, interface, task type.
