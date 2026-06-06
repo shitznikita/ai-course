@@ -2,6 +2,8 @@
 
 This repository stores AI course assignments. Keep every assignment small, reviewable, and isolated in its own day folder.
 
+For durable course memory after context compaction, read `skills/course-continuity/SKILL.md`.
+
 ## Repository Layout
 
 - `day-01-llm-rest-kotlin/`: Day 1 Kotlin CLI that sends a direct REST request to an LLM API.

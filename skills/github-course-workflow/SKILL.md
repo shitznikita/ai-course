@@ -30,7 +30,10 @@ git pull
 git checkout -b day-02-task-name
 ```
 
-- Open one pull request per assignment. Merge after verification and README updates.
+- For day-assignment changes requested by the user, do not stop after a local commit. After verification, push the branch and create a pull request automatically whenever credentials/tools allow it.
+- The user will review/approve/merge the pull request on GitHub.
+- Do not merge PRs automatically unless the user explicitly asks.
+- If push or PR creation is blocked by sandbox policy, missing credentials, missing GitHub CLI, or inability to verify the destination is safe/private, explain the blocker and give the exact command the user should run.
 
 ## Commits
 
@@ -49,7 +52,7 @@ git add .
 git commit -m "Add day 2 ..."
 ```
 
-## Push Over SSH
+## Push And Pull Request
 
 The remote should use SSH:
 
@@ -70,11 +73,40 @@ git remote set-url origin git@github.com:shitznikita/ai-course.git
 ssh -T git@github.com
 ```
 
-Then push:
+After committing a day-assignment change, push the current branch:
 
 ```bash
 git push -u origin <branch>
 ```
+
+Then create a pull request into `main`.
+
+Preferred, if GitHub CLI is installed and authenticated:
+
+```bash
+gh pr create \
+  --base main \
+  --head <branch> \
+  --title "Add day X ..." \
+  --body "Summary:
+- ...
+
+Verification:
+- ..."
+```
+
+If `gh` is not installed, either install/authenticate it with user approval or provide the GitHub compare URL:
+
+```text
+https://github.com/shitznikita/ai-course/compare/main...<branch>?expand=1
+```
+
+When creating PRs, include:
+
+- What changed.
+- How it was verified.
+- Any known caveats, such as unsupported API parameters.
+- Reminder that `.env` and `.certs/` were not committed if relevant.
 
 ## Root Skill Ideas
 
