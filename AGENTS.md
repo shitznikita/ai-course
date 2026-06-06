@@ -61,3 +61,10 @@ day-03-reasoning-methods-kotlin/scripts/run-eliza.sh
 ./gradlew :day-04-temperature-kotlin:build
 day-04-temperature-kotlin/scripts/run-eliza.sh
 ```
+
+- For Day 5:
+
+```bash
+./gradlew :day-05-model-versions-kotlin:build
+day-05-model-versions-kotlin/scripts/run-eliza.sh
+```
