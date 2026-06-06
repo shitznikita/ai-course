@@ -54,3 +54,10 @@ day-02-response-format-kotlin/scripts/run-eliza.sh
 ./gradlew :day-03-reasoning-methods-kotlin:build
 day-03-reasoning-methods-kotlin/scripts/run-eliza.sh
 ```
+
+- For Day 4:
+
+```bash
+./gradlew :day-04-temperature-kotlin:build
+day-04-temperature-kotlin/scripts/run-eliza.sh
+```
