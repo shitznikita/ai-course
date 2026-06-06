@@ -11,6 +11,7 @@ ai-course/
   day-01-llm-rest-kotlin/   # День 1: REST-запрос к LLM API на Kotlin
   day-02-response-format-kotlin/ # День 2: формат и ограничения ответа
   day-03-reasoning-methods-kotlin/ # День 3: разные способы рассуждения
+  day-04-temperature-kotlin/ # День 4: temperature
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -21,6 +22,7 @@ ai-course/
 - [День 1: REST-запрос к LLM API на Kotlin](day-01-llm-rest-kotlin/README.md)
 - [День 2: Формат ответа](day-02-response-format-kotlin/README.md)
 - [День 3: Разные способы рассуждения](day-03-reasoning-methods-kotlin/README.md)
+- [День 4: Температура](day-04-temperature-kotlin/README.md)
 
 ## Запуск дня 1
 
@@ -62,6 +64,20 @@ day-03-reasoning-methods-kotlin/scripts/run-eliza.sh
 
 ```bash
 ./gradlew :day-03-reasoning-methods-kotlin:build
+```
+
+## Запуск дня 4
+
+Для Eliza DeepSeek:
+
+```bash
+day-04-temperature-kotlin/scripts/run-eliza.sh
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-04-temperature-kotlin:build
 ```
 
 ## Правила безопасности

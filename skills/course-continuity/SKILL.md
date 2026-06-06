@@ -137,6 +137,21 @@ day-03-reasoning-methods-kotlin/scripts/run-eliza.sh
 
 Observed useful result: prompt-first can be very detailed but still wrong; comparison should check against an explicit reference idea, not just reward verbosity.
 
+### Day 4: Temperature
+
+Folder: `day-04-temperature-kotlin`.
+
+Purpose: same prompt and same model, three REST calls with `temperature` values `0`, `0.7`, `1.2`, plus a local comparison summary.
+
+Important: `gpt-5-mini` through Eliza rejected non-default temperature, so Day 4 should use a temperature-compatible model/endpoint. Current plan: Eliza/OpenRouter DeepSeek endpoint with the same OAuth token:
+
+```text
+LLM_API_URL=https://api.eliza.yandex.net/openrouter/v1/chat/completions
+LLM_MODEL=deepseek/deepseek-v3.1-terminus
+```
+
+The code should print sanitized REST request bodies without API keys. The comparison section should stay local and should not add a fourth temperature experiment request.
+
 ## Starting A New Day
 
 1. Confirm only essentials if needed: stack, provider, key, interface, task type.
