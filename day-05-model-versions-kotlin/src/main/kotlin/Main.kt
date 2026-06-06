@@ -36,14 +36,14 @@ private const val MAX_TOKENS = 700
 private val models = listOf(
     ModelSpec(
         label = "WEAK",
-        id = "meta-llama/llama-3.2-3b-instruct",
-        displayName = "Meta: Llama 3.2 3B Instruct",
+        id = "google/gemma-3-4b-it",
+        displayName = "Google: Gemma 3 4B",
         modelClass = "weak",
-        size = "3B parameters",
-        inputPricePerToken = BigDecimal("0.0000000509"),
-        outputPricePerToken = BigDecimal("0.000000335"),
-        url = "https://openrouter.ai/meta-llama/llama-3.2-3b-instruct",
-        why = "Small 3B model: cheap and fast, but more likely to miss nuance.",
+        size = "4B parameters",
+        inputPricePerToken = BigDecimal("0.00000004"),
+        outputPricePerToken = BigDecimal("0.00000008"),
+        url = "https://openrouter.ai/google/gemma-3-4b-it",
+        why = "Small 4B model: cheap and lightweight, but still below the 6B weak-model threshold.",
     ),
     ModelSpec(
         label = "MEDIUM",
@@ -190,19 +190,21 @@ private fun sendChatCompletion(
         )
     }
 
+    val root = json.parseToJsonElement(response.body()).jsonObject
+    val responseRoot = root["response"]?.jsonObject ?: root
+    val assistantText = extractAssistantText(responseRoot)
+    val usage = extractUsage(responseRoot)
+
     if (response.statusCode() !in 200..299) {
         return LlmResponse(
-            answer = "HTTP status: ${response.statusCode()}\n${response.body()}",
-            usage = null,
+            answer = "HTTP status: ${response.statusCode()}\nProvider returned partial response:\n$assistantText",
+            usage = usage,
         )
     }
 
-    val root = json.parseToJsonElement(response.body()).jsonObject
-    val responseRoot = root["response"]?.jsonObject ?: root
-
     return LlmResponse(
-        answer = extractAssistantText(responseRoot),
-        usage = extractUsage(responseRoot),
+        answer = assistantText,
+        usage = usage,
     )
 }
 
@@ -242,7 +244,7 @@ private fun printComparison(results: List<ModelResult>) {
     println("Quality:")
     println("- Compare the answers above: look for correctness, completeness, concrete MVP steps, and whether risks are realistic.")
     println("- Weak models may be verbose, mix languages, or miss business nuance; medium and strong models are usually more stable on analytical prompts.")
-    println("- In the verified run, the 70B and 405B answers were more concise and cleaner than the 3B answer.")
+    println("- In the verified run, the 70B and 405B answers were more concise and complete than the 4B answer.")
     println()
 
     println("Speed:")

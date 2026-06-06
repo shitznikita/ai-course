@@ -161,7 +161,7 @@ Purpose: same prompt sent to weak, medium, and strong cloud LLM models via Eliza
 Chosen models:
 
 ```text
-WEAK: meta-llama/llama-3.2-3b-instruct (3B)
+WEAK: google/gemma-3-4b-it (4B)
 MEDIUM: meta-llama/llama-3.3-70b-instruct (70B)
 STRONG: nousresearch/hermes-3-llama-3.1-405b (405B)
 ```
