@@ -68,3 +68,10 @@ day-04-temperature-kotlin/scripts/run-eliza.sh
 ./gradlew :day-05-model-versions-kotlin:build
 day-05-model-versions-kotlin/scripts/run-eliza.sh
 ```
+
+- For Day 6:
+
+```bash
+./gradlew :day-06-first-agent-kotlin:build
+day-06-first-agent-kotlin/scripts/run-eliza.sh
+```

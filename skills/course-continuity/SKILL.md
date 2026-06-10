@@ -168,6 +168,21 @@ STRONG: nousresearch/hermes-3-llama-3.1-405b (405B)
 
 Free `:free` variants may hit rate limits; standard paid routes are cheap for short prompts and more reliable for recording.
 
+### Day 6: First agent
+
+Folder: `day-06-first-agent-kotlin`.
+
+Purpose: minimal CLI chat-agent with session history. This is not a one-shot request; the `Agent` class stores `system`, `user`, and `assistant` messages for the current process and sends the whole history in every REST request.
+
+Default model/provider:
+
+```text
+LLM_API_URL=https://api.eliza.yandex.net/openrouter/v1/chat/completions
+LLM_MODEL=meta-llama/llama-3.3-70b-instruct
+```
+
+Role: StudyAgent, a concise learning assistant that uses current-session history. Debug mode is available through `AGENT_DEBUG=true` or `/debug`.
+
 ## Starting A New Day
 
 1. Confirm only essentials if needed: stack, provider, key, interface, task type.
