@@ -13,6 +13,7 @@ ai-course/
   day-03-reasoning-methods-kotlin/ # День 3: разные способы рассуждения
   day-04-temperature-kotlin/ # День 4: temperature
   day-05-model-versions-kotlin/ # День 5: версии моделей
+  day-06-first-agent-kotlin/ # День 6: первый агент
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -25,6 +26,7 @@ ai-course/
 - [День 3: Разные способы рассуждения](day-03-reasoning-methods-kotlin/README.md)
 - [День 4: Температура](day-04-temperature-kotlin/README.md)
 - [День 5: Версии моделей](day-05-model-versions-kotlin/README.md)
+- [День 6: Первый агент](day-06-first-agent-kotlin/README.md)
 
 ## Запуск дня 1
 
@@ -94,6 +96,20 @@ day-05-model-versions-kotlin/scripts/run-eliza.sh
 
 ```bash
 ./gradlew :day-05-model-versions-kotlin:build
+```
+
+## Запуск дня 6
+
+Для Eliza:
+
+```bash
+day-06-first-agent-kotlin/scripts/run-eliza.sh
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-06-first-agent-kotlin:build
 ```
 
 ## Правила безопасности
