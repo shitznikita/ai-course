@@ -46,6 +46,7 @@ fun main() {
 
     while (true) {
         print("User: ")
+        System.out.flush()
         val input = readLine()?.trim() ?: break
         if (input.isBlank()) continue
 

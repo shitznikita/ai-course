@@ -30,6 +30,8 @@ export LLM_MODEL="${LLM_MODEL:-meta-llama/llama-3.3-70b-instruct}"
 
 cd "$REPO_ROOT"
 exec ./gradlew \
+    --console=plain \
+    --quiet \
     -PelizaTrustStore="$TRUSTSTORE" \
     -PelizaTrustStorePassword="$STORE_PASSWORD" \
     :day-06-first-agent-kotlin:run \

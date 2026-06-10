@@ -112,6 +112,8 @@ day-06-first-agent-kotlin/scripts/setup-yandex-ca.sh
 day-06-first-agent-kotlin/scripts/run-eliza.sh
 ```
 
+Скрипт запускает Gradle с `--console=plain --quiet`, чтобы Gradle не перерисовывал интерактивную строку ввода в терминале.
+
 Debug-режим можно включить переменной:
 
 ```bash
