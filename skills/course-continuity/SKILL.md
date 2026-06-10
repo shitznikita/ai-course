@@ -183,6 +183,21 @@ LLM_MODEL=meta-llama/llama-3.3-70b-instruct
 
 Role: StudyAgent, a concise learning assistant that uses current-session history. Debug mode is available through `AGENT_DEBUG=true` or `/debug`.
 
+### Day 7: Persistent context
+
+Folder: `day-07-persistent-context-kotlin`.
+
+Purpose: day 6 agent plus JSON persistence. The agent stores chat messages in `agent-history.json`, loads them at startup, and continues the dialog after process restart.
+
+Default model/provider:
+
+```text
+LLM_API_URL=https://api.eliza.yandex.net/openrouter/v1/chat/completions
+LLM_MODEL=meta-llama/llama-3.3-70b-instruct
+```
+
+History file is user data and should stay ignored. `/clear` resets saved history.
+
 ## Starting A New Day
 
 1. Confirm only essentials if needed: stack, provider, key, interface, task type.

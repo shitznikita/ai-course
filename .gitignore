@@ -7,3 +7,5 @@ build/
 .DS_Store
 *.iml
 out/
+day-07-persistent-context-kotlin/agent-history.json
+day-07-persistent-context-kotlin/*.tmp

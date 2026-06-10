@@ -75,3 +75,10 @@ day-05-model-versions-kotlin/scripts/run-eliza.sh
 ./gradlew :day-06-first-agent-kotlin:build
 day-06-first-agent-kotlin/scripts/run-eliza.sh
 ```
+
+- For Day 7:
+
+```bash
+./gradlew :day-07-persistent-context-kotlin:build
+day-07-persistent-context-kotlin/scripts/run-eliza.sh
+```

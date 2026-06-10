@@ -14,6 +14,7 @@ ai-course/
   day-04-temperature-kotlin/ # День 4: temperature
   day-05-model-versions-kotlin/ # День 5: версии моделей
   day-06-first-agent-kotlin/ # День 6: первый агент
+  day-07-persistent-context-kotlin/ # День 7: сохранение контекста
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -27,6 +28,7 @@ ai-course/
 - [День 4: Температура](day-04-temperature-kotlin/README.md)
 - [День 5: Версии моделей](day-05-model-versions-kotlin/README.md)
 - [День 6: Первый агент](day-06-first-agent-kotlin/README.md)
+- [День 7: Сохранение контекста](day-07-persistent-context-kotlin/README.md)
 
 ## Запуск дня 1
 
@@ -110,6 +112,20 @@ day-06-first-agent-kotlin/scripts/run-eliza.sh
 
 ```bash
 ./gradlew :day-06-first-agent-kotlin:build
+```
+
+## Запуск дня 7
+
+Для Eliza:
+
+```bash
+day-07-persistent-context-kotlin/scripts/run-eliza.sh
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-07-persistent-context-kotlin:build
 ```
 
 ## Правила безопасности
