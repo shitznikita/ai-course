@@ -198,6 +198,30 @@ LLM_MODEL=meta-llama/llama-3.3-70b-instruct
 
 History file is user data and should stay ignored. `/clear` resets saved history.
 
+### Day 8: Token accounting
+
+Folder: `day-08-token-accounting-kotlin`.
+
+Purpose: day 7 persistent agent plus token/cost accounting. The agent counts approximate local tokens for the current user message, full `messages` history before each request, model response, and full history after response. If the API returns `usage`, print `prompt_tokens`, `completion_tokens`, `total_tokens`, and `usage.cost`.
+
+Default model/provider:
+
+```text
+LLM_API_URL=https://api.eliza.yandex.net/openrouter/v1/chat/completions
+LLM_MODEL=meta-llama/llama-3.3-70b-instruct
+```
+
+Demo modes:
+
+```bash
+day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="short"
+day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="long"
+APP_CONTEXT_LIMIT_TOKENS=800 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="overflow"
+day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-dry-run"
+```
+
+Important safety rule: `/Users/shitznikita/Downloads/skills-all.md` may be used only for local token/cost dry-run by default. Do not commit it, do not print it fully, and do not send it to API unless the user explicitly confirms via the documented `CONFIRM_BIG_CONTEXT_SEND=YES_I_UNDERSTAND_THE_COST` guard.
+
 ## Starting A New Day
 
 1. Confirm only essentials if needed: stack, provider, key, interface, task type.

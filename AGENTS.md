@@ -82,3 +82,11 @@ day-06-first-agent-kotlin/scripts/run-eliza.sh
 ./gradlew :day-07-persistent-context-kotlin:build
 day-07-persistent-context-kotlin/scripts/run-eliza.sh
 ```
+
+- For Day 8:
+
+```bash
+./gradlew :day-08-token-accounting-kotlin:build
+day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="short"
+day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-dry-run"
+```
