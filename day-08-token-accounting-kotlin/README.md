@@ -195,6 +195,26 @@ day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-send"
 
 Сам файл не коммитится в репозиторий и не печатается в консоль целиком. В консоль выводятся только путь, размер, примерное число токенов и оценка стоимости.
 
+## Фактический результат с большим файлом
+
+Для файла `skills-all.local.md` размером `4664435` bytes локальная оценка показала:
+
+```text
+Approximate file tokens: 1177946
+Approximate request tokens if sent now: 1178009
+Model context window: 131072 tokens
+```
+
+При реальной отправке API вернул:
+
+```text
+HTTP status: 400
+API error: This endpoint's maximum context length is 131072 tokens.
+However, you requested about 1303283 tokens.
+```
+
+Вывод: в этой конфигурации модель не начинает забывать старый контекст, потому что запрос не доходит до самой модели. Провайдер/роутер отклоняет слишком большой prompt до генерации ответа. Это тоже полезная демонстрация переполнения контекстного окна.
+
 ## Пример вывода
 
 ```text

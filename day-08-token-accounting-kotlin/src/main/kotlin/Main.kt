@@ -5,6 +5,8 @@ import java.net.http.HttpResponse
 import java.net.http.HttpTimeoutException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.charset.CodingErrorAction
+import java.nio.charset.StandardCharsets
 import java.text.DecimalFormat
 import java.time.Duration
 import javax.net.ssl.SSLHandshakeException
@@ -195,7 +197,7 @@ private fun runBigFileSend(env: Map<String, String>, agent: Agent) {
         return
     }
 
-    val content = runCatching { Files.readString(file) }.getOrElse { error ->
+    val content = runCatching { readTextReplacingInvalidUtf8(file) }.getOrElse { error ->
         println()
         println("API request blocked: cannot read file `${file.absolute()}`.")
         println("Reason: ${error.message}")
@@ -383,7 +385,7 @@ private class Agent(
             println("Reason: ${error.message}")
             return
         }
-        val content = runCatching { Files.readString(file) }.getOrElse { error ->
+        val content = runCatching { readTextReplacingInvalidUtf8(file) }.getOrElse { error ->
             println("Cannot read file content: ${file.absolute()}")
             println("Reason: ${error.message}")
             println("No API request was sent.")
@@ -462,7 +464,7 @@ private class Agent(
 
         if (response.statusCode() !in 200..299) {
             return AgentReply(
-                content = "HTTP status: ${response.statusCode()}\n${response.body()}",
+                content = "HTTP status: ${response.statusCode()}\n${extractErrorSummary(parsedRoot) ?: "API error body is hidden to avoid leaking internal metadata."}",
                 rememberInHistory = false,
                 usage = parsedRoot?.let { extractUsage(it["response"]?.jsonObject ?: it) },
                 warningOrError = "HTTP ${response.statusCode()}",
@@ -533,6 +535,19 @@ private class Agent(
             totalTokens = usage["total_tokens"]?.asInt(),
             costUsd = usage["cost"]?.asDouble(),
         )
+    }
+
+    private fun extractErrorSummary(root: JsonObject?): String? {
+        if (root == null) return null
+        val responseRoot = root["response"]?.jsonObject ?: root
+        val errorElement = responseRoot["error"] ?: root["error"]
+
+        val message = when (errorElement) {
+            is JsonObject -> errorElement["message"]?.jsonPrimitive?.content
+            else -> errorElement?.jsonPrimitive?.content
+        }
+
+        return message?.let { "API error: $it" }
     }
 
     private fun limitWarning(tokens: Int): String? {
@@ -784,4 +799,12 @@ private fun compactForConsole(text: String, maxChars: Int = 700): String {
     } else {
         normalized.take(maxChars) + "... [truncated in console, full text is not printed]"
     }
+}
+
+private fun readTextReplacingInvalidUtf8(path: Path): String {
+    val decoder = StandardCharsets.UTF_8
+        .newDecoder()
+        .onMalformedInput(CodingErrorAction.REPLACE)
+        .onUnmappableCharacter(CodingErrorAction.REPLACE)
+    return decoder.decode(java.nio.ByteBuffer.wrap(Files.readAllBytes(path))).toString()
 }
