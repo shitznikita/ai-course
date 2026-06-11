@@ -363,12 +363,12 @@ private class Agent(
 
         println()
         println("=== MEASUREMENT TABLE ===")
-        println("| Step | User tokens | History before | Response tokens | History after | API total | Cost | Limit % |")
-        println("|---:|---:|---:|---:|---:|---:|---:|---:|")
+        println("| Step | Current request | Dialog history | Model response | API total | Cost |")
+        println("|---:|---:|---:|---:|---:|---:|")
         measurements.forEach { row ->
             println(
                 "| ${row.step} | ${row.userTokens} | ${row.historyBeforeRequestTokens} | ${row.responseTokens} | " +
-                    "${row.historyAfterResponseTokens} | ${row.apiTotalTokens?.toString() ?: "n/a"} | ${row.costLabel} | ${formatPercent(row.limitUsagePercent)} |",
+                    "${row.apiTotalTokens?.toString() ?: "n/a"} | ${row.costLabel} |",
             )
         }
         println()
@@ -588,24 +588,18 @@ private class Agent(
         println("=== USER MESSAGE ===")
         println(compactForConsole(userMessage))
         println()
-        println("=== TOKEN STATS BEFORE REQUEST ===")
-        println("Current message tokens: ${result.before.currentUserMessageTokens}")
-        println("History tokens before request: ${result.before.historyTokensBeforeRequest}")
-        println("Estimated request tokens: ${result.before.requestTotalTokens}")
-        println("Context limit: ${result.before.contextLimitTokens}")
-        println("Limit usage: ${formatPercent(result.before.limitUsagePercent)}")
+        println("=== TOKENS ===")
+        println("Current request: ${result.before.currentUserMessageTokens}")
+        println("Dialog history: ${result.before.historyTokensBeforeRequest}")
+        println("Model response: ${result.after.responseTokens}")
+        println("Context limit usage: ${formatPercent(result.before.limitUsagePercent)}")
         result.before.warning?.let { println("Warning: $it") }
         println()
         println("=== MODEL RESPONSE ===")
         println(result.answer)
         println()
-        println("=== TOKEN STATS AFTER RESPONSE ===")
-        println("Response tokens: ${result.after.responseTokens}")
-        println("History tokens after response: ${result.after.historyTokensAfterResponse}")
-        println("API prompt tokens: ${result.after.apiUsage?.promptTokens?.toString() ?: "not provided"}")
-        println("API completion tokens: ${result.after.apiUsage?.completionTokens?.toString() ?: "not provided"}")
-        println("API total tokens: ${result.after.apiUsage?.totalTokens?.toString() ?: "not provided"}")
-        println("Estimated/API cost: ${result.after.estimatedCost.label()}")
+        println("API usage: ${formatApiUsage(result.after.apiUsage)}")
+        println("Cost: ${result.after.estimatedCost.label()}")
         result.after.warningOrError?.let {
             println()
             println("=== WARNING / ERROR ===")
@@ -791,6 +785,14 @@ private fun JsonElement.asInt(): Int? = jsonPrimitive.intOrNull
 private fun JsonElement.asDouble(): Double? = jsonPrimitive.doubleOrNull
 
 private fun formatPercent(value: Double): String = "${DecimalFormat("0.0").format(value)}%"
+
+private fun formatApiUsage(usage: ApiUsage?): String {
+    if (usage == null) return "not provided"
+    val prompt = usage.promptTokens?.toString() ?: "?"
+    val completion = usage.completionTokens?.toString() ?: "?"
+    val total = usage.totalTokens?.toString() ?: "?"
+    return "prompt=$prompt, completion=$completion, total=$total"
+}
 
 private fun compactForConsole(text: String, maxChars: Int = 700): String {
     val normalized = text.replace(Regex("\\s+"), " ").trim()

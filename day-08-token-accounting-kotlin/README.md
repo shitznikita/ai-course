@@ -221,28 +221,22 @@ However, you requested about 1303283 tokens.
 === USER MESSAGE ===
 Привет! Меня зовут Никита.
 
-=== TOKEN STATS BEFORE REQUEST ===
-Current message tokens: 9
-History tokens before request: 35
-Estimated request tokens: 35
-Context limit: 3000
-Limit usage: 1.2%
+=== TOKENS ===
+Current request: 9
+Dialog history: 35
+Model response: 7
+Context limit usage: 1.2%
 
 === MODEL RESPONSE ===
 Привет, Никита! Запомнил.
 
-=== TOKEN STATS AFTER RESPONSE ===
-Response tokens: 7
-History tokens after response: 48
-API prompt tokens: 31
-API completion tokens: 9
-API total tokens: 40
-Estimated/API cost: $0.000001
+API usage: prompt=31, completion=9, total=40
+Cost: $0.000001
 
 === MEASUREMENT TABLE ===
-| Step | User tokens | History before | Response tokens | History after | API total | Cost | Limit % |
-|---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | 9 | 35 | 7 | 48 | 40 | $0.000001 | 1.2% |
+| Step | Current request | Dialog history | Model response | API total | Cost |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 9 | 35 | 7 | 40 | $0.000001 |
 ```
 
 ## Почему max_tokens не равен контекстному окну
