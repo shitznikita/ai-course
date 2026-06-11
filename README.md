@@ -15,6 +15,7 @@ ai-course/
   day-05-model-versions-kotlin/ # День 5: версии моделей
   day-06-first-agent-kotlin/ # День 6: первый агент
   day-07-persistent-context-kotlin/ # День 7: сохранение контекста
+  day-08-token-accounting-kotlin/ # День 8: работа с токенами
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -29,6 +30,7 @@ ai-course/
 - [День 5: Версии моделей](day-05-model-versions-kotlin/README.md)
 - [День 6: Первый агент](day-06-first-agent-kotlin/README.md)
 - [День 7: Сохранение контекста](day-07-persistent-context-kotlin/README.md)
+- [День 8: Работа с токенами](day-08-token-accounting-kotlin/README.md)
 
 ## Запуск дня 1
 
@@ -126,6 +128,23 @@ day-07-persistent-context-kotlin/scripts/run-eliza.sh
 
 ```bash
 ./gradlew :day-07-persistent-context-kotlin:build
+```
+
+## Запуск дня 8
+
+Для Eliza:
+
+```bash
+day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="short"
+day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="long"
+APP_CONTEXT_LIMIT_TOKENS=800 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="overflow"
+day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-dry-run"
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-08-token-accounting-kotlin:build
 ```
 
 ## Правила безопасности
