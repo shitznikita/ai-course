@@ -12,3 +12,4 @@ day-07-persistent-context-kotlin/*.tmp
 day-08-token-accounting-kotlin/token-agent-history.json
 day-08-token-accounting-kotlin/agent-history.json
 day-08-token-accounting-kotlin/*.tmp
+day-08-token-accounting-kotlin/*.local.md

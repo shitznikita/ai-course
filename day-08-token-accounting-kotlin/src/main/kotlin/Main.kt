@@ -202,8 +202,35 @@ private fun runBigFileSend(env: Map<String, String>, agent: Agent) {
         println("Grant the terminal/Java process access to the file or set BIG_CONTEXT_FILE to a readable path.")
         return
     }
+    val beginMarker = "BEGIN_MARKER_DAY08_NIKITA_CONTEXT_START_481516"
+    val endMarker = "END_MARKER_DAY08_NIKITA_CONTEXT_END_2342"
     agent.askAndPrint(
-        "Ниже большой контекст из локального файла. Не пересказывай его полностью. Ответь только: сколько примерно разделов ты видишь и какая общая тема?\n\n$content",
+        """
+        Это реальная демонстрация переполнения контекста.
+        В начале большого контекста стоит маркер: $beginMarker
+        В конце большого контекста стоит маркер: $endMarker
+
+        Задача:
+        1. Не пересказывай файл.
+        2. Ответь коротко.
+        3. Скажи, видишь ли ты маркер начала и маркер конца.
+        4. Верни оба маркера ровно как текст, если они есть в доступном тебе контексте.
+
+        $beginMarker
+
+        BEGIN BIG FILE CONTENT
+        $content
+        END BIG FILE CONTENT
+
+        $endMarker
+
+        Ответь в формате:
+        begin_marker_seen: yes/no
+        begin_marker: <marker or missing>
+        end_marker_seen: yes/no
+        end_marker: <marker or missing>
+        conclusion: <одно короткое предложение о том, был ли контекст доступен полностью>
+        """.trimIndent(),
     )
     agent.printMeasurementTable()
 }

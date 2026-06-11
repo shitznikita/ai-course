@@ -160,6 +160,15 @@ BIG_CONTEXT_FILE=/path/to/big-file.md day-08-token-accounting-kotlin/scripts/run
 
 Если macOS не дает Java-процессу читать файл из `Downloads`, программа выведет `Operation not permitted` и не отправит API-запрос. В таком случае можно дать доступ терминалу в System Settings или временно скопировать файл в доступную папку и указать путь через `BIG_CONTEXT_FILE`.
 
+Практичный вариант для записи видео:
+
+```bash
+cp /Users/shitznikita/Downloads/skills-all.md \
+  /Users/shitznikita/Documents/Projects/shitz-projects/ai-course/day-08-token-accounting-kotlin/skills-all.local.md
+```
+
+Файл `*.local.md` в папке дня 8 добавлен в `.gitignore`, поэтому он не попадет в репозиторий.
+
 ## Реальная отправка большого файла
 
 Реальная отправка большого файла отключена по умолчанию. Программа сначала считает токены и примерную стоимость, а затем блокирует запрос.
@@ -172,6 +181,17 @@ day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-send"
 ```
 
 Это сделано специально, чтобы случайно не отправить файл примерно на сотни тысяч или миллион токенов.
+
+Для реальной проверки реакции API на переполнение нужно дополнительно поднять искусственный лимит приложения выше размера файла, иначе приложение остановит запрос само:
+
+```bash
+APP_CONTEXT_LIMIT_TOKENS=2000000 \
+CONFIRM_BIG_CONTEXT_SEND=YES_I_UNDERSTAND_THE_COST \
+BIG_CONTEXT_FILE=/Users/shitznikita/Documents/Projects/shitz-projects/ai-course/day-08-token-accounting-kotlin/skills-all.local.md \
+day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-send"
+```
+
+`file-send` добавляет контрольный маркер в начало и в конец большого контекста. Если API не вернет ошибку, по ответу можно проверить, видит ли модель оба маркера. Если виден только конец, значит провайдер или роутер мог обрезать начало контекста. Если API вернет ошибку context length или payload limit, это тоже корректная демонстрация реального переполнения.
 
 Сам файл не коммитится в репозиторий и не печатается в консоль целиком. В консоль выводятся только путь, размер, примерное число токенов и оценка стоимости.
 
