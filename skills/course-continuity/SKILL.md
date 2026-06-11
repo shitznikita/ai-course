@@ -222,6 +222,28 @@ day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-dry-run"
 
 Important safety rule: `/Users/shitznikita/Downloads/skills-all.md` may be used only for local token/cost dry-run by default. Do not commit it, do not print it fully, and do not send it to API unless the user explicitly confirms via the documented `CONFIRM_BIG_CONTEXT_SEND=YES_I_UNDERSTAND_THE_COST` guard.
 
+### Day 9: History compression
+
+Folder: `day-09-history-compression-kotlin`.
+
+Purpose: context management with summary compression. The agent keeps the latest `RECENT_MESSAGES_LIMIT` messages as-is, summarizes older messages with an LLM request, stores summary separately in `context-summary.md`, stores recent messages in `recent-messages.json`, and compares `full_history` vs `compressed_history` on the same final question.
+
+Default model/provider:
+
+```text
+LLM_API_URL=https://api.eliza.yandex.net/openrouter/v1/chat/completions
+LLM_MODEL=meta-llama/llama-3.3-70b-instruct
+RECENT_MESSAGES_LIMIT=10
+```
+
+Run:
+
+```bash
+day-09-history-compression-kotlin/scripts/run-eliza.sh --args="compare"
+```
+
+The comparison should print the LLM-created summary, full prompt tokens, compressed prompt tokens, token savings, summary request cost, and a simple quality comparison. Summary and recent-history files are user data and must remain ignored.
+
 ## Starting A New Day
 
 1. Confirm only essentials if needed: stack, provider, key, interface, task type.

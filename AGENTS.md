@@ -90,3 +90,10 @@ day-07-persistent-context-kotlin/scripts/run-eliza.sh
 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="short"
 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-dry-run"
 ```
+
+- For Day 9:
+
+```bash
+./gradlew :day-09-history-compression-kotlin:build
+day-09-history-compression-kotlin/scripts/run-eliza.sh --args="compare"
+```
