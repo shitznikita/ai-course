@@ -103,6 +103,12 @@ day-09-history-compression-kotlin/scripts/setup-yandex-ca.sh
 day-09-history-compression-kotlin/scripts/run-eliza.sh --args="compare"
 ```
 
+Детальная проверка на нескольких тематиках:
+
+```bash
+day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"
+```
+
 Интерактивный режим:
 
 ```bash
@@ -137,6 +143,22 @@ RECENT_MESSAGES_LIMIT=6 day-09-history-compression-kotlin/scripts/run-eliza.sh -
 ```text
 Как меня зовут, что я сейчас изучаю и какие мои технические предпочтения и workflow ты помнишь?
 ```
+
+## Что делает multi
+
+`multi` запускает несколько независимых сценариев:
+
+- `AI course workflow`: учебный курс, Kotlin CLI, REST, JSON, GitHub PR workflow;
+- `Tokyo travel plan`: поездка в Токио, бюджет, метро, еда, свободный день;
+- `FocusGarden product brief`: продукт, MVP, ограничения, дедлайн.
+
+Для каждого сценария программа делает:
+
+1. Summary старой истории через LLM.
+2. Запрос с полной историей.
+3. Запрос со сжатой историей.
+4. Проверку ожидаемых фактов.
+5. Итоговую строку в общей таблице расходов.
 
 ## Пример вывода
 
@@ -180,6 +202,21 @@ Full history answer: 7/7 expected facts detected
 Compressed history answer: 6/7 expected facts detected
 Lost facts: JSON history
 ```
+
+Итоговая таблица в `multi`:
+
+```text
+=== FINAL RESULTS TABLE ===
+| Scenario | Full prompt | Compressed prompt | Saved tokens | Saved % | Summary tokens | Full cost | Compressed answer | Summary cost | Compressed total | Quality full | Quality compressed | Lost facts |
+| AI course workflow | 1366 | 501 | 865 | 63.3% | 1046 | $0.000180 | $0.000164 | $0.000143 | $0.000307 | 6/7 | 6/7 | none |
+| Tokyo travel plan | 1062 | 460 | 602 | 56.7% | 849 | $0.000874 | $0.000082 | $0.000176 | $0.000259 | 9/9 | 8/9 | свободный день |
+| FocusGarden product brief | 1167 | 495 | 672 | 57.6% | 947 | $0.000162 | $0.000111 | $0.000185 | $0.000297 | 9/9 | 9/9 | none |
+| TOTAL | 3595 | 1456 | 2139 | 59.5% | 2842 | $0.001216 | $0.000358 | $0.000505 | $0.000863 | - | - | - |
+```
+
+Так видно не один случай, а несколько тематик и итоговую экономию по каждой.
+
+В фактическом прогоне compressed-контекст сэкономил `2139` prompt tokens (`59.5%`). В travel-сценарии compressed-ответ потерял деталь `свободный день`, хотя summary ее содержало. Это хороший пример главного trade-off: сжатие экономит токены, но может ухудшить качество на отдельных деталях.
 
 ## Где хранятся данные
 
@@ -226,6 +263,14 @@ day-09-history-compression-kotlin/scripts/run-eliza.sh --args="compare"
 10. Показать `TOKEN SAVINGS`.
 11. Показать `QUALITY COMPARISON`.
 12. Коротко объяснить вывод: summary экономит токены и стоимость на длинной дистанции, но может потерять детали.
+
+Для более убедительной демонстрации можно запустить:
+
+```bash
+day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"
+```
+
+И показать финальную таблицу расходов по нескольким тематикам.
 
 ## Проверка требований
 

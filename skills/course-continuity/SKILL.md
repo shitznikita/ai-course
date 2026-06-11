@@ -240,9 +240,10 @@ Run:
 
 ```bash
 day-09-history-compression-kotlin/scripts/run-eliza.sh --args="compare"
+day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"
 ```
 
-The comparison should print the LLM-created summary, full prompt tokens, compressed prompt tokens, token savings, summary request cost, and a simple quality comparison. Summary and recent-history files are user data and must remain ignored.
+The comparison should print the LLM-created summary, full prompt tokens, compressed prompt tokens, token savings, summary request cost, and a simple quality comparison. `multi` runs several scenarios and prints a final results table with total token/cost savings and lost facts. Summary and recent-history files are user data and must remain ignored.
 
 ## Starting A New Day
 

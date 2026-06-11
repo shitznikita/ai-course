@@ -74,6 +74,7 @@ fun main(args: Array<String>) {
 
     when (mode) {
         "compare" -> runComparisonDemo(agent)
+        "multi" -> runMultiComparisonDemo(agent)
         "interactive" -> runInteractive(agent)
         "clear" -> {
             agent.clearSavedContext()
@@ -81,22 +82,23 @@ fun main(args: Array<String>) {
         }
         else -> {
             println("Unknown mode: $mode")
-            println("Available modes: compare, interactive, clear")
+            println("Available modes: compare, multi, interactive, clear")
             exitProcess(1)
         }
     }
 }
 
 private fun runComparisonDemo(agent: Agent) {
-    val demoHistory = buildDemoHistory()
-    val finalQuestion = "Как меня зовут, что я сейчас изучаю и какие мои технические предпочтения и workflow ты помнишь?"
+    val scenario = buildDemoScenarios().first()
+    agent.clearSavedContext()
 
     println("=== DAY 9 COMPARISON DEMO ===")
-    println("Demo history messages: ${demoHistory.size}")
-    println("Final question: $finalQuestion")
+    println("Scenario: ${scenario.name}")
+    println("Demo history messages: ${scenario.history.size}")
+    println("Final question: ${scenario.finalQuestion}")
     println()
 
-    val summaryResult = agent.compressAndSave(demoHistory)
+    val summaryResult = agent.compressAndSave(scenario.history)
     println("=== SUMMARY CREATED BY LLM ===")
     println("Old messages summarized: ${summaryResult.oldMessagesCount}")
     println("Recent messages kept as is: ${summaryResult.recentMessagesCount}")
@@ -108,8 +110,44 @@ private fun runComparisonDemo(agent: Agent) {
     println(compactForConsole(summaryResult.summary, maxChars = 1200))
     println()
 
-    val comparison = agent.compareFullAndCompressed(demoHistory, finalQuestion, summaryResult.summary)
-    printComparison(comparison, summaryResult)
+    val comparison = agent.compareFullAndCompressed(scenario.history, scenario.finalQuestion, summaryResult.summary, scenario.expectedFacts)
+    printComparison(scenario, comparison, summaryResult)
+}
+
+private fun runMultiComparisonDemo(agent: Agent) {
+    val scenarios = buildDemoScenarios()
+    val results = mutableListOf<ScenarioRunResult>()
+
+    println("=== DAY 9 MULTI-SCENARIO COMPARISON ===")
+    println("Scenarios: ${scenarios.size}")
+    println()
+
+    scenarios.forEachIndexed { index, scenario ->
+        agent.clearSavedContext()
+        println("=== SCENARIO ${index + 1}: ${scenario.name} ===")
+        println("History messages: ${scenario.history.size}")
+        println("Final question: ${scenario.finalQuestion}")
+        println()
+
+        val summaryResult = agent.compressAndSave(scenario.history)
+        println("Summary tokens: ${summaryResult.summaryTokens}")
+        println("Summary request tokens: ${summaryResult.requestTokens}")
+        println("Summary response tokens: ${summaryResult.responseTokens}")
+        println("Summary cost: ${summaryResult.cost.label()}")
+        println("Summary preview: ${compactForConsole(summaryResult.summary, maxChars = 500)}")
+        println()
+
+        val comparison = agent.compareFullAndCompressed(
+            fullHistory = scenario.history,
+            finalQuestion = scenario.finalQuestion,
+            summaryText = summaryResult.summary,
+            expectedFacts = scenario.expectedFacts,
+        )
+        printComparison(scenario, comparison, summaryResult)
+        results += ScenarioRunResult(scenario, comparison, summaryResult)
+    }
+
+    printFinalResultsTable(results)
 }
 
 private fun runInteractive(agent: Agent) {
@@ -194,6 +232,7 @@ private class Agent(
         fullHistory: List<ChatMessage>,
         finalQuestion: String,
         summaryText: String,
+        expectedFacts: List<ExpectedFact>,
     ): ComparisonResult {
         val fullContext = buildFullContext(fullHistory, finalQuestion)
         val compressedContext = buildCompressedContext(summaryText, recentMessages, finalQuestion)
@@ -231,7 +270,7 @@ private class Agent(
             ),
             summaryTokens = summaryTokens,
             recentMessagesSent = recentMessages.size,
-            localQuality = compareQuality(fullReply.content, compressedReply.content),
+            localQuality = compareQuality(fullReply.content, compressedReply.content, expectedFacts),
         )
     }
 
@@ -489,7 +528,7 @@ private class Agent(
     }
 }
 
-private fun printComparison(comparison: ComparisonResult, summaryResult: SummaryResult) {
+private fun printComparison(scenario: DemoScenario, comparison: ComparisonResult, summaryResult: SummaryResult) {
     println("=== CONTEXT MODE: FULL HISTORY ===")
     println("Messages sent: ${comparison.full.messagesSent}")
     println("Prompt tokens: ${comparison.full.promptTokens}")
@@ -536,14 +575,72 @@ private fun printComparison(comparison: ComparisonResult, summaryResult: Summary
     println()
 
     println("=== QUALITY COMPARISON ===")
-    println("Expected facts: Никита; курс по AI-агентам; Kotlin CLI; direct REST; JSON history; GitHub PR workflow; concise explanations.")
+    println("Expected facts: ${scenario.expectedFacts.joinToString("; ") { it.label }}")
     println("Full history answer: ${comparison.localQuality.fullLabel}")
     println("Compressed history answer: ${comparison.localQuality.compressedLabel}")
     println("Lost facts: ${comparison.localQuality.lostFacts.ifEmpty { "none detected by local keyword check" }}")
     println()
 }
 
-private fun buildDemoHistory(): List<ChatMessage> {
+private fun printFinalResultsTable(results: List<ScenarioRunResult>) {
+    println("=== FINAL RESULTS TABLE ===")
+    println("| Scenario | Full prompt | Compressed prompt | Saved tokens | Saved % | Summary tokens | Full cost | Compressed answer | Summary cost | Compressed total | Quality full | Quality compressed | Lost facts |")
+    println("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|")
+    var totalFullTokens = 0
+    var totalCompressedTokens = 0
+    var totalSummaryTokens = 0
+    val fullCosts = mutableListOf<CostEstimate>()
+    val compressedAnswerCosts = mutableListOf<CostEstimate>()
+    val summaryCosts = mutableListOf<CostEstimate>()
+    val compressedTotalCosts = mutableListOf<CostEstimate>()
+
+    results.forEach { result ->
+        val fullTokens = result.comparison.full.promptTokens
+        val compressedTokens = result.comparison.compressed.promptTokens
+        val savedTokens = fullTokens - compressedTokens
+        val savedPercent = if (fullTokens == 0) 0.0 else savedTokens * 100.0 / fullTokens
+        val summaryTokens = result.summaryResult.requestTokens + result.summaryResult.responseTokens
+        val compressedTotal = sumCosts(result.comparison.compressed.cost, result.summaryResult.cost)
+
+        totalFullTokens += fullTokens
+        totalCompressedTokens += compressedTokens
+        totalSummaryTokens += summaryTokens
+        fullCosts += result.comparison.full.cost
+        compressedAnswerCosts += result.comparison.compressed.cost
+        summaryCosts += result.summaryResult.cost
+        compressedTotalCosts += compressedTotal
+
+        println(
+            "| ${result.scenario.name} | $fullTokens | $compressedTokens | $savedTokens | ${formatPercent(savedPercent)} | " +
+                "$summaryTokens | ${result.comparison.full.cost.label()} | " +
+                "${result.comparison.compressed.cost.label()} | ${result.summaryResult.cost.label()} | ${compressedTotal.label()} | " +
+                "${result.comparison.localQuality.fullDetected}/${result.scenario.expectedFacts.size} | " +
+                "${result.comparison.localQuality.compressedDetected}/${result.scenario.expectedFacts.size} | " +
+                "${result.comparison.localQuality.lostFacts.ifEmpty { "none" }} |",
+        )
+    }
+
+    val totalSavedTokens = totalFullTokens - totalCompressedTokens
+    val totalSavedPercent = if (totalFullTokens == 0) 0.0 else totalSavedTokens * 100.0 / totalFullTokens
+    println(
+        "| TOTAL | $totalFullTokens | $totalCompressedTokens | $totalSavedTokens | ${formatPercent(totalSavedPercent)} | " +
+            "$totalSummaryTokens | ${sumCosts(fullCosts).label()} | ${sumCosts(compressedAnswerCosts).label()} | " +
+            "${sumCosts(summaryCosts).label()} | ${sumCosts(compressedTotalCosts).label()} | - | - | - |",
+    )
+    println()
+    println("Summary cost is paid once per compression. It can be higher than one saved answer, but it can pay off across many later requests.")
+    println()
+}
+
+private fun buildDemoScenarios(): List<DemoScenario> {
+    return listOf(
+        buildCourseScenario(),
+        buildTravelScenario(),
+        buildProductScenario(),
+    )
+}
+
+private fun buildCourseScenario(): DemoScenario {
     val messages = mutableListOf<ChatMessage>()
     fun user(text: String) {
         messages += ChatMessage(role = "user", content = text)
@@ -568,20 +665,113 @@ private fun buildDemoHistory(): List<ChatMessage> {
 
     user("Перед финальным вопросом напомню: последние сообщения могут не содержать ранние важные факты.")
     assistant("Да, поэтому summary должно сохранить ранние факты и предпочтения.")
-    return messages
+    return DemoScenario(
+        name = "AI course workflow",
+        history = messages,
+        finalQuestion = "Как меня зовут, что я сейчас изучаю и какие мои технические предпочтения и workflow ты помнишь?",
+        expectedFacts = listOf(
+            ExpectedFact("Никита", listOf("никита")),
+            ExpectedFact("курс по AI-агентам", listOf("ai-агент", "ai агент", "агент")),
+            ExpectedFact("Kotlin CLI", listOf("kotlin", "cli")),
+            ExpectedFact("direct REST", listOf("rest")),
+            ExpectedFact("JSON history", listOf("json")),
+            ExpectedFact("GitHub PR workflow", listOf("github", "pr", "pull request")),
+            ExpectedFact("concise explanations", listOf("крат", "корот", "понят")),
+        ),
+    )
 }
 
-private fun compareQuality(fullAnswer: String, compressedAnswer: String): QualityComparison {
-    val facts = listOf(
-        ExpectedFact("Никита", listOf("никита")),
-        ExpectedFact("курс по AI-агентам", listOf("ai-агент", "ai агент", "агент")),
-        ExpectedFact("Kotlin CLI", listOf("kotlin", "cli")),
-        ExpectedFact("direct REST", listOf("rest")),
-        ExpectedFact("JSON history", listOf("json")),
-        ExpectedFact("GitHub PR workflow", listOf("github", "pr", "pull request")),
-        ExpectedFact("concise explanations", listOf("крат", "корот", "понят")),
-    )
+private fun buildTravelScenario(): DemoScenario {
+    val messages = mutableListOf<ChatMessage>()
+    fun user(text: String) {
+        messages += ChatMessage(role = "user", content = text)
+    }
+    fun assistant(text: String) {
+        messages += ChatMessage(role = "assistant", content = text)
+    }
 
+    user("Меня зовут Никита. Я планирую поездку в Токио на 7 дней в апреле.")
+    assistant("Запомнил: Никита планирует поездку в Токио на 7 дней в апреле.")
+    user("Мои предпочтения: средний бюджет, отель рядом с метро, больше музеев и районов для прогулок, без ночных перелетов.")
+    assistant("Запомнил: средний бюджет, метро рядом, музеи, прогулки, без ночных перелетов.")
+    user("По еде важно: я хочу вегетарианские варианты и не хочу дорогие дегустационные рестораны.")
+    assistant("Запомнил вегетарианские варианты и без дорогих дегустационных ресторанов.")
+    user("Для маршрута важно оставить один свободный день без жесткого расписания.")
+    assistant("Запомнил: один свободный день без жесткого расписания.")
+
+    repeat(14) { index ->
+        user("Тревел-сообщение ${index + 1}: обсуждаем разные районы, транспорт и погоду, чтобы история стала длиннее.")
+        assistant("Принял тревел-сообщение ${index + 1}. Продолжаю держать общий контекст поездки.")
+    }
+
+    user("Финальный вопрос будет проверять, сохранились ли ранние детали поездки.")
+    assistant("Ок, summary должно сохранить ранние travel-предпочтения.")
+    return DemoScenario(
+        name = "Tokyo travel plan",
+        history = messages,
+        finalQuestion = "Кто я, куда и когда еду, и какие важные предпочтения по поездке ты помнишь?",
+        expectedFacts = listOf(
+            ExpectedFact("Никита", listOf("никита")),
+            ExpectedFact("Токио", listOf("токио")),
+            ExpectedFact("апрель", listOf("апрел")),
+            ExpectedFact("7 дней", listOf("7", "семь")),
+            ExpectedFact("средний бюджет", listOf("средн", "бюджет")),
+            ExpectedFact("отель рядом с метро", listOf("метро")),
+            ExpectedFact("вегетарианские варианты", listOf("вегетариан")),
+            ExpectedFact("без ночных перелетов", listOf("ночн", "перел")),
+            ExpectedFact("свободный день", listOf("свобод")),
+        ),
+    )
+}
+
+private fun buildProductScenario(): DemoScenario {
+    val messages = mutableListOf<ChatMessage>()
+    fun user(text: String) {
+        messages += ChatMessage(role = "user", content = text)
+    }
+    fun assistant(text: String) {
+        messages += ChatMessage(role = "assistant", content = text)
+    }
+
+    user("Я делаю продукт FocusGarden: мобильное приложение для студентов, которые хотят выстроить учебные привычки.")
+    assistant("Запомнил: FocusGarden — мобильное приложение для студентов и учебных привычек.")
+    user("MVP должен включать напоминания, streaks, offline-режим и простой экран прогресса.")
+    assistant("Запомнил MVP: напоминания, streaks, offline и экран прогресса.")
+    user("Ограничения: не делать социальную ленту, не делать сложную геймификацию, первый прототип нужен к пятнице.")
+    assistant("Запомнил ограничения: без социальной ленты, без сложной геймификации, прототип к пятнице.")
+    user("Стиль интерфейса должен быть спокойный, рабочий, без маркетингового hero-экрана.")
+    assistant("Запомнил спокойный рабочий интерфейс без hero-экрана.")
+
+    repeat(15) { index ->
+        user("Продуктовое сообщение ${index + 1}: обсуждаем гипотезы, user stories и мелкие детали, чтобы история стала длиннее.")
+        assistant("Принял продуктовое сообщение ${index + 1}. Продолжаем копить контекст продукта.")
+    }
+
+    user("Потом я спрошу про исходные требования к продукту, которые были в начале.")
+    assistant("Ок, summary должно сохранить исходные требования FocusGarden.")
+    return DemoScenario(
+        name = "FocusGarden product brief",
+        history = messages,
+        finalQuestion = "Что за продукт я делаю, для кого он, что входит в MVP, какие ограничения и дедлайн ты помнишь?",
+        expectedFacts = listOf(
+            ExpectedFact("FocusGarden", listOf("focusgarden", "фокусгарден")),
+            ExpectedFact("мобильное приложение", listOf("мобиль")),
+            ExpectedFact("студенты", listOf("студент")),
+            ExpectedFact("учебные привычки", listOf("привыч")),
+            ExpectedFact("напоминания", listOf("напомин")),
+            ExpectedFact("streaks", listOf("streak")),
+            ExpectedFact("offline", listOf("offline", "офлайн")),
+            ExpectedFact("без социальной ленты", listOf("социальн", "лент")),
+            ExpectedFact("прототип к пятнице", listOf("пятниц")),
+        ),
+    )
+}
+
+private fun compareQuality(
+    fullAnswer: String,
+    compressedAnswer: String,
+    facts: List<ExpectedFact>,
+): QualityComparison {
     val fullDetected = facts.filter { it.matches(fullAnswer) }.map { it.label }.toSet()
     val compressedDetected = facts.filter { it.matches(compressedAnswer) }.map { it.label }.toSet()
     val lostFacts = (fullDetected - compressedDetected).joinToString(", ")
@@ -589,6 +779,8 @@ private fun compareQuality(fullAnswer: String, compressedAnswer: String): Qualit
     return QualityComparison(
         fullLabel = "${fullDetected.size}/${facts.size} expected facts detected",
         compressedLabel = "${compressedDetected.size}/${facts.size} expected facts detected",
+        fullDetected = fullDetected.size,
+        compressedDetected = compressedDetected.size,
         lostFacts = lostFacts,
     )
 }
@@ -717,7 +909,22 @@ private data class ComparisonResult(
 private data class QualityComparison(
     val fullLabel: String,
     val compressedLabel: String,
+    val fullDetected: Int,
+    val compressedDetected: Int,
     val lostFacts: String,
+)
+
+private data class DemoScenario(
+    val name: String,
+    val history: List<ChatMessage>,
+    val finalQuestion: String,
+    val expectedFacts: List<ExpectedFact>,
+)
+
+private data class ScenarioRunResult(
+    val scenario: DemoScenario,
+    val comparison: ComparisonResult,
+    val summaryResult: SummaryResult,
 )
 
 private data class AskResult(
@@ -787,6 +994,15 @@ private fun sumCosts(first: CostEstimate, second: CostEstimate): CostEstimate {
     } else {
         CostEstimate.Unknown
     }
+}
+
+private fun sumCosts(costs: List<CostEstimate>): CostEstimate {
+    var total = 0.0
+    costs.forEach { cost ->
+        if (cost !is CostEstimate.Known) return CostEstimate.Unknown
+        total += cost.usd
+    }
+    return CostEstimate.Known(total)
 }
 
 private fun formatApiUsage(usage: ApiUsage?): String {

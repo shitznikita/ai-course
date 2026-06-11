@@ -155,6 +155,7 @@ day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-dry-run"
 
 ```bash
 day-09-history-compression-kotlin/scripts/run-eliza.sh --args="compare"
+day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"
 ```
 
 Обычная Gradle-команда для сборки:
