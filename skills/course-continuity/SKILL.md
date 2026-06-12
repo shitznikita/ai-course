@@ -240,6 +240,7 @@ Demo modes:
 ```bash
 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="short"
 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="long"
+day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="forgetting"
 APP_CONTEXT_LIMIT_TOKENS=800 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="overflow"
 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-dry-run"
 APP_CONTEXT_LIMIT_TOKENS=2000000 CONFIRM_BIG_CONTEXT_SEND=YES_I_UNDERSTAND_THE_COST BIG_CONTEXT_FILE=/absolute/path/to/skills-all.local.md day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-send"
@@ -257,7 +258,7 @@ API returned HTTP 400:
 maximum context length is 131072 tokens, requested about 1303283 tokens
 ```
 
-Conclusion: in this configuration the model does not silently forget context; the provider/router rejects an over-limit prompt before generation. Day 8 output was simplified to the three assignment counters: `Current request`, `Dialog history`, `Model response`.
+Conclusion: in this configuration the model does not silently forget context; the provider/router rejects an over-limit prompt before generation. To demonstrate the course point about old context drifting away, Day 8 now has `forgetting` mode: local history remains complete, but `sliding-window` sends only the newest messages that fit `APP_CONTEXT_LIMIT_TOKENS`, so old facts can disappear from the current REST request. Day 8 output was simplified to the three assignment counters: `Current request`, `Dialog history`, `Model response`.
 
 ### Day 9: History compression
 

@@ -29,7 +29,11 @@ export LLM_API_URL="${LLM_API_URL:-https://api.eliza.yandex.net/openrouter/v1/ch
 export LLM_MODEL="${LLM_MODEL:-meta-llama/llama-3.3-70b-instruct}"
 export AGENT_HISTORY_FILE="${AGENT_HISTORY_FILE:-token-agent-history.json}"
 export MODEL_CONTEXT_WINDOW_TOKENS="${MODEL_CONTEXT_WINDOW_TOKENS:-131072}"
-export APP_CONTEXT_LIMIT_TOKENS="${APP_CONTEXT_LIMIT_TOKENS:-3000}"
+if [[ "${*:-}" == *"forgetting"* ]]; then
+    export APP_CONTEXT_LIMIT_TOKENS="${APP_CONTEXT_LIMIT_TOKENS:-650}"
+else
+    export APP_CONTEXT_LIMIT_TOKENS="${APP_CONTEXT_LIMIT_TOKENS:-3000}"
+fi
 export BIG_CONTEXT_FILE="${BIG_CONTEXT_FILE:-/Users/shitznikita/Downloads/skills-all.md}"
 
 cd "$REPO_ROOT"

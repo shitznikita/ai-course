@@ -46,7 +46,7 @@ fun main(args: Array<String>) {
     val env = loadEnvFile(resolveEnvPath()) + System.getenv()
     val mode = args.firstOrNull()?.lowercase() ?: env["DAY08_MODE"]?.lowercase() ?: "interactive"
     val historyPath = Path.of(env["AGENT_HISTORY_FILE"] ?: "token-agent-history.json")
-    val modelConfig = ModelConfig.fromEnv(env)
+    val modelConfig = ModelConfig.fromEnv(env, mode)
     val apiKey = env["LLM_API_KEY"]?.takeIf { it.isNotBlank() }
         ?: if (mode == "file-dry-run") "not-used-in-file-dry-run" else requiredEnv(env, "LLM_API_KEY")
 
@@ -60,6 +60,7 @@ fun main(args: Array<String>) {
         modelConfig = modelConfig,
         systemPrompt = env["AGENT_SYSTEM_PROMPT"] ?: DEFAULT_SYSTEM_PROMPT,
         historyPath = historyPath,
+        contextOverflowStrategy = ContextOverflowStrategy.fromEnv(env, mode),
         debug = env["AGENT_DEBUG"]?.toBooleanStrictOrNull() ?: false,
     )
 
@@ -70,6 +71,7 @@ fun main(args: Array<String>) {
     println("Tokenizer: approximate local estimator; API usage is printed when provider returns it.")
     println("Model context window: ${modelConfig.contextWindowTokens} tokens")
     println("App context limit: ${modelConfig.appContextLimitTokens} tokens")
+    println("Context overflow strategy: ${agent.contextOverflowStrategy.label}")
     println("Prices: ${modelConfig.priceLabel()}")
     println()
 
@@ -78,11 +80,12 @@ fun main(args: Array<String>) {
         "short" -> runShortDialog(agent)
         "long" -> runLongDialog(agent)
         "overflow" -> runOverflowDemo(agent)
+        "forgetting" -> runForgettingDemo(agent)
         "file-dry-run" -> runBigFileDryRun(env, agent)
         "file-send" -> runBigFileSend(env, agent)
         else -> {
             println("Unknown mode: $mode")
-            println("Available modes: interactive, short, long, overflow, file-dry-run, file-send")
+            println("Available modes: interactive, short, long, overflow, forgetting, file-dry-run, file-send")
             exitProcess(1)
         }
     }
@@ -178,6 +181,49 @@ private fun runOverflowDemo(agent: Agent) {
     agent.printMeasurementTable()
 }
 
+private fun runForgettingDemo(agent: Agent) {
+    agent.resetDemoHistory()
+    println("=== FORGETTING DEMO WITH SLIDING CONTEXT WINDOW ===")
+    println("This mode sends real API requests, but only the newest messages that fit APP_CONTEXT_LIMIT_TOKENS are included.")
+    println("Local history is kept, while old messages can be skipped from the REST request.")
+    println()
+
+    agent.askAndPrint(
+        "Запомни секрет для проверки контекста: кодовое слово DAY8-SEVER-481. " +
+            "В конце я спрошу именно это кодовое слово. Сейчас ответь только: запомнил.",
+    )
+
+    val fillerTopics = listOf(
+        "чем input tokens отличаются от output tokens",
+        "почему длинная история дороже короткой",
+        "зачем агент отправляет messages в каждом запросе",
+        "почему max_tokens не равен размеру контекстного окна",
+        "как provider usage помогает проверить локальный подсчет",
+        "почему старые сообщения могут не попасть в следующий запрос",
+        "как это связано с галлюцинациями",
+        "почему summary может быть дешевле полной истории",
+        "чем hard limit API отличается от sliding window в приложении",
+        "что полезно показать в видео для задания дня 8",
+    )
+
+    fillerTopics.forEachIndexed { index, topic ->
+        agent.askAndPrint(
+            "Фоновое сообщение ${index + 1}. Тема: $topic. " +
+                "Ответь одним коротким предложением и не повторяй секретное кодовое слово.",
+        )
+    }
+
+    agent.askAndPrint(
+        "Проверка памяти: какое секретное кодовое слово было в самом первом сообщении? " +
+            "Если ты не видишь его в доступном тебе контексте, честно ответь: НЕ ВИЖУ В КОНТЕКСТЕ.",
+    )
+
+    println("=== DEMO NOTE ===")
+    println("If the first secret message was skipped from the API request, the model can only admit missing context or guess.")
+    println("That is the intended lesson: the local agent may have history, but the model reasons only over messages sent in the current REST request.")
+    agent.printMeasurementTable()
+}
+
 private fun runBigFileDryRun(env: Map<String, String>, agent: Agent) {
     val file = Path.of(env["BIG_CONTEXT_FILE"] ?: "/Users/shitznikita/Downloads/skills-all.md")
     println("=== BIG FILE DRY RUN ===")
@@ -242,6 +288,7 @@ private class Agent(
     private val modelConfig: ModelConfig,
     private val systemPrompt: String,
     val historyPath: Path,
+    val contextOverflowStrategy: ContextOverflowStrategy,
     debug: Boolean,
 ) {
     private val client = HttpClient.newHttpClient()
@@ -264,13 +311,17 @@ private class Agent(
         messages += ChatMessage(role = "user", content = userMessage)
         saveHistory(quiet = true)
 
-        val requestTokens = tokenCounter.countMessages(messages)
+        val requestContext = buildRequestContext()
+        val requestTokens = requestContext.sentHistoryTokens
         val before = TokenStatsBefore(
             currentUserMessageTokens = userTokens,
-            historyTokensBeforeRequest = requestTokens,
+            storedHistoryTokensBeforeRequest = requestContext.storedHistoryTokens,
+            sentHistoryTokensBeforeRequest = requestTokens,
             requestTotalTokens = requestTokens,
             contextLimitTokens = modelConfig.appContextLimitTokens,
             limitUsagePercent = requestTokens * 100.0 / modelConfig.appContextLimitTokens,
+            skippedMessagesFromApi = requestContext.skippedMessagesFromApi,
+            overflowStrategy = requestContext.strategy,
             warning = limitWarning(requestTokens),
         )
 
@@ -293,7 +344,7 @@ private class Agent(
             )
         }
 
-        val requestBody = buildRequest()
+        val requestBody = buildRequest(requestContext.messagesForRequest)
         if (debug) {
             println()
             println("=== DEBUG REST REQUEST BODY WITHOUT API KEY ===")
@@ -316,7 +367,7 @@ private class Agent(
         }
 
         val historyAfterResponse = tokenCounter.countMessages(messages)
-        val warningOrError = assistantReply.warningOrError ?: limitWarning(historyAfterResponse)
+        val warningOrError = assistantReply.warningOrError ?: afterResponseLimitWarning(historyAfterResponse)
         val estimatedCost = assistantReply.usage?.costUsd?.let { CostEstimate.Known(it) }
             ?: modelConfig.estimateCost(promptTokensForCost, completionTokensForCost)
 
@@ -419,11 +470,52 @@ private class Agent(
         }
     }
 
-    private fun buildRequest(): String {
+    private fun buildRequestContext(): RequestContext {
+        val storedMessages = messages.toList()
+        val storedTokens = tokenCounter.countMessages(storedMessages)
+
+        if (contextOverflowStrategy == ContextOverflowStrategy.FAIL_FAST || storedTokens <= modelConfig.appContextLimitTokens) {
+            return RequestContext(
+                messagesForRequest = storedMessages,
+                storedHistoryTokens = storedTokens,
+                sentHistoryTokens = storedTokens,
+                skippedMessagesFromApi = 0,
+                strategy = contextOverflowStrategy,
+            )
+        }
+
+        val systemMessages = storedMessages.takeWhile { it.role == "system" }
+        val dialogMessages = storedMessages.drop(systemMessages.size)
+        val keptReversed = mutableListOf<ChatMessage>()
+        var skipped = 0
+
+        dialogMessages.asReversed().forEach { message ->
+            val candidateDialog = (keptReversed + message).asReversed()
+            val candidate = systemMessages + candidateDialog
+            val candidateTokens = tokenCounter.countMessages(candidate)
+
+            if (candidateTokens <= modelConfig.appContextLimitTokens || keptReversed.isEmpty()) {
+                keptReversed += message
+            } else {
+                skipped += 1
+            }
+        }
+
+        val requestMessages = systemMessages + keptReversed.asReversed()
+        return RequestContext(
+            messagesForRequest = requestMessages,
+            storedHistoryTokens = storedTokens,
+            sentHistoryTokens = tokenCounter.countMessages(requestMessages),
+            skippedMessagesFromApi = skipped,
+            strategy = contextOverflowStrategy,
+        )
+    }
+
+    private fun buildRequest(messagesForRequest: List<ChatMessage>): String {
         return buildJsonObject {
             put("model", config.model)
             put("messages", buildJsonArray {
-                messages.forEach { message ->
+                messagesForRequest.forEach { message ->
                     add(buildJsonObject {
                         put("role", message.role)
                         put("content", message.content)
@@ -563,6 +655,14 @@ private class Agent(
         }
     }
 
+    private fun afterResponseLimitWarning(tokens: Int): String? {
+        if (contextOverflowStrategy == ContextOverflowStrategy.SLIDING_WINDOW && tokens > modelConfig.appContextLimitTokens) {
+            return "Stored local history has $tokens tokens, above APP_CONTEXT_LIMIT_TOKENS=${modelConfig.appContextLimitTokens}. Future requests will keep sending only the newest messages."
+        }
+
+        return limitWarning(tokens)
+    }
+
     private fun recordMeasurement(
         userTokens: Int,
         requestTokens: Int,
@@ -590,7 +690,10 @@ private class Agent(
         println()
         println("=== TOKENS ===")
         println("Current request: ${result.before.currentUserMessageTokens}")
-        println("Dialog history: ${result.before.historyTokensBeforeRequest}")
+        println("Dialog history: ${result.before.storedHistoryTokensBeforeRequest}")
+        if (result.before.skippedMessagesFromApi > 0) {
+            println("Sent to API: ${result.before.sentHistoryTokensBeforeRequest} (${result.before.skippedMessagesFromApi} old messages skipped by ${result.before.overflowStrategy.label})")
+        }
         println("Model response: ${result.after.responseTokens}")
         println("Context limit usage: ${formatPercent(result.before.limitUsagePercent)}")
         result.before.warning?.let { println("Warning: $it") }
@@ -659,14 +762,31 @@ private data class ModelConfig(
     }
 
     companion object {
-        fun fromEnv(env: Map<String, String>): ModelConfig {
+        fun fromEnv(env: Map<String, String>, mode: String): ModelConfig {
             return ModelConfig(
                 name = env["LLM_MODEL"] ?: "meta-llama/llama-3.3-70b-instruct",
                 inputPricePerMillionTokens = env["MODEL_INPUT_PRICE_PER_1M_TOKENS"]?.toDoubleOrNull(),
                 outputPricePerMillionTokens = env["MODEL_OUTPUT_PRICE_PER_1M_TOKENS"]?.toDoubleOrNull(),
                 contextWindowTokens = env["MODEL_CONTEXT_WINDOW_TOKENS"]?.toIntOrNull() ?: 131_072,
-                appContextLimitTokens = env["APP_CONTEXT_LIMIT_TOKENS"]?.toIntOrNull() ?: 3_000,
+                appContextLimitTokens = env["APP_CONTEXT_LIMIT_TOKENS"]?.toIntOrNull()
+                    ?: if (mode == "forgetting") 650 else 3_000,
             )
+        }
+    }
+}
+
+private enum class ContextOverflowStrategy(val label: String) {
+    FAIL_FAST("fail-fast"),
+    SLIDING_WINDOW("sliding-window");
+
+    companion object {
+        fun fromEnv(env: Map<String, String>, mode: String): ContextOverflowStrategy {
+            val defaultValue = if (mode == "forgetting") "sliding-window" else "fail-fast"
+            return when ((env["CONTEXT_OVERFLOW_STRATEGY"] ?: defaultValue).lowercase()) {
+                "sliding-window", "sliding_window", "trim-oldest", "trim_oldest" -> SLIDING_WINDOW
+                "fail-fast", "fail_fast", "error" -> FAIL_FAST
+                else -> FAIL_FAST
+            }
         }
     }
 }
@@ -699,10 +819,13 @@ private data class AgentResult(
 
 private data class TokenStatsBefore(
     val currentUserMessageTokens: Int,
-    val historyTokensBeforeRequest: Int,
+    val storedHistoryTokensBeforeRequest: Int,
+    val sentHistoryTokensBeforeRequest: Int,
     val requestTotalTokens: Int,
     val contextLimitTokens: Int,
     val limitUsagePercent: Double,
+    val skippedMessagesFromApi: Int,
+    val overflowStrategy: ContextOverflowStrategy,
     val warning: String?,
 )
 
@@ -731,6 +854,14 @@ private data class MeasurementRow(
     val costLabel: String,
     val limitUsagePercent: Double,
     val warningOrError: String?,
+)
+
+private data class RequestContext(
+    val messagesForRequest: List<ChatMessage>,
+    val storedHistoryTokens: Int,
+    val sentHistoryTokens: Int,
+    val skippedMessagesFromApi: Int,
+    val strategy: ContextOverflowStrategy,
 )
 
 @Serializable
