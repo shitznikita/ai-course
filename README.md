@@ -2,6 +2,16 @@
 
 Репозиторий для заданий курса по AI/LLM.
 
+## Current Snapshot
+
+- Статус на `2026-06-12`: на `main` есть завершенные задания дней 1-9.
+- Основной стек всех последних заданий: Kotlin CLI + Gradle + прямой REST через `java.net.http.HttpClient`.
+- Основной провайдер: Eliza API, OpenRouter-compatible endpoint `https://api.eliza.yandex.net/openrouter/v1/chat/completions`.
+- Основная модель для дней 6-9: `meta-llama/llama-3.3-70b-instruct`.
+- Реальный API-ключ хранится только в `.env` или переменных окружения. `.env`, `.certs/`, build outputs, history/summary/tmp-файлы не коммитятся.
+- Для продолжения после сжатия контекста сначала читать [AGENTS.md](AGENTS.md), затем [skills/course-continuity/SKILL.md](skills/course-continuity/SKILL.md).
+- Для проверки текущего состояния полезнее всего запускать день 9 в режиме `multi`, потому что он показывает несколько тематик и финальную таблицу расходов.
+
 ## Структура
 
 ```text
@@ -33,6 +43,20 @@ ai-course/
 - [День 7: Сохранение контекста](day-07-persistent-context-kotlin/README.md)
 - [День 8: Работа с токенами](day-08-token-accounting-kotlin/README.md)
 - [День 9: Управление контекстом — сжатие истории](day-09-history-compression-kotlin/README.md)
+
+## Быстрая Карта Дней
+
+| День | Папка | Суть | Основная команда |
+|---:|---|---|---|
+| 1 | `day-01-llm-rest-kotlin` | первый прямой REST-запрос к LLM | `day-01-llm-rest-kotlin/scripts/run-eliza.sh --args="Ответь кратко: что такое REST API?"` |
+| 2 | `day-02-response-format-kotlin` | формат, длина, завершение ответа | `day-02-response-format-kotlin/scripts/run-eliza.sh` |
+| 3 | `day-03-reasoning-methods-kotlin` | direct, step-by-step, prompt-first, experts | `day-03-reasoning-methods-kotlin/scripts/run-eliza.sh` |
+| 4 | `day-04-temperature-kotlin` | сравнение temperature | `day-04-temperature-kotlin/scripts/run-eliza.sh` |
+| 5 | `day-05-model-versions-kotlin` | weak/medium/strong модели, токены, стоимость | `day-05-model-versions-kotlin/scripts/run-eliza.sh` |
+| 6 | `day-06-first-agent-kotlin` | первый CLI-агент с памятью процесса | `day-06-first-agent-kotlin/scripts/run-eliza.sh` |
+| 7 | `day-07-persistent-context-kotlin` | persistent JSON context | `day-07-persistent-context-kotlin/scripts/run-eliza.sh` |
+| 8 | `day-08-token-accounting-kotlin` | токены, стоимость, переполнение контекста | `day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="short"` |
+| 9 | `day-09-history-compression-kotlin` | summary compression и multi-сравнение | `day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"` |
 
 ## Запуск дня 1
 
@@ -162,6 +186,20 @@ day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"
 
 ```bash
 ./gradlew :day-09-history-compression-kotlin:build
+```
+
+Фактический последний прогон `multi` показал:
+
+```text
+Full prompt tokens total: 3595
+Compressed prompt tokens total: 1456
+Saved prompt tokens: 2139 / 59.5%
+Summary creation tokens: 2842
+Full answer cost total: $0.001216
+Compressed answer cost total: $0.000358
+Summary cost total: $0.000505
+Compressed total: $0.000863
+Quality trade-off: Tokyo travel compressed answer lost "свободный день".
 ```
 
 ## Правила безопасности

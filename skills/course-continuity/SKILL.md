@@ -7,6 +7,23 @@ description: Use when continuing this AI course repository after context compact
 
 Use this skill as the durable memory for the AI course repo. Keep future work consistent with these decisions unless the user explicitly changes direction.
 
+## Current Snapshot
+
+- Snapshot date: 2026-06-12.
+- `main` currently contains completed assignments for days 1-9.
+- Latest completed assignment: Day 9, history compression with `compare` and `multi` modes.
+- Current working convention: one Kotlin/JVM Gradle subproject per day, CLI first, direct REST via `java.net.http.HttpClient`, no high-level LLM SDKs.
+- Default provider for recent agent tasks: Eliza API through the OpenRouter-compatible endpoint.
+- Default recent model: `meta-llama/llama-3.3-70b-instruct`.
+- The best smoke test for the latest state is:
+
+```bash
+./gradlew :day-09-history-compression-kotlin:build
+day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"
+```
+
+After context compaction, start by reading `AGENTS.md`, this file, root `README.md`, and the latest day README before changing code.
+
 ## User Preferences
 
 - The user wants a technical mentor and executor, not just advice.
@@ -44,19 +61,26 @@ Use this skill as the durable memory for the AI course repo. Keep future work co
 
 ## Eliza/API Notes
 
-- Default API URL used so far: `https://api.eliza.yandex.net/raw/openai/v1/chat/completions`.
+- Historical Day 1-3 raw API URL: `https://api.eliza.yandex.net/raw/openai/v1/chat/completions`.
 - Auth header: `Authorization: OAuth <token>`.
-- Default model: `gpt-5-mini`.
+- Historical raw model: `gpt-5-mini`.
 - Eliza/gpt-5-mini rejected:
   - `max_tokens`: use prompt instructions or supported model-specific fields instead.
   - `temperature=0.2`: API said only default value is supported.
-- Therefore prefer minimal request body:
+- Therefore raw `gpt-5-mini` requests should stay minimal:
 
 ```json
 {
   "model": "gpt-5-mini",
   "messages": [...]
 }
+```
+
+- Current default for agent days 6-9:
+
+```text
+LLM_API_URL=https://api.eliza.yandex.net/openrouter/v1/chat/completions
+LLM_MODEL=meta-llama/llama-3.3-70b-instruct
 ```
 
 - Keep model/provider identical within a comparison assignment unless the assignment says otherwise.
@@ -218,9 +242,22 @@ day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="short"
 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="long"
 APP_CONTEXT_LIMIT_TOKENS=800 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="overflow"
 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-dry-run"
+APP_CONTEXT_LIMIT_TOKENS=2000000 CONFIRM_BIG_CONTEXT_SEND=YES_I_UNDERSTAND_THE_COST BIG_CONTEXT_FILE=/absolute/path/to/skills-all.local.md day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-send"
 ```
 
 Important safety rule: `/Users/shitznikita/Downloads/skills-all.md` may be used only for local token/cost dry-run by default. Do not commit it, do not print it fully, and do not send it to API unless the user explicitly confirms via the documented `CONFIRM_BIG_CONTEXT_SEND=YES_I_UNDERSTAND_THE_COST` guard.
+
+Observed real overflow result with copied local file `skills-all.local.md`:
+
+```text
+File size: 4664435 bytes
+Approximate file tokens: 1177946
+Approximate request tokens if sent now: 1178009
+API returned HTTP 400:
+maximum context length is 131072 tokens, requested about 1303283 tokens
+```
+
+Conclusion: in this configuration the model does not silently forget context; the provider/router rejects an over-limit prompt before generation. Day 8 output was simplified to the three assignment counters: `Current request`, `Dialog history`, `Model response`.
 
 ### Day 9: History compression
 
@@ -245,21 +282,38 @@ day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"
 
 The comparison should print the LLM-created summary, full prompt tokens, compressed prompt tokens, token savings, summary request cost, and a simple quality comparison. `multi` runs several scenarios and prints a final results table with total token/cost savings and lost facts. Summary and recent-history files are user data and must remain ignored.
 
+Observed latest `multi` result:
+
+```text
+AI course workflow: full 1366, compressed 501, saved 865 / 63.3%, quality 6/7 vs 6/7
+Tokyo travel plan: full 1062, compressed 460, saved 602 / 56.7%, quality 9/9 vs 8/9, lost "свободный день"
+FocusGarden product brief: full 1167, compressed 495, saved 672 / 57.6%, quality 9/9 vs 9/9
+TOTAL: full 3595, compressed 1456, saved 2139 / 59.5%
+Summary creation tokens total: 2842
+Full answer cost total: $0.001216
+Compressed answer cost total: $0.000358
+Summary cost total: $0.000505
+Compressed total: $0.000863
+```
+
+Useful explanation for video/submission: summary compression saved prompt tokens substantially, but it can lose details. In the Tokyo scenario the compressed answer missed the free-day preference, even though the summary contained it.
+
 ## Starting A New Day
 
 1. Confirm only essentials if needed: stack, provider, key, interface, task type.
 2. Prefer `Kotlin + Eliza + CLI` if user agrees or implies continuity.
-3. Create branch `day-XX-short-name`.
-4. Create folder `day-XX-short-name-kotlin`.
-5. Copy the proven Eliza run/setup script pattern from the latest day.
-6. Add the subproject to `settings.gradle.kts`.
-7. Add root README/AGENTS entries.
-8. Implement direct REST via `java.net.http.HttpClient`.
-9. Add a day README with plan, checklist, setup, run commands, video scenario, requirement check.
-10. Build and run with Eliza if feasible.
-11. Commit.
-12. Push the branch and create a PR into `main` automatically when allowed.
-13. If push/PR is blocked by sandbox policy, missing credentials, missing GitHub CLI, or inability to verify safe/private destination, explain the blocker and provide the exact command or compare URL.
+3. Start from current `main`; pull first if network/tools allow it.
+4. Create branch `day-XX-short-name`.
+5. Create folder `day-XX-short-name-kotlin`.
+6. Copy the proven Eliza run/setup script pattern from the latest day.
+7. Add the subproject to `settings.gradle.kts`.
+8. Add root README/AGENTS/course-continuity entries.
+9. Implement direct REST via `java.net.http.HttpClient`.
+10. Add a day README with plan, checklist, setup, run commands, video scenario, requirement check.
+11. Build and run with Eliza if feasible.
+12. Commit.
+13. Push the branch and create a PR into `main` automatically when allowed.
+14. If push/PR is blocked by sandbox policy, missing credentials, missing GitHub CLI, or inability to verify safe/private destination, explain the blocker and provide the exact command or compare URL.
 
 ## Video Guidance
 

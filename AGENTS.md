@@ -4,10 +4,39 @@ This repository stores AI course assignments. Keep every assignment small, revie
 
 For durable course memory after context compaction, read `skills/course-continuity/SKILL.md`.
 
+## Current Snapshot For New Agents
+
+- Current date of this snapshot: 2026-06-12.
+- `main` contains completed course days 1-9.
+- Preferred stack remains Kotlin CLI with direct REST calls through `java.net.http.HttpClient`.
+- Preferred provider remains Eliza API with OAuth token from `.env`/environment variables.
+- Recent default endpoint/model for agent tasks:
+
+```text
+LLM_API_URL=https://api.eliza.yandex.net/openrouter/v1/chat/completions
+LLM_MODEL=meta-llama/llama-3.3-70b-instruct
+```
+
+- Do not use high-level LLM SDKs or ready-made agents as a replacement for the required REST request.
+- Day 9 is the latest completed assignment and the best smoke test is:
+
+```bash
+./gradlew :day-09-history-compression-kotlin:build
+day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"
+```
+
 ## Repository Layout
 
 - `day-01-llm-rest-kotlin/`: Day 1 Kotlin CLI that sends a direct REST request to an LLM API.
-- Add future assignments as `day-02-...`, `day-03-...`, and so on.
+- `day-02-response-format-kotlin/`: Day 2 response format and output constraints.
+- `day-03-reasoning-methods-kotlin/`: Day 3 reasoning strategies.
+- `day-04-temperature-kotlin/`: Day 4 temperature comparison.
+- `day-05-model-versions-kotlin/`: Day 5 model versions.
+- `day-06-first-agent-kotlin/`: Day 6 first chat agent with in-process memory.
+- `day-07-persistent-context-kotlin/`: Day 7 persistent JSON context.
+- `day-08-token-accounting-kotlin/`: Day 8 token accounting and context overflow demos.
+- `day-09-history-compression-kotlin/`: Day 9 history compression with summary and multi-scenario comparison.
+- Add future assignments as `day-10-...`, `day-11-...`, and so on.
 - Keep Gradle Wrapper files at the repository root.
 
 ## GitHub Workflow
@@ -23,6 +52,13 @@ For durable course memory after context compaction, read `skills/course-continui
 - Commit `.env.example` with placeholder values only.
 - For corporate/internal endpoints, keep the repository private unless publication is explicitly allowed.
 - Before pushing, run `git status --ignored` and check that secrets are ignored.
+- Keep local/generated context files ignored:
+  - `day-07-persistent-context-kotlin/agent-history.json`
+  - `day-08-token-accounting-kotlin/token-agent-history.json`
+  - `day-08-token-accounting-kotlin/*.local.md`
+  - `day-09-history-compression-kotlin/recent-messages.json`
+  - `day-09-history-compression-kotlin/context-summary.md`
+  - `day-09-history-compression-kotlin/*.tmp`
 
 ## Assignment Quality Bar
 
