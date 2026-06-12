@@ -163,6 +163,7 @@ day-07-persistent-context-kotlin/scripts/run-eliza.sh
 ```bash
 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="short"
 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="long"
+day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="forgetting"
 APP_CONTEXT_LIMIT_TOKENS=800 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="overflow"
 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-dry-run"
 ```

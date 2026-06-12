@@ -124,6 +124,7 @@ day-07-persistent-context-kotlin/scripts/run-eliza.sh
 ```bash
 ./gradlew :day-08-token-accounting-kotlin:build
 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="short"
+day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="forgetting"
 day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-dry-run"
 ```
 
