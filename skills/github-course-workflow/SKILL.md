@@ -18,6 +18,7 @@ git branch --show-current
 
 2. Keep user changes intact. Do not reset, checkout, or delete files unless explicitly requested.
 3. For a new assignment, create a dedicated folder such as `day-02-task-name/`.
+4. For documentation or memory-refresh work before context compaction, use a small docs branch such as `docs-context-memory-refresh`.
 
 ## Branches And PRs
 
@@ -44,6 +45,17 @@ git status --short --ignored
 ```
 
 Confirm that `.env`, `.certs/`, build outputs, IDE files, and secrets are ignored.
+
+Also confirm that local context/demo files are ignored and not staged:
+
+```text
+day-07-persistent-context-kotlin/agent-history.json
+day-08-token-accounting-kotlin/*.local.md
+day-08-token-accounting-kotlin/*.tmp
+day-09-history-compression-kotlin/recent-messages.json
+day-09-history-compression-kotlin/context-summary.md
+day-09-history-compression-kotlin/*.tmp
+```
 
 Commit messages should be short and concrete:
 

@@ -2,6 +2,25 @@
 
 CLI-агент, который умеет заменять старую часть истории диалога на `summary`, хранить последние N сообщений как есть и сравнивать полный контекст со сжатым.
 
+## Текущий статус
+
+- Реализация актуальна на 2026-06-12.
+- Основные режимы: `compare`, `multi`, `interactive`, `clear`.
+- Для видео и проверки лучше использовать `multi`: он запускает несколько тематик и выводит финальную таблицу расходов.
+- Последний фактический `multi`-прогон:
+
+```text
+Full prompt tokens total: 3595
+Compressed prompt tokens total: 1456
+Saved prompt tokens: 2139 / 59.5%
+Summary creation tokens: 2842
+Full answer cost total: $0.001216
+Compressed answer cost total: $0.000358
+Summary cost total: $0.000505
+Compressed total: $0.000863
+Quality trade-off: Tokyo travel compressed answer lost "свободный день".
+```
+
 ## Что используется
 
 - Язык: Kotlin
