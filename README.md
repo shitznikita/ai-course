@@ -16,6 +16,7 @@ ai-course/
   day-06-first-agent-kotlin/ # День 6: первый агент
   day-07-persistent-context-kotlin/ # День 7: сохранение контекста
   day-08-token-accounting-kotlin/ # День 8: работа с токенами
+  day-09-history-compression-kotlin/ # День 9: сжатие истории
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -31,6 +32,7 @@ ai-course/
 - [День 6: Первый агент](day-06-first-agent-kotlin/README.md)
 - [День 7: Сохранение контекста](day-07-persistent-context-kotlin/README.md)
 - [День 8: Работа с токенами](day-08-token-accounting-kotlin/README.md)
+- [День 9: Управление контекстом — сжатие истории](day-09-history-compression-kotlin/README.md)
 
 ## Запуск дня 1
 
@@ -145,6 +147,21 @@ day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-dry-run"
 
 ```bash
 ./gradlew :day-08-token-accounting-kotlin:build
+```
+
+## Запуск дня 9
+
+Для Eliza:
+
+```bash
+day-09-history-compression-kotlin/scripts/run-eliza.sh --args="compare"
+day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-09-history-compression-kotlin:build
 ```
 
 ## Правила безопасности
