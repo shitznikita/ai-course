@@ -7,7 +7,7 @@ For durable course memory after context compaction, read `skills/course-continui
 ## Current Snapshot For New Agents
 
 - Current date of this snapshot: 2026-06-12.
-- `main` contains completed course days 1-9.
+- `main` contains completed course days 1-9; Day 10 is developed as a separate PR.
 - Preferred stack remains Kotlin CLI with direct REST calls through `java.net.http.HttpClient`.
 - Preferred provider remains Eliza API with OAuth token from `.env`/environment variables.
 - Recent default endpoint/model for agent tasks:
@@ -18,11 +18,11 @@ LLM_MODEL=meta-llama/llama-3.3-70b-instruct
 ```
 
 - Do not use high-level LLM SDKs or ready-made agents as a replacement for the required REST request.
-- Day 9 is the latest completed assignment and the best smoke test is:
+- Day 10 uses a cleaner multi-file Kotlin layout for new work. The best Day 10 smoke test is:
 
 ```bash
-./gradlew :day-09-history-compression-kotlin:build
-day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"
+./gradlew :day-10-context-strategies-kotlin:build
+day-10-context-strategies-kotlin/scripts/run-eliza.sh
 ```
 
 ## Repository Layout
@@ -36,7 +36,8 @@ day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"
 - `day-07-persistent-context-kotlin/`: Day 7 persistent JSON context.
 - `day-08-token-accounting-kotlin/`: Day 8 token accounting and context overflow demos.
 - `day-09-history-compression-kotlin/`: Day 9 history compression with summary and multi-scenario comparison.
-- Add future assignments as `day-10-...`, `day-11-...`, and so on.
+- `day-10-context-strategies-kotlin/`: Day 10 context strategies without summary: sliding, facts, branching.
+- Add future assignments as `day-11-...`, `day-12-...`, and so on.
 - Keep Gradle Wrapper files at the repository root.
 
 ## GitHub Workflow
@@ -59,6 +60,8 @@ day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"
   - `day-09-history-compression-kotlin/recent-messages.json`
   - `day-09-history-compression-kotlin/context-summary.md`
   - `day-09-history-compression-kotlin/*.tmp`
+  - `day-10-context-strategies-kotlin/context-state.json`
+  - `day-10-context-strategies-kotlin/*.tmp`
 
 ## Assignment Quality Bar
 
@@ -134,4 +137,11 @@ day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="file-dry-run"
 ./gradlew :day-09-history-compression-kotlin:build
 day-09-history-compression-kotlin/scripts/run-eliza.sh --args="compare"
 day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"
+```
+
+- For Day 10:
+
+```bash
+./gradlew :day-10-context-strategies-kotlin:build
+day-10-context-strategies-kotlin/scripts/run-eliza.sh
 ```

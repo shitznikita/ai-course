@@ -4,10 +4,10 @@
 
 ## Current Snapshot
 
-- Статус на `2026-06-12`: на `main` есть завершенные задания дней 1-9.
+- Статус на `2026-06-12`: на `main` есть завершенные задания дней 1-9, день 10 готовится отдельной веткой.
 - Основной стек всех последних заданий: Kotlin CLI + Gradle + прямой REST через `java.net.http.HttpClient`.
 - Основной провайдер: Eliza API, OpenRouter-compatible endpoint `https://api.eliza.yandex.net/openrouter/v1/chat/completions`.
-- Основная модель для дней 6-9: `meta-llama/llama-3.3-70b-instruct`.
+- Основная модель для дней 6-10: `meta-llama/llama-3.3-70b-instruct`.
 - Реальный API-ключ хранится только в `.env` или переменных окружения. `.env`, `.certs/`, build outputs, history/summary/tmp-файлы не коммитятся.
 - Для продолжения после сжатия контекста сначала читать [AGENTS.md](AGENTS.md), затем [skills/course-continuity/SKILL.md](skills/course-continuity/SKILL.md).
 - Для проверки текущего состояния полезнее всего запускать день 9 в режиме `multi`, потому что он показывает несколько тематик и финальную таблицу расходов.
@@ -27,6 +27,7 @@ ai-course/
   day-07-persistent-context-kotlin/ # День 7: сохранение контекста
   day-08-token-accounting-kotlin/ # День 8: работа с токенами
   day-09-history-compression-kotlin/ # День 9: сжатие истории
+  day-10-context-strategies-kotlin/ # День 10: стратегии контекста без summary
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -43,6 +44,7 @@ ai-course/
 - [День 7: Сохранение контекста](day-07-persistent-context-kotlin/README.md)
 - [День 8: Работа с токенами](day-08-token-accounting-kotlin/README.md)
 - [День 9: Управление контекстом — сжатие истории](day-09-history-compression-kotlin/README.md)
+- [День 10: Управление контекстом разными стратегиями](day-10-context-strategies-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -57,6 +59,7 @@ ai-course/
 | 7 | `day-07-persistent-context-kotlin` | persistent JSON context | `day-07-persistent-context-kotlin/scripts/run-eliza.sh` |
 | 8 | `day-08-token-accounting-kotlin` | токены, стоимость, переполнение контекста | `day-08-token-accounting-kotlin/scripts/run-eliza.sh --args="short"` |
 | 9 | `day-09-history-compression-kotlin` | summary compression и multi-сравнение | `day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"` |
+| 10 | `day-10-context-strategies-kotlin` | sliding, facts, branching без summary | `day-10-context-strategies-kotlin/scripts/run-eliza.sh` |
 
 ## Запуск дня 1
 
@@ -201,6 +204,21 @@ Compressed answer cost total: $0.000358
 Summary cost total: $0.000505
 Compressed total: $0.000863
 Quality trade-off: Tokyo travel compressed answer lost "свободный день".
+```
+
+## Запуск дня 10
+
+Для Eliza:
+
+```bash
+day-10-context-strategies-kotlin/scripts/run-eliza.sh
+day-10-context-strategies-kotlin/scripts/run-eliza.sh --args="interactive"
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-10-context-strategies-kotlin:build
 ```
 
 ## Правила безопасности
