@@ -11,7 +11,8 @@ Use this skill as the durable memory for the AI course repo. Keep future work co
 
 - Snapshot date: 2026-06-12.
 - `main` currently contains completed assignments for days 1-9.
-- Latest completed assignment: Day 9, history compression with `compare` and `multi` modes.
+- Day 10 is implemented as a separate PR with a cleaner multi-file Kotlin layout.
+- Latest completed assignment on main: Day 9, history compression with `compare` and `multi` modes.
 - Current working convention: one Kotlin/JVM Gradle subproject per day, CLI first, direct REST via `java.net.http.HttpClient`, no high-level LLM SDKs.
 - Default provider for recent agent tasks: Eliza API through the OpenRouter-compatible endpoint.
 - Default recent model: `meta-llama/llama-3.3-70b-instruct`.
@@ -76,7 +77,7 @@ After context compaction, start by reading `AGENTS.md`, this file, root `README.
 }
 ```
 
-- Current default for agent days 6-9:
+- Current default for agent days 6-10:
 
 ```text
 LLM_API_URL=https://api.eliza.yandex.net/openrouter/v1/chat/completions
@@ -298,6 +299,66 @@ Compressed total: $0.000863
 ```
 
 Useful explanation for video/submission: summary compression saved prompt tokens substantially, but it can lose details. In the Tokyo scenario the compressed answer missed the free-day preference, even though the summary contained it.
+
+### Day 10: Context strategies without summary
+
+Folder: `day-10-context-strategies-kotlin`.
+
+Purpose: compare three context management strategies without summary:
+
+```text
+sliding: send only the latest N messages
+facts: send key-value sticky facts plus latest N messages
+branching: keep checkpoint plus independent branch histories
+```
+
+The user explicitly asked that Day 10 and future days should not put everything into `Main.kt`. Keep the code split into understandable files/classes.
+
+Current layout:
+
+```text
+Main.kt
+ContextAgent.kt
+ContextStrategies.kt
+FactMemoryUpdater.kt
+LlmClient.kt
+DemoScenario.kt
+DemoRunner.kt
+InteractiveCli.kt
+```
+
+Default model/provider:
+
+```text
+LLM_API_URL=https://api.eliza.yandex.net/openrouter/v1/chat/completions
+LLM_MODEL=meta-llama/llama-3.3-70b-instruct
+RECENT_MESSAGES_LIMIT=6
+FACTS_UPDATE_MODE=llm
+```
+
+Run:
+
+```bash
+./gradlew :day-10-context-strategies-kotlin:build
+day-10-context-strategies-kotlin/scripts/run-eliza.sh
+day-10-context-strategies-kotlin/scripts/run-eliza.sh --args="interactive"
+```
+
+Observed demo result from the first completed Day 10 run:
+
+```text
+sliding: prompt 160, quality 7/12, lost name, app goal, backend, categories, limits
+facts: prompt 4207 including fact-update calls, quality 12/12, lost none
+branching: prompt 493, branches isolated=true
+```
+
+Important constraints:
+
+- Do not use summary as one of the Day 10 strategies.
+- Facts must be structured key-value memory, not a retelling of the whole dialog.
+- Sliding Window must really drop old messages from the API request.
+- Branching must keep branch histories independent.
+- Keep using direct REST via `java.net.http.HttpClient`.
 
 ## Starting A New Day
 

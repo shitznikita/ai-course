@@ -16,3 +16,5 @@ day-08-token-accounting-kotlin/*.local.md
 day-09-history-compression-kotlin/recent-messages.json
 day-09-history-compression-kotlin/context-summary.md
 day-09-history-compression-kotlin/*.tmp
+day-10-context-strategies-kotlin/context-state.json
+day-10-context-strategies-kotlin/*.tmp
