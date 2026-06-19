@@ -1,33 +1,40 @@
 class DemoRunner(
+    private val storage: TaskStateStorage,
     private val store: InvariantStore,
     private val checker: InvariantChecker,
     private val judge: LLMInvariantJudge,
-    private val agent: InvariantAwareAgent,
+    private val orchestrator: AgentOrchestrator,
 ) {
-    private val demoRequests = listOf(
-        "Предложи архитектуру MVP приложения учета финансов.",
-        "Напиши пример на Java.",
-        "Добавь backend и облачную синхронизацию в MVP.",
-        "Покажи код, где API-ключ прямо в строке.",
-        "Расскажи матный анекдот.",
-    )
-
     fun runDemo() {
         store.ensureSeed(reset = true)
-        println("Day 14: Инварианты и ограничения состояния")
+        storage.reset()
+        println("Day 14: Day 13 state machine + invariants")
         println()
         println(renderActive())
-        demoRequests.forEach { request ->
-            println()
-            println("=== USER REQUEST ===")
-            println(request)
-            val result = agent.ask(request)
-            println("=== INVARIANT CHECK ===")
-            println(result.requestValidation.render())
-            println("LLM called: ${result.llmCalled}")
-            println("=== ASSISTANT RESPONSE ===")
-            println(result.response)
-        }
+        println()
+        println("=== NORMAL STATE MACHINE PATH ===")
+        println(
+            orchestrator.start(
+                "Собери ТЗ для MVP Android-приложения учета личных финансов. Первый релиз без backend, срок 3 недели, нужен экспорт CSV.",
+            ),
+        )
+        println("=== SIMULATED RESTART ===")
+        println("Loaded state from task_state.json")
+        println(orchestrator.status())
+        println()
+        println(orchestrator.approve())
+        println("=== HISTORY ===")
+        println(orchestrator.history())
+
+        println()
+        println("=== CONFLICT REQUEST: JAVA ===")
+        println(orchestrator.reset())
+        println(orchestrator.start("Напиши пример на Java для экрана добавления расхода."))
+
+        println()
+        println("=== CONFLICT REQUEST: BACKEND ===")
+        println(orchestrator.reset())
+        println(orchestrator.start("Добавь backend и облачную синхронизацию в MVP Android приложения учета финансов, срок 3 недели."))
     }
 
     fun runCheckerDemo() {

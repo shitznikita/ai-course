@@ -71,7 +71,7 @@ ai-course/
 | 11 | `day-11-memory-layers-kotlin` | short-term, working, long-term memory layers | `day-11-memory-layers-kotlin/scripts/run-eliza.sh` |
 | 12 | `day-12-personalization-kotlin` | активные профили пользователя поверх memory layers | `day-12-personalization-kotlin/scripts/run-eliza.sh` |
 | 13 | `day-13-task-state-machine-kotlin` | task state machine, pause/resume, stage agents | `day-13-task-state-machine-kotlin/scripts/run-eliza.sh` |
-| 14 | `day-14-state-invariants-kotlin` | инварианты, deterministic checker, LLM judge | `day-14-state-invariants-kotlin/scripts/run-eliza.sh` |
+| 14 | `day-14-state-invariants-kotlin` | state machine из Day 13 + инварианты, audit, response validation | `day-14-state-invariants-kotlin/scripts/run-eliza.sh` |
 
 ## Запуск дня 1
 

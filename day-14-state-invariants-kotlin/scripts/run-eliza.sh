@@ -26,6 +26,7 @@ fi
 export LLM_AUTH_SCHEME="${LLM_AUTH_SCHEME:-OAuth}"
 export LLM_API_URL="${LLM_API_URL:-https://api.eliza.yandex.net/openrouter/v1/chat/completions}"
 export LLM_MODEL="${LLM_MODEL:-meta-llama/llama-3.3-70b-instruct}"
+export TASK_STATE_FILE="${TASK_STATE_FILE:-state/task_state.json}"
 export INVARIANTS_FILE="${INVARIANTS_FILE:-memory/invariants.json}"
 export CHECKER_MODE="${CHECKER_MODE:-combined}"
 

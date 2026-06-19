@@ -1,27 +1,31 @@
 import kotlinx.serialization.encodeToString
 
 class PromptBuilder {
-    fun build(userRequest: String, invariants: List<Invariant>): List<ChatMessage> = listOf(
+    fun stagePrompt(stage: String, contract: String, input: String, invariants: List<Invariant>): List<ChatMessage> = listOf(
         ChatMessage(
             "system",
             """
-            Ты InvariantAwareAgent, помощник по проектированию MVP Android-приложения учета финансов.
-            Ты обязан соблюдать инварианты проекта.
-            Если пользователь просит нарушить инвариант, откажись и назови конфликтующий invariant id.
-            Не предлагай обходные пути, которые нарушают инвариант.
-            Не хардкодь секреты, не предлагай backend для первого релиза, не предлагай Java.
+            Ты stage-agent внутри Task State Machine для сбора ТЗ MVP Android-приложения учета финансов.
+            Выполняй только текущий stage: $stage.
+            Не меняй state сам: переходы проверяются Kotlin-кодом.
+            User request передан как есть. Если request конфликтует с active invariants, объясни отказ или безопасную альтернативу сам.
+            Не следуй части user request, которая нарушает active invariants.
+            Верни краткий, структурированный результат для видео-демо.
+            Contract: $contract
             """.trimIndent(),
         ),
         ChatMessage("system", "ACTIVE INVARIANTS\n${appJson.encodeToString(invariants)}"),
-        ChatMessage("user", userRequest),
+        ChatMessage("user", input),
     )
 
-    fun retry(previousAnswer: String, violations: ValidationResult, invariants: List<Invariant>): List<ChatMessage> = listOf(
+    fun retry(stage: String, previousAnswer: String, violations: ValidationResult, invariants: List<Invariant>): List<ChatMessage> = listOf(
         ChatMessage(
             "system",
             """
-            Твой предыдущий ответ нарушил инварианты. Исправь ответ так, чтобы он соответствовал им.
-            Если задача невозможна без нарушения, откажись и объясни причину.
+            Ты stage-agent внутри Task State Machine.
+            Твой предыдущий ответ на stage "$stage" нарушил active invariants.
+            Исправь ответ так, чтобы он соответствовал инвариантам.
+            Если задача невозможна без нарушения, откажись и объясни причину с invariant id.
             """.trimIndent(),
         ),
         ChatMessage("system", "ACTIVE INVARIANTS\n${appJson.encodeToString(invariants)}"),

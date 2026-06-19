@@ -1,17 +1,30 @@
 class InteractiveCli(
     private val store: InvariantStore,
     private val checker: InvariantChecker,
-    private val agent: InvariantAwareAgent,
+    private val orchestrator: AgentOrchestrator,
 ) {
     fun run() {
         store.ensureSeed()
-        println("Day 14 invariant-aware agent. Commands: /invariants active, /invariants check <text>, /debug is env AGENT_DEBUG, /exit.")
+        println("Day 14 state machine + invariants. Commands: /status, /state, /history, /approve, /pause, /resume, /reset, /invariants active, /exit.")
+        val existing = orchestrator.status()
+        if (!existing.startsWith("No task")) {
+            println("=== RESUMED ===")
+            println(existing)
+        }
         while (true) {
             print("> ")
             val line = readlnOrNull()?.trim() ?: break
             if (line.isBlank()) continue
             when {
                 line == "/exit" -> return
+                line == "/status" -> println(orchestrator.status())
+                line == "/state" -> println(orchestrator.stateJson())
+                line == "/history" -> println(orchestrator.history())
+                line == "/approve" -> println(orchestrator.approve())
+                line == "/pause" -> println(orchestrator.pause())
+                line == "/resume" -> println(orchestrator.resume())
+                line.startsWith("/reject ") -> println(orchestrator.reject(line.removePrefix("/reject ").trim()))
+                line == "/reset" -> println(orchestrator.reset())
                 line == "/invariants list" -> printInvariants(store.load().all())
                 line == "/invariants active" || line == "/invariants" -> printInvariants(store.active())
                 line.startsWith("/invariants show ") -> {
@@ -36,15 +49,7 @@ class InteractiveCli(
                 }
                 line == "/debug on" -> println("Set AGENT_DEBUG=true before launch to print raw prompts.")
                 line == "/debug off" -> println("Set AGENT_DEBUG=false before launch to hide raw prompts.")
-                else -> {
-                    val result = agent.ask(line)
-                    println("=== ACTIVE INVARIANTS ===")
-                    result.activeInvariants.forEach { println("- ${it.id}") }
-                    println("=== INVARIANT CHECK ===")
-                    println(result.requestValidation.render())
-                    println("=== ASSISTANT RESPONSE ===")
-                    println(result.response)
-                }
+                else -> println(orchestrator.start(line))
             }
         }
     }

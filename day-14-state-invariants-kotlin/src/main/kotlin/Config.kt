@@ -9,6 +9,7 @@ data class AppConfig(
     val apiUrl: String,
     val model: String,
     val debug: Boolean,
+    val stateFile: Path,
     val invariantsFile: Path,
     val checkerMode: String,
 ) {
@@ -21,6 +22,7 @@ data class AppConfig(
                 apiUrl = env["LLM_API_URL"] ?: "https://api.eliza.yandex.net/openrouter/v1/chat/completions",
                 model = env["LLM_MODEL"] ?: "meta-llama/llama-3.3-70b-instruct",
                 debug = env["AGENT_DEBUG"]?.toBooleanStrictOrNull() ?: false,
+                stateFile = Path(env["TASK_STATE_FILE"] ?: "state/task_state.json"),
                 invariantsFile = Path(env["INVARIANTS_FILE"] ?: "memory/invariants.json"),
                 checkerMode = env["CHECKER_MODE"] ?: "combined",
             )
