@@ -1,0 +1,16 @@
+{
+  "invariants": [
+    {
+      "id": "kotlin_only",
+      "title": "Только Kotlin",
+      "description": "Не предлагать Java для реализации.",
+      "forbiddenKeywords": ["Java"]
+    },
+    {
+      "id": "no_backend_mvp",
+      "title": "Без backend для MVP",
+      "description": "Первый релиз работает локально.",
+      "forbiddenKeywords": ["backend", "сервер"]
+    }
+  ]
+}

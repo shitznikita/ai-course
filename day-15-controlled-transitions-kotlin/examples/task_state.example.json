@@ -1,0 +1,13 @@
+{
+  "taskId": "task_001",
+  "title": "Реализовать CLI-команду экспорта CSV",
+  "currentState": "waiting_for_approval",
+  "previousState": "planning",
+  "currentStep": "wait_for_plan_approval",
+  "expectedAction": "user_approval",
+  "approvedPlan": false,
+  "validationPassed": false,
+  "pausedReason": null,
+  "artifacts": {},
+  "transitionHistory": []
+}
