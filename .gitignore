@@ -28,3 +28,6 @@ day-13-task-state-machine-kotlin/*.tmp
 day-14-state-invariants-kotlin/memory/
 day-14-state-invariants-kotlin/state/
 day-14-state-invariants-kotlin/*.tmp
+day-15-controlled-transitions-kotlin/task_state.json
+day-15-controlled-transitions-kotlin/memory/
+day-15-controlled-transitions-kotlin/*.tmp

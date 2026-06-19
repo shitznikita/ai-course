@@ -32,6 +32,7 @@ ai-course/
   day-12-personalization-kotlin/ # День 12: персонализация ассистента
   day-13-task-state-machine-kotlin/ # День 13: Task State Machine
   day-14-state-invariants-kotlin/ # День 14: инварианты состояния
+  day-15-controlled-transitions-kotlin/ # День 15: контролируемые переходы
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -53,6 +54,7 @@ ai-course/
 - [День 12: Персонализация ассистента](day-12-personalization-kotlin/README.md)
 - [День 13: Состояние задачи](day-13-task-state-machine-kotlin/README.md)
 - [День 14: Инварианты и ограничения состояния](day-14-state-invariants-kotlin/README.md)
+- [День 15: Контролируемые переходы состояний](day-15-controlled-transitions-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -72,6 +74,7 @@ ai-course/
 | 12 | `day-12-personalization-kotlin` | активные профили пользователя поверх memory layers | `day-12-personalization-kotlin/scripts/run-eliza.sh` |
 | 13 | `day-13-task-state-machine-kotlin` | task state machine, pause/resume, stage agents | `day-13-task-state-machine-kotlin/scripts/run-eliza.sh` |
 | 14 | `day-14-state-invariants-kotlin` | state machine из Day 13 + инварианты, audit, response validation | `day-14-state-invariants-kotlin/scripts/run-eliza.sh` |
+| 15 | `day-15-controlled-transitions-kotlin` | controlled lifecycle, guards, state-owned agents | `day-15-controlled-transitions-kotlin/scripts/run-eliza.sh` |
 
 ## Запуск дня 1
 
@@ -293,6 +296,23 @@ day-14-state-invariants-kotlin/scripts/run-eliza.sh --args="interactive"
 
 ```bash
 ./gradlew :day-14-state-invariants-kotlin:build
+```
+
+## Запуск дня 15
+
+Для Eliza:
+
+```bash
+day-15-controlled-transitions-kotlin/scripts/run-eliza.sh
+day-15-controlled-transitions-kotlin/scripts/run-eliza.sh --args="transition-tests"
+day-15-controlled-transitions-kotlin/scripts/run-eliza.sh --args="pause-resume-demo"
+day-15-controlled-transitions-kotlin/scripts/run-eliza.sh --args="interactive"
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-15-controlled-transitions-kotlin:build
 ```
 
 ## Правила безопасности
