@@ -1,0 +1,54 @@
+{
+  "project": [
+    {
+      "id": "architecture_clean",
+      "title": "Clean Architecture",
+      "description": "Все технические решения должны соответствовать Clean Architecture.",
+      "type": "architecture",
+      "severity": "high",
+      "enabled": true
+    },
+    {
+      "id": "stack_kotlin_only",
+      "title": "Только Kotlin",
+      "description": "Для кода и архитектурных примеров использовать Kotlin. Не предлагать Java.",
+      "type": "tech_stack",
+      "severity": "high",
+      "enabled": true,
+      "forbiddenKeywords": ["Java", "Spring Boot"]
+    },
+    {
+      "id": "no_backend_mvp",
+      "title": "MVP без backend",
+      "description": "В первом релизе нельзя предлагать backend, серверную авторизацию или облачную синхронизацию.",
+      "type": "business_rule",
+      "severity": "high",
+      "enabled": true,
+      "forbiddenKeywords": ["backend", "server", "сервер", "cloud sync", "облачная синхронизация"]
+    }
+  ],
+  "security": [
+    {
+      "id": "no_hardcoded_api_keys",
+      "title": "Не хардкодить API-ключи",
+      "description": "API-ключи должны храниться только в .env или переменных окружения.",
+      "type": "security",
+      "severity": "critical",
+      "enabled": true,
+      "forbiddenKeywords": ["прямо в строке", "вставь API-ключ", "секрет в коде"],
+      "forbiddenPatterns": ["api_key = \"", "OPENAI_API_KEY = \"", "Authorization: Bearer sk-"]
+    }
+  ],
+  "communication": [
+    {
+      "id": "no_profanity",
+      "title": "Без мата",
+      "description": "Ассистент не должен генерировать мат, оскорбления или токсичный текст.",
+      "type": "communication",
+      "severity": "high",
+      "enabled": true,
+      "forbiddenKeywords": ["матный", "матом", "оскорб"]
+    }
+  ],
+  "userDefined": []
+}

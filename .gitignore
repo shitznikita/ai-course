@@ -25,3 +25,6 @@ day-12-personalization-kotlin/profiles/
 day-12-personalization-kotlin/*.tmp
 day-13-task-state-machine-kotlin/state/
 day-13-task-state-machine-kotlin/*.tmp
+day-14-state-invariants-kotlin/memory/
+day-14-state-invariants-kotlin/state/
+day-14-state-invariants-kotlin/*.tmp
