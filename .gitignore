@@ -18,3 +18,5 @@ day-09-history-compression-kotlin/context-summary.md
 day-09-history-compression-kotlin/*.tmp
 day-10-context-strategies-kotlin/context-state.json
 day-10-context-strategies-kotlin/*.tmp
+day-11-memory-layers-kotlin/memory/
+day-11-memory-layers-kotlin/*.tmp
