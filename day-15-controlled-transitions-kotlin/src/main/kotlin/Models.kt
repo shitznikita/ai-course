@@ -19,10 +19,8 @@ data class TransitionRecord(
 @Serializable
 data class TaskArtifacts(
     val taskBrief: String = "",
-    val productPlan: String = "",
-    val techPlan: String = "",
-    val riskPlan: String = "",
     val finalPlan: String = "",
+    val approvalSummary: String = "",
     val executionResult: String = "",
     val validationReport: String = "",
 )
@@ -80,11 +78,11 @@ data class TransitionResult(
     val to: String,
 )
 
-data class SwarmResult(
-    val productPlan: String,
-    val techPlan: String,
-    val riskPlan: String,
-    val finalPlan: String,
+data class StateAgentResult(
+    val agentName: String,
+    val ownedState: String,
+    val artifactName: String,
+    val content: String,
 )
 
 data class ApiUsage(

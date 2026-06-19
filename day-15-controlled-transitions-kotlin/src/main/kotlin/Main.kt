@@ -9,7 +9,9 @@ fun main(args: Array<String>) {
         invariantStore = invariantStore,
         invariantChecker = InvariantChecker(),
         stateMachine = TaskStateMachine(TransitionValidator()),
-        planningSwarm = PlanningAgentsSwarm(llmClient, promptBuilder),
+        intakeAgent = IntakeAgent(llmClient, promptBuilder),
+        planningAgent = PlanningAgent(llmClient, promptBuilder),
+        approvalAgent = ApprovalAgent(),
         executionAgent = ExecutionAgent(llmClient, promptBuilder),
         validationAgent = ValidationAgent(llmClient, promptBuilder),
     )

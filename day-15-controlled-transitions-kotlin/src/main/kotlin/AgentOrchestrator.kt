@@ -6,7 +6,9 @@ class AgentOrchestrator(
     private val invariantStore: InvariantStore,
     private val invariantChecker: InvariantChecker,
     private val stateMachine: TaskStateMachine,
-    private val planningSwarm: PlanningAgentsSwarm,
+    private val intakeAgent: IntakeAgent,
+    private val planningAgent: PlanningAgent,
+    private val approvalAgent: ApprovalAgent,
     private val executionAgent: ExecutionAgent,
     private val validationAgent: ValidationAgent,
 ) {
@@ -21,13 +23,24 @@ class AgentOrchestrator(
             userRequest = userRequest,
             createdAt = now,
             updatedAt = now,
-            artifacts = TaskArtifacts(taskBrief = "Task accepted: $userRequest"),
         )
         storage.save(state)
         val log = StringBuilder()
         log.appendLine(renderCurrentState(state))
 
-        val toPlanning = stateMachine.transition(state, "planning", "task_brief_ready", "build_plan_with_swarm", "llm_generation")
+        val invariants = invariantStore.active()
+        val intake = intakeAgent.run(state, invariants)
+        val intakeCheck = invariantChecker.check(intake.content, invariants)
+        state = state.copy(artifacts = state.artifacts.copy(taskBrief = intake.content))
+        storage.save(state)
+        log.appendLine(renderAgentResult(intake, intakeCheck))
+        if (!intakeCheck.valid) {
+            val paused = stateMachine.transition(state, "paused", "intake artifact violated invariants", "fix_intake_artifact", "user_input", "intake artifact violated invariants")
+            storage.save(paused.state)
+            return log.appendLine(renderTransition(paused)).toString()
+        }
+
+        val toPlanning = stateMachine.transition(state, "planning", "task_brief_ready", "build_plan_with_planning_agent", "llm_generation")
         state = toPlanning.state
         storage.save(state)
         log.appendLine(renderTransition(toPlanning))
@@ -49,13 +62,10 @@ class AgentOrchestrator(
 
         val invariants = invariantStore.active()
         val execution = executionAgent.run(state, invariants)
-        val executionCheck = invariantChecker.check(execution, invariants)
-        state = state.copy(artifacts = state.artifacts.copy(executionResult = execution))
+        val executionCheck = invariantChecker.check(execution.content, invariants)
+        state = state.copy(artifacts = state.artifacts.copy(executionResult = execution.content))
         storage.save(state)
-        log.appendLine("=== EXECUTION RESULT ===")
-        log.appendLine(execution.take(1800))
-        log.appendLine("=== INVARIANT CHECK ===")
-        log.appendLine(executionCheck.render())
+        log.appendLine(renderAgentResult(execution, executionCheck))
         if (!executionCheck.valid) {
             val back = stateMachine.transition(state, "planning", "execution_result violated invariants", "revise_plan", "llm_generation")
             storage.save(back.state)
@@ -68,17 +78,15 @@ class AgentOrchestrator(
         log.appendLine(renderTransition(toValidation))
 
         val validation = validationAgent.run(state, invariants)
-        val validationCheck = invariantChecker.check(validation, invariants)
-        val passed = validationCheck.valid
+        val validationCheck = invariantChecker.check(validation.content, invariants)
+        val validationVerdictPassed = validation.content.trimStart().startsWith("PASS", ignoreCase = true)
+        val passed = validationCheck.valid && validationVerdictPassed
         state = state.copy(
             validationPassed = passed,
-            artifacts = state.artifacts.copy(validationReport = validation),
+            artifacts = state.artifacts.copy(validationReport = validation.content),
         )
         storage.save(state)
-        log.appendLine("=== VALIDATION REPORT ===")
-        log.appendLine(validation.take(1800))
-        log.appendLine("=== VALIDATION INVARIANT CHECK ===")
-        log.appendLine(validationCheck.render())
+        log.appendLine(renderAgentResult(validation, validationCheck))
 
         val nextState = if (passed) "done" else "execution"
         val finalTransition = stateMachine.transition(
@@ -119,7 +127,7 @@ class AgentOrchestrator(
     fun reject(reason: String): String {
         val state = storage.load() ?: return "No saved task."
         if (state.currentState != "waiting_for_approval") return "Reject allowed only from waiting_for_approval."
-        val back = stateMachine.transition(state, "planning", "user rejected plan: $reason", "revise_plan_with_swarm", "llm_generation")
+        val back = stateMachine.transition(state, "planning", "user rejected plan: $reason", "revise_plan_with_planning_agent", "llm_generation")
         storage.save(back.state)
         return renderTransition(back) + "\n" + runPlanning(back.state)
     }
@@ -143,35 +151,28 @@ class AgentOrchestrator(
 
     private fun runPlanning(state: TaskState): String {
         val invariants = invariantStore.active()
-        val swarm = planningSwarm.run(state.userRequest, invariants)
-        val planCheck = invariantChecker.check(swarm.finalPlan, invariants)
+        val plan = planningAgent.run(state, invariants)
+        val planCheck = invariantChecker.check(plan.content, invariants)
         val planned = state.copy(
             artifacts = state.artifacts.copy(
-                productPlan = swarm.productPlan,
-                techPlan = swarm.techPlan,
-                riskPlan = swarm.riskPlan,
-                finalPlan = swarm.finalPlan,
+                finalPlan = plan.content,
             ),
         )
         storage.save(planned)
         val log = StringBuilder()
-        log.appendLine("=== SWARM RESULTS ===")
-        log.appendLine("ProductPlannerAgent: ${swarm.productPlan.take(600)}")
-        log.appendLine("TechPlannerAgent: ${swarm.techPlan.take(600)}")
-        log.appendLine("RiskPlannerAgent: ${swarm.riskPlan.take(600)}")
-        log.appendLine("=== ORCHESTRATOR DECISION ===")
-        log.appendLine(swarm.finalPlan.take(1200))
-        log.appendLine("=== PLAN INVARIANT CHECK ===")
-        log.appendLine(planCheck.render())
+        log.appendLine(renderAgentResult(plan, planCheck))
         if (!planCheck.valid) {
             val paused = stateMachine.transition(planned, "paused", "plan violated invariants", "fix_plan_invariants", "user_input", "plan violated invariants")
             storage.save(paused.state)
             return log.appendLine(renderTransition(paused)).toString()
         }
         val waiting = stateMachine.transition(planned, "waiting_for_approval", "plan_created_requires_approval", "wait_for_plan_approval", "user_approval")
-        storage.save(waiting.state)
+        val approval = approvalAgent.run(waiting.state, invariants)
+        val approvalState = waiting.state.copy(artifacts = waiting.state.artifacts.copy(approvalSummary = approval.content))
+        storage.save(approvalState)
         log.appendLine(renderTransition(waiting))
-        log.appendLine(renderCurrentState(waiting.state))
+        log.appendLine(renderAgentResult(approval, ValidationResult(valid = true)))
+        log.appendLine(renderCurrentState(approvalState))
         return log.toString()
     }
 
@@ -182,6 +183,16 @@ class AgentOrchestrator(
         |Expected action: ${state.expectedAction}
         |approvedPlan: ${state.approvedPlan}
         |validationPassed: ${state.validationPassed}
+    """.trimMargin()
+
+    private fun renderAgentResult(result: StateAgentResult, invariantCheck: ValidationResult): String = """
+        |=== STATE AGENT: ${result.agentName} ===
+        |Owns state: ${result.ownedState}
+        |Artifact: ${result.artifactName}
+        |=== ARTIFACT ===
+        |${result.content.take(1800)}
+        |=== ARTIFACT INVARIANT CHECK ===
+        |${invariantCheck.render()}
     """.trimMargin()
 
     private fun renderTransition(result: TransitionResult): String = """
