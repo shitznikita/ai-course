@@ -1,0 +1,27 @@
+{
+  "id": "senior_mobile_dev",
+  "name": "Никита",
+  "role": "mobile developer",
+  "experienceLevel": "senior",
+  "style": "кратко и технически",
+  "format": "архитектурные решения и trade-offs",
+  "domainOrStack": "Kotlin, Android, Jetpack Compose, CLI agents",
+  "constraints": [
+    "предпочитать Kotlin/Android примеры",
+    "не объяснять базовые термины"
+  ],
+  "habits": [
+    "быстро сканирует списки рисков"
+  ],
+  "preferences": [
+    "указывать риски",
+    "давать варианты реализации"
+  ],
+  "language": "ru",
+  "doExamples": [
+    "Дай структуру модулей, trade-offs и риски."
+  ],
+  "avoidExamples": [
+    "Не объясняй, что такое JSON или HTTP."
+  ]
+}
