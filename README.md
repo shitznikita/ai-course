@@ -30,6 +30,7 @@ ai-course/
   day-10-context-strategies-kotlin/ # День 10: стратегии контекста без summary
   day-11-memory-layers-kotlin/ # День 11: модель памяти ассистента
   day-12-personalization-kotlin/ # День 12: персонализация ассистента
+  day-13-task-state-machine-kotlin/ # День 13: Task State Machine
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -49,6 +50,7 @@ ai-course/
 - [День 10: Управление контекстом разными стратегиями](day-10-context-strategies-kotlin/README.md)
 - [День 11: Модель памяти ассистента](day-11-memory-layers-kotlin/README.md)
 - [День 12: Персонализация ассистента](day-12-personalization-kotlin/README.md)
+- [День 13: Состояние задачи](day-13-task-state-machine-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -66,6 +68,7 @@ ai-course/
 | 10 | `day-10-context-strategies-kotlin` | sliding, facts, branching без summary | `day-10-context-strategies-kotlin/scripts/run-eliza.sh` |
 | 11 | `day-11-memory-layers-kotlin` | short-term, working, long-term memory layers | `day-11-memory-layers-kotlin/scripts/run-eliza.sh` |
 | 12 | `day-12-personalization-kotlin` | активные профили пользователя поверх memory layers | `day-12-personalization-kotlin/scripts/run-eliza.sh` |
+| 13 | `day-13-task-state-machine-kotlin` | task state machine, pause/resume, stage agents | `day-13-task-state-machine-kotlin/scripts/run-eliza.sh` |
 
 ## Запуск дня 1
 
@@ -255,6 +258,22 @@ day-12-personalization-kotlin/scripts/run-eliza.sh --args="interactive"
 
 ```bash
 ./gradlew :day-12-personalization-kotlin:build
+```
+
+## Запуск дня 13
+
+Для Eliza:
+
+```bash
+day-13-task-state-machine-kotlin/scripts/run-eliza.sh
+day-13-task-state-machine-kotlin/scripts/run-eliza.sh --args="pause-demo"
+day-13-task-state-machine-kotlin/scripts/run-eliza.sh --args="interactive"
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-13-task-state-machine-kotlin:build
 ```
 
 ## Правила безопасности

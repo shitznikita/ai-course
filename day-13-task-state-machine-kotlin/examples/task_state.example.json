@@ -1,0 +1,14 @@
+{
+  "taskId": "task_001",
+  "title": "ТЗ для MVP приложения учета финансов",
+  "status": "waiting_for_approval",
+  "currentStep": "wait_for_plan_approval",
+  "expectedAction": "user_approval",
+  "previousStatus": "planning",
+  "createdAt": "2026-06-19T00:00:00Z",
+  "updatedAt": "2026-06-19T00:00:00Z",
+  "userRequest": "Собери ТЗ для MVP Android-приложения учета личных финансов. Первый релиз без backend, срок 3 недели, нужен экспорт CSV.",
+  "artifacts": {},
+  "history": [],
+  "pausedReason": null
+}

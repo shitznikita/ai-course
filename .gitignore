@@ -23,3 +23,5 @@ day-11-memory-layers-kotlin/*.tmp
 day-12-personalization-kotlin/memory/
 day-12-personalization-kotlin/profiles/
 day-12-personalization-kotlin/*.tmp
+day-13-task-state-machine-kotlin/state/
+day-13-task-state-machine-kotlin/*.tmp
