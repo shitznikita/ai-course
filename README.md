@@ -29,6 +29,7 @@ ai-course/
   day-09-history-compression-kotlin/ # День 9: сжатие истории
   day-10-context-strategies-kotlin/ # День 10: стратегии контекста без summary
   day-11-memory-layers-kotlin/ # День 11: модель памяти ассистента
+  day-12-personalization-kotlin/ # День 12: персонализация ассистента
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -47,6 +48,7 @@ ai-course/
 - [День 9: Управление контекстом — сжатие истории](day-09-history-compression-kotlin/README.md)
 - [День 10: Управление контекстом разными стратегиями](day-10-context-strategies-kotlin/README.md)
 - [День 11: Модель памяти ассистента](day-11-memory-layers-kotlin/README.md)
+- [День 12: Персонализация ассистента](day-12-personalization-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -63,6 +65,7 @@ ai-course/
 | 9 | `day-09-history-compression-kotlin` | summary compression и multi-сравнение | `day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"` |
 | 10 | `day-10-context-strategies-kotlin` | sliding, facts, branching без summary | `day-10-context-strategies-kotlin/scripts/run-eliza.sh` |
 | 11 | `day-11-memory-layers-kotlin` | short-term, working, long-term memory layers | `day-11-memory-layers-kotlin/scripts/run-eliza.sh` |
+| 12 | `day-12-personalization-kotlin` | активные профили пользователя поверх memory layers | `day-12-personalization-kotlin/scripts/run-eliza.sh` |
 
 ## Запуск дня 1
 
@@ -237,6 +240,21 @@ day-11-memory-layers-kotlin/scripts/run-eliza.sh --args="interactive"
 
 ```bash
 ./gradlew :day-11-memory-layers-kotlin:build
+```
+
+## Запуск дня 12
+
+Для Eliza:
+
+```bash
+day-12-personalization-kotlin/scripts/run-eliza.sh
+day-12-personalization-kotlin/scripts/run-eliza.sh --args="interactive"
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-12-personalization-kotlin:build
 ```
 
 ## Правила безопасности

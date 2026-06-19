@@ -20,3 +20,6 @@ day-10-context-strategies-kotlin/context-state.json
 day-10-context-strategies-kotlin/*.tmp
 day-11-memory-layers-kotlin/memory/
 day-11-memory-layers-kotlin/*.tmp
+day-12-personalization-kotlin/memory/
+day-12-personalization-kotlin/profiles/
+day-12-personalization-kotlin/*.tmp
