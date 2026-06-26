@@ -33,6 +33,7 @@ ai-course/
   day-13-task-state-machine-kotlin/ # День 13: Task State Machine
   day-14-state-invariants-kotlin/ # День 14: инварианты состояния
   day-15-controlled-transitions-kotlin/ # День 15: контролируемые переходы
+  day-16-mcp-connection-kotlin/ # День 16: подключение MCP
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -55,6 +56,7 @@ ai-course/
 - [День 13: Состояние задачи](day-13-task-state-machine-kotlin/README.md)
 - [День 14: Инварианты и ограничения состояния](day-14-state-invariants-kotlin/README.md)
 - [День 15: Контролируемые переходы состояний](day-15-controlled-transitions-kotlin/README.md)
+- [День 16: Подключение MCP](day-16-mcp-connection-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -75,6 +77,7 @@ ai-course/
 | 13 | `day-13-task-state-machine-kotlin` | task state machine, pause/resume, stage agents | `day-13-task-state-machine-kotlin/scripts/run-eliza.sh` |
 | 14 | `day-14-state-invariants-kotlin` | state machine из Day 13 + инварианты, audit, response validation | `day-14-state-invariants-kotlin/scripts/run-eliza.sh` |
 | 15 | `day-15-controlled-transitions-kotlin` | controlled lifecycle, guards, state-owned agents | `day-15-controlled-transitions-kotlin/scripts/run-eliza.sh` |
+| 16 | `day-16-mcp-connection-kotlin` | remote MCP connection и `tools/list` discovery | `day-16-mcp-connection-kotlin/scripts/run-mcp.sh` |
 
 ## Запуск дня 1
 
@@ -313,6 +316,21 @@ day-15-controlled-transitions-kotlin/scripts/run-eliza.sh --args="interactive"
 
 ```bash
 ./gradlew :day-15-controlled-transitions-kotlin:build
+```
+
+## Запуск дня 16
+
+Для public DeepWiki MCP:
+
+```bash
+day-16-mcp-connection-kotlin/scripts/run-mcp.sh
+day-16-mcp-connection-kotlin/scripts/run-mcp.sh --args="raw-check"
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-16-mcp-connection-kotlin:build
 ```
 
 ## Правила безопасности
