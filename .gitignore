@@ -42,3 +42,7 @@ day-19-mcp-tool-composition-kotlin/state/
 day-19-mcp-tool-composition-kotlin/telegram-session/
 day-19-mcp-tool-composition-kotlin/telegram-files/
 day-19-mcp-tool-composition-kotlin/*.tmp
+day-20-mcp-orchestration-kotlin/state/
+day-20-mcp-orchestration-kotlin/telegram-session/
+day-20-mcp-orchestration-kotlin/telegram-files/
+day-20-mcp-orchestration-kotlin/*.tmp

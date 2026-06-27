@@ -37,6 +37,7 @@ ai-course/
   day-17-telegram-mcp-tool-kotlin/ # День 17: свой MCP tool для Telegram
   day-18-telegram-course-scheduler-kotlin/ # День 18: scheduler поверх Telegram MCP
   day-19-mcp-tool-composition-kotlin/ # День 19: композиция MCP-инструментов
+  day-20-mcp-orchestration-kotlin/ # День 20: orchestration нескольких MCP-серверов
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -63,6 +64,7 @@ ai-course/
 - [День 17: Первый MCP-инструмент для Telegram](day-17-telegram-mcp-tool-kotlin/README.md)
 - [День 18: Telegram Course Scheduler MCP](day-18-telegram-course-scheduler-kotlin/README.md)
 - [День 19: Композиция MCP-инструментов](day-19-mcp-tool-composition-kotlin/README.md)
+- [День 20: Orchestration MCP](day-20-mcp-orchestration-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -87,6 +89,7 @@ ai-course/
 | 17 | `day-17-telegram-mcp-tool-kotlin` | свой read-only MCP tool вокруг Telegram history | `day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="fixture-demo"` |
 | 18 | `day-18-telegram-course-scheduler-kotlin` | scheduler-agent вызывает MCP tool, сохраняет Telegram day prompt | `day-18-telegram-course-scheduler-kotlin/scripts/run-scheduler.sh --args="fixture-demo"` |
 | 19 | `day-19-mcp-tool-composition-kotlin` | agent вызывает MCP tools цепочкой search -> summarize -> save | `day-19-mcp-tool-composition-kotlin/scripts/run-pipeline.sh --args="fixture-demo"` |
+| 20 | `day-20-mcp-orchestration-kotlin` | agent оркестрирует tools с 4 MCP servers в длинном flow | `day-20-mcp-orchestration-kotlin/scripts/run-orchestration.sh --args="fixture-demo"` |
 
 ## Запуск дня 1
 
@@ -385,6 +388,21 @@ day-19-mcp-tool-composition-kotlin/scripts/run-pipeline.sh --args="raw-check"
 
 ```bash
 ./gradlew :day-19-mcp-tool-composition-kotlin:build
+```
+
+## Запуск дня 20
+
+Для multi-server MCP orchestration в offline fixture-режиме:
+
+```bash
+day-20-mcp-orchestration-kotlin/scripts/run-orchestration.sh --args="fixture-demo"
+day-20-mcp-orchestration-kotlin/scripts/run-orchestration.sh --args="raw-check"
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-20-mcp-orchestration-kotlin:build
 ```
 
 ## Правила безопасности
