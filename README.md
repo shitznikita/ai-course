@@ -34,6 +34,7 @@ ai-course/
   day-14-state-invariants-kotlin/ # День 14: инварианты состояния
   day-15-controlled-transitions-kotlin/ # День 15: контролируемые переходы
   day-16-mcp-connection-kotlin/ # День 16: подключение MCP
+  day-17-telegram-mcp-tool-kotlin/ # День 17: свой MCP tool для Telegram
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -57,6 +58,7 @@ ai-course/
 - [День 14: Инварианты и ограничения состояния](day-14-state-invariants-kotlin/README.md)
 - [День 15: Контролируемые переходы состояний](day-15-controlled-transitions-kotlin/README.md)
 - [День 16: Подключение MCP](day-16-mcp-connection-kotlin/README.md)
+- [День 17: Первый MCP-инструмент для Telegram](day-17-telegram-mcp-tool-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -78,6 +80,7 @@ ai-course/
 | 14 | `day-14-state-invariants-kotlin` | state machine из Day 13 + инварианты, audit, response validation | `day-14-state-invariants-kotlin/scripts/run-eliza.sh` |
 | 15 | `day-15-controlled-transitions-kotlin` | controlled lifecycle, guards, state-owned agents | `day-15-controlled-transitions-kotlin/scripts/run-eliza.sh` |
 | 16 | `day-16-mcp-connection-kotlin` | remote MCP connection и `tools/list` discovery | `day-16-mcp-connection-kotlin/scripts/run-mcp.sh` |
+| 17 | `day-17-telegram-mcp-tool-kotlin` | свой read-only MCP tool вокруг Telegram history | `day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="fixture-demo"` |
 
 ## Запуск дня 1
 
@@ -331,6 +334,21 @@ day-16-mcp-connection-kotlin/scripts/run-mcp.sh --args="raw-check"
 
 ```bash
 ./gradlew :day-16-mcp-connection-kotlin:build
+```
+
+## Запуск дня 17
+
+Для локального Telegram MCP tool в offline fixture-режиме:
+
+```bash
+day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="fixture-demo"
+day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="raw-check"
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-17-telegram-mcp-tool-kotlin:build
 ```
 
 ## Правила безопасности
