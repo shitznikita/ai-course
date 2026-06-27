@@ -31,3 +31,6 @@ day-14-state-invariants-kotlin/*.tmp
 day-15-controlled-transitions-kotlin/task_state.json
 day-15-controlled-transitions-kotlin/memory/
 day-15-controlled-transitions-kotlin/*.tmp
+day-17-telegram-mcp-tool-kotlin/telegram-session/
+day-17-telegram-mcp-tool-kotlin/telegram-files/
+day-17-telegram-mcp-tool-kotlin/*.tmp
