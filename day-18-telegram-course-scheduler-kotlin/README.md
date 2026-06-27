@@ -56,6 +56,14 @@ day-18-telegram-course-scheduler-kotlin/scripts/run-scheduler.sh --args="fixture
 cp day-18-telegram-course-scheduler-kotlin/.env.example day-18-telegram-course-scheduler-kotlin/.env
 ```
 
+`run-scheduler.sh` также умеет переиспользовать уже настроенные env-файлы:
+
+- Eliza/LLM берется из `day-01-llm-rest-kotlin/.env`;
+- Telegram/TDLib берется из `day-17-telegram-mcp-tool-kotlin/.env`;
+- если Day 17 `.env` найден, TDLib session/files по умолчанию переиспользуются из `day-17-telegram-mcp-tool-kotlin/telegram-session` и `day-17-telegram-mcp-tool-kotlin/telegram-files`;
+- локальный `day-18-telegram-course-scheduler-kotlin/.env` переопределяет оба файла;
+- переменные, переданные прямо в команду, имеют самый высокий приоритет.
+
 Минимальные live-переменные:
 
 ```text

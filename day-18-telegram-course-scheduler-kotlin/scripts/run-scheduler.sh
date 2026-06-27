@@ -6,7 +6,8 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 ROOT_DIR="$(cd "$PROJECT_DIR/.." && pwd)"
 
 LOCAL_ENV="$PROJECT_DIR/.env"
-SHARED_ENV="$ROOT_DIR/day-01-llm-rest-kotlin/.env"
+ELIZA_ENV="$ROOT_DIR/day-01-llm-rest-kotlin/.env"
+TELEGRAM_ENV="$ROOT_DIR/day-17-telegram-mcp-tool-kotlin/.env"
 OVERRIDE_VARS=(
   MCP_SERVER_HOST
   MCP_SERVER_PORT
@@ -36,6 +37,85 @@ OVERRIDE_VARS=(
   LLM_API_URL
   LLM_MODEL
 )
+TELEGRAM_ENV_VARS=(
+  TELEGRAM_BACKEND
+  TELEGRAM_CHAT
+  TELEGRAM_LIMIT
+  TELEGRAM_API_ID
+  TELEGRAM_API_HASH
+  TELEGRAM_PHONE
+  TELEGRAM_CODE
+  TELEGRAM_PASSWORD
+  TELEGRAM_RESEND_CODE
+  TELEGRAM_QR_WAIT_SECONDS
+  TDLIB_LIBRARY_PATH
+  TDLIB_SESSION_DIR
+  TDLIB_FILES_DIR
+)
+
+source_env_file() {
+  local file="$1"
+  if [[ -f "$file" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$file"
+    set +a
+  fi
+}
+
+is_selected_key() {
+  local key="$1"
+  shift
+  local selected
+  for selected in "$@"; do
+    if [[ "$key" == "$selected" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+trim_value() {
+  local value="$1"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  value="${value%\"}"
+  value="${value#\"}"
+  value="${value%\'}"
+  value="${value#\'}"
+  printf '%s' "$value"
+}
+
+import_selected_env() {
+  local file="$1"
+  shift
+  [[ -f "$file" ]] || return 0
+
+  local line key value
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="$(trim_value "$line")"
+    [[ -z "$line" || "$line" == \#* || "$line" != *=* ]] && continue
+    key="$(trim_value "${line%%=*}")"
+    is_selected_key "$key" "$@" || continue
+    value="$(trim_value "${line#*=}")"
+    export "$key=$value"
+  done < "$file"
+}
+
+reuse_day17_tdlib_paths() {
+  [[ -f "$TELEGRAM_ENV" ]] || return 0
+  local day17_dir="$ROOT_DIR/day-17-telegram-mcp-tool-kotlin"
+
+  export TDLIB_SESSION_DIR="${TDLIB_SESSION_DIR:-$day17_dir/telegram-session}"
+  export TDLIB_FILES_DIR="${TDLIB_FILES_DIR:-$day17_dir/telegram-files}"
+
+  if [[ "$TDLIB_SESSION_DIR" != /* ]]; then
+    export TDLIB_SESSION_DIR="$day17_dir/$TDLIB_SESSION_DIR"
+  fi
+  if [[ "$TDLIB_FILES_DIR" != /* ]]; then
+    export TDLIB_FILES_DIR="$day17_dir/$TDLIB_FILES_DIR"
+  fi
+}
 
 for name in "${OVERRIDE_VARS[@]}"; do
   if [[ -n "${!name+x}" ]]; then
@@ -44,17 +124,10 @@ for name in "${OVERRIDE_VARS[@]}"; do
   fi
 done
 
-if [[ -f "$LOCAL_ENV" ]]; then
-  set -a
-  # shellcheck disable=SC1090
-  source "$LOCAL_ENV"
-  set +a
-elif [[ -f "$SHARED_ENV" ]]; then
-  set -a
-  # shellcheck disable=SC1090
-  source "$SHARED_ENV"
-  set +a
-fi
+source_env_file "$ELIZA_ENV"
+import_selected_env "$TELEGRAM_ENV" "${TELEGRAM_ENV_VARS[@]}"
+reuse_day17_tdlib_paths
+source_env_file "$LOCAL_ENV"
 
 for name in "${OVERRIDE_VARS[@]}"; do
   has_name="CALLER_HAS_${name}"
