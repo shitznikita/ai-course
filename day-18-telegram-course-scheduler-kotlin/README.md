@@ -9,6 +9,7 @@
 - agent владеет расписанием и работает 24/7;
 - MCP server остается adapter/tool слоем;
 - tool выполняет сбор, фильтрацию, persistence и генерацию результата.
+- interval/daily scheduler держит один MCP client session на весь loop, чтобы live TDLib backend переиспользовал один Telegram session lock.
 
 Стек: Kotlin CLI, Gradle, MCP Kotlin SDK server/client, Ktor CIO Streamable HTTP, TDLib JSON/JNA для live Telegram, direct REST к Eliza для optional prompt generation.
 
@@ -132,6 +133,8 @@ day-18-telegram-course-scheduler-kotlin/scripts/run-scheduler.sh --args="once"
 LLM_API_KEY= COURSE_DAY=18 SCHEDULE_INTERVAL_SECONDS=5 SCHEDULER_RUNS=2 \
 day-18-telegram-course-scheduler-kotlin/scripts/run-scheduler.sh --args="scheduler-demo"
 ```
+
+В live TDLib-режиме не запускайте несколько scheduler-процессов одновременно с одной `telegram-session`: TDLib блокирует локальную database. Внутри одного scheduler loop client/session переиспользуется.
 
 Daily scheduler:
 

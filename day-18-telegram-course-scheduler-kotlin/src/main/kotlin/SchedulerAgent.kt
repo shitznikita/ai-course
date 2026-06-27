@@ -14,11 +14,11 @@ import kotlin.time.Duration.Companion.seconds
 class CourseSchedulerAgent(private val config: AppConfig) {
     suspend fun runOnce(label: String = "manual run"): Boolean =
         runCatching {
-            connectClient { client ->
+            withClient { client ->
                 runOnceConnected(client, label)
             }
         }.fold(
-            onSuccess = { true },
+            onSuccess = { it },
             onFailure = { error ->
                 println("AGENT RUN FAILED: ${error.message ?: error::class.simpleName}")
                 println("Hint: live Telegram + Eliza may need more time. Increase MCP_TIMEOUT_SECONDS if this repeats.")
@@ -26,7 +26,7 @@ class CourseSchedulerAgent(private val config: AppConfig) {
             },
         )
 
-    private suspend fun runOnceConnected(client: Client, label: String) {
+    private suspend fun runOnceConnected(client: Client, label: String): Boolean {
         println("AGENT RUN: $label")
         val tools = client.listTools().tools
         println("TOOLS RETURNED: ${tools.size}")
@@ -54,7 +54,7 @@ class CourseSchedulerAgent(private val config: AppConfig) {
         println()
         if (result.isError == true) {
             println("LATEST CHECK SKIPPED: generate tool returned an error")
-            return
+            return false
         }
 
         val latest = client.callTool(
@@ -66,22 +66,34 @@ class CourseSchedulerAgent(private val config: AppConfig) {
             .joinToString("\n") { it.text }
         println("LATEST CHECK")
         println(latestText.lineSequence().take(8).joinToString("\n"))
+        return latest.isError != true
     }
 
     suspend fun runIntervalScheduler() {
         println("SCHEDULER DEMO")
         println("interval seconds: ${config.scheduleIntervalSeconds}")
         println("runs: ${config.schedulerRuns}")
-        for (run in 1..config.schedulerRuns) {
-            val ok = runOnce("interval run $run/${config.schedulerRuns}")
-            if (!ok) {
-                println("Interval run $run/${config.schedulerRuns} failed; scheduler remains alive for the next run.")
-            }
-            if (run < config.schedulerRuns) {
-                println()
-                println("Next interval run in ${config.scheduleIntervalSeconds}s")
-                delay(config.scheduleIntervalSeconds.seconds)
-                println()
+        withClient { client ->
+            for (run in 1..config.schedulerRuns) {
+                val ok = runCatching {
+                    runOnceConnected(client, "interval run $run/${config.schedulerRuns}")
+                }.fold(
+                    onSuccess = { it },
+                    onFailure = { error ->
+                        println("AGENT RUN FAILED: ${error.message ?: error::class.simpleName}")
+                        println("Hint: live Telegram + Eliza may need more time. Increase MCP_TIMEOUT_SECONDS if this repeats.")
+                        false
+                    },
+                )
+                if (!ok) {
+                    println("Interval run $run/${config.schedulerRuns} failed; scheduler remains alive for the next run.")
+                }
+                if (run < config.schedulerRuns) {
+                    println()
+                    println("Next interval run in ${config.scheduleIntervalSeconds}s")
+                    delay(config.scheduleIntervalSeconds.seconds)
+                    println()
+                }
             }
         }
         println("SCHEDULER DEMO COMPLETE")
@@ -91,14 +103,25 @@ class CourseSchedulerAgent(private val config: AppConfig) {
         println("DAILY SCHEDULER")
         println("time: ${config.scheduleTime}")
         println("zone: ${config.scheduleZone}")
-        while (true) {
-            val delayMillis = millisUntilNextRun()
-            val nextAt = ZonedDateTime.now(config.scheduleZone).plus(Duration.ofMillis(delayMillis))
-            println("Next run at $nextAt")
-            delay(delayMillis)
-            val ok = runOnce("daily scheduled run at ${ZonedDateTime.now(config.scheduleZone)}")
-            if (!ok) {
-                println("Daily run failed; scheduler remains alive for the next scheduled run.")
+        withClient { client ->
+            while (true) {
+                val delayMillis = millisUntilNextRun()
+                val nextAt = ZonedDateTime.now(config.scheduleZone).plus(Duration.ofMillis(delayMillis))
+                println("Next run at $nextAt")
+                delay(delayMillis)
+                val ok = runCatching {
+                    runOnceConnected(client, "daily scheduled run at ${ZonedDateTime.now(config.scheduleZone)}")
+                }.fold(
+                    onSuccess = { it },
+                    onFailure = { error ->
+                        println("AGENT RUN FAILED: ${error.message ?: error::class.simpleName}")
+                        println("Hint: live Telegram + Eliza may need more time. Increase MCP_TIMEOUT_SECONDS if this repeats.")
+                        false
+                    },
+                )
+                if (!ok) {
+                    println("Daily run failed; scheduler remains alive for the next scheduled run.")
+                }
             }
         }
     }
@@ -112,7 +135,7 @@ class CourseSchedulerAgent(private val config: AppConfig) {
         return Duration.between(now, next).toMillis().coerceAtLeast(1)
     }
 
-    private suspend fun connectClient(block: suspend (Client) -> Unit) {
+    private suspend fun <T> withClient(block: suspend (Client) -> T): T =
         HttpClient(CIO) {
             install(SSE)
             install(HttpTimeout) {
@@ -135,5 +158,4 @@ class CourseSchedulerAgent(private val config: AppConfig) {
             client.connect(transport)
             block(client)
         }
-    }
 }
