@@ -34,3 +34,7 @@ day-15-controlled-transitions-kotlin/*.tmp
 day-17-telegram-mcp-tool-kotlin/telegram-session/
 day-17-telegram-mcp-tool-kotlin/telegram-files/
 day-17-telegram-mcp-tool-kotlin/*.tmp
+day-18-telegram-course-scheduler-kotlin/state/
+day-18-telegram-course-scheduler-kotlin/telegram-session/
+day-18-telegram-course-scheduler-kotlin/telegram-files/
+day-18-telegram-course-scheduler-kotlin/*.tmp
