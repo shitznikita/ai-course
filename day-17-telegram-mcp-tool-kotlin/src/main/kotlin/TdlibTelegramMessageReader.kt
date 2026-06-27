@@ -4,6 +4,7 @@ import com.sun.jna.NativeLibrary
 import com.sun.jna.Pointer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
@@ -47,6 +48,13 @@ class TdlibTelegramMessageReader(private val config: AppConfig) : TelegramMessag
             includeSender = request.includeSender,
             messages = messages,
         )
+    }
+}
+
+class TdlibAuthInspector(private val config: AppConfig) {
+    fun inspect(resendCode: Boolean, requestQr: Boolean = false): String {
+        val session = TdlibJsonSession(config)
+        return session.inspectAuthorization(resendCode, requestQr)
     }
 }
 
@@ -102,8 +110,17 @@ private class TdlibJsonSession(private val config: AppConfig) {
                     },
                 )
                 "authorizationStateWaitCode" -> {
+                    val codeInfo = describeAuthCodeInfo(state["code_info"]?.jsonObject)
+                    if (config.telegramResendCode) {
+                        request(buildJsonObject { put("@type", JsonPrimitive("resendAuthenticationCode")) })
+                        continue
+                    }
                     val code = config.telegramCode
-                        ?: throw IllegalStateException("Telegram sent a login code. Re-run with TELEGRAM_CODE=... in the environment; do not commit it.")
+                        ?: throw IllegalStateException(
+                            "Telegram is waiting for a login code.\n" +
+                                codeInfo + "\n" +
+                                "Re-run with TELEGRAM_CODE=... after you receive it, or run auth-resend after the timeout.",
+                        )
                     send(
                         buildJsonObject {
                             put("@type", JsonPrimitive("checkAuthenticationCode"))
@@ -129,6 +146,147 @@ private class TdlibJsonSession(private val config: AppConfig) {
             }
         }
         error("Timed out while waiting for TDLib authorization. Increase MCP_TIMEOUT_SECONDS if needed.")
+    }
+
+    fun inspectAuthorization(resendCode: Boolean, requestQr: Boolean): String {
+        validateLoginConfig()
+        Files.createDirectories(config.tdlibSessionDir)
+        Files.createDirectories(config.tdlibFilesDir)
+
+        val output = StringBuilder()
+        output.appendLine("TDLib auth diagnostics")
+        output.appendLine("session: ${config.tdlibSessionDir.toAbsolutePath()}")
+        output.appendLine("files: ${config.tdlibFilesDir.toAbsolutePath()}")
+        output.appendLine("phone: ${maskPhone(config.telegramPhone)}")
+        output.appendLine("resend requested: $resendCode")
+        output.appendLine("qr requested: $requestQr")
+        output.appendLine()
+
+        var resendAttempted = false
+        var qrAttempted = false
+        val deadline = System.currentTimeMillis() + config.timeoutSeconds * 1000L
+        while (System.currentTimeMillis() < deadline) {
+            val update = receive(1.0) ?: continue
+            if (update["@type"]?.jsonPrimitive?.contentOrNull == "error") {
+                output.appendLine(tdlibError(update))
+                return output.toString()
+            }
+
+            val state = update["authorization_state"]?.jsonObject ?: continue
+            when (val stateType = state["@type"]?.jsonPrimitive?.contentOrNull) {
+                "authorizationStateWaitTdlibParameters" -> {
+                    output.appendLine("state: wait TDLib parameters -> sending safe local parameters")
+                    send(tdlibParameters())
+                }
+                "authorizationStateWaitEncryptionKey" -> {
+                    output.appendLine("state: wait encryption key -> using empty local database key")
+                    send(
+                        buildJsonObject {
+                            put("@type", JsonPrimitive("checkDatabaseEncryptionKey"))
+                            put("encryption_key", JsonPrimitive(""))
+                        },
+                    )
+                }
+                "authorizationStateWaitPhoneNumber" -> {
+                    if (requestQr && !qrAttempted) {
+                        output.appendLine("state: wait phone number -> requesting QR authentication instead of phone code")
+                        qrAttempted = true
+                        val qrResult = runCatching { request(qrAuthenticationRequest()) }
+                        output.appendLine(
+                            qrResult.fold(
+                                onSuccess = { "qr request result: ${it["@type"]?.jsonPrimitive?.contentOrNull ?: it}" },
+                                onFailure = { "qr request failed: ${it.message ?: it::class.simpleName}" },
+                            ),
+                        )
+                        output.appendLine()
+                    } else {
+                        output.appendLine("state: wait phone number -> sending configured TELEGRAM_PHONE")
+                        send(
+                            buildJsonObject {
+                                put("@type", JsonPrimitive("setAuthenticationPhoneNumber"))
+                                put("phone_number", JsonPrimitive(config.telegramPhone))
+                            },
+                        )
+                    }
+                }
+                "authorizationStateWaitCode" -> {
+                    output.appendLine("state: wait login code")
+                    output.appendLine(describeAuthCodeInfo(state["code_info"]?.jsonObject))
+                    if (requestQr && !qrAttempted) {
+                        output.appendLine("auth-qr requested from wait-code state -> trying requestQrCodeAuthentication")
+                        qrAttempted = true
+                        val qrResult = runCatching { request(qrAuthenticationRequest()) }
+                        output.appendLine(
+                            qrResult.fold(
+                                onSuccess = { "qr request result: ${it["@type"]?.jsonPrimitive?.contentOrNull ?: it}" },
+                                onFailure = { "qr request failed: ${it.message ?: it::class.simpleName}" },
+                            ),
+                        )
+                        output.appendLine()
+                        continue
+                    }
+                    if (config.telegramCode != null) {
+                        output.appendLine("TELEGRAM_CODE is configured -> sending checkAuthenticationCode")
+                        send(
+                            buildJsonObject {
+                                put("@type", JsonPrimitive("checkAuthenticationCode"))
+                                put("code", JsonPrimitive(config.telegramCode))
+                            },
+                        )
+                        continue
+                    }
+                    if (resendCode && !resendAttempted) {
+                        output.appendLine("auth-resend requested -> sending resendAuthenticationCode")
+                        resendAttempted = true
+                        val resendResult = runCatching {
+                            request(buildJsonObject { put("@type", JsonPrimitive("resendAuthenticationCode")) })
+                        }
+                        output.appendLine(
+                            resendResult.fold(
+                                onSuccess = { "resend result: ${it["@type"]?.jsonPrimitive?.contentOrNull ?: it}" },
+                                onFailure = { "resend failed: ${it.message ?: it::class.simpleName}" },
+                            ),
+                        )
+                        output.appendLine()
+                        continue
+                    }
+                    output.appendLine("Next step: check delivery above, then run with TELEGRAM_CODE=... or use auth-resend after timeout.")
+                    return output.toString()
+                }
+                "authorizationStateWaitOtherDeviceConfirmation" -> {
+                    val link = state["link"]?.jsonPrimitive?.contentOrNull
+                    output.appendLine("state: wait other device confirmation")
+                    output.appendLine("Open or convert this tg:// link to a QR code, then confirm from an already logged-in Telegram device:")
+                    output.appendLine(link ?: "link unavailable")
+                    output.appendLine()
+                    output.appendLine("Telegram mobile path: Settings -> Devices -> Link Desktop Device.")
+                    return output.toString()
+                }
+                "authorizationStateWaitPassword" -> {
+                    output.appendLine("state: wait 2FA password")
+                    output.appendLine("Next step: run with TELEGRAM_PASSWORD=... in local environment.")
+                    return output.toString()
+                }
+                "authorizationStateReady" -> {
+                    authorized = true
+                    output.appendLine("state: ready")
+                    output.appendLine("Telegram session is authorized; agent-demo can read chats now.")
+                    return output.toString()
+                }
+                "authorizationStateClosed", "authorizationStateClosing" -> {
+                    output.appendLine("state: $stateType")
+                    return output.toString()
+                }
+            }
+        }
+        output.appendLine("Timed out while waiting for TDLib authorization state. Increase MCP_TIMEOUT_SECONDS if needed.")
+        return output.toString()
+    }
+
+    private fun validateLoginConfig() {
+        require(config.telegramApiId != null) { "TELEGRAM_API_ID is required for TELEGRAM_BACKEND=tdlib." }
+        require(!config.telegramApiHash.isNullOrBlank()) { "TELEGRAM_API_HASH is required for TELEGRAM_BACKEND=tdlib." }
+        require(!config.telegramPhone.isNullOrBlank()) { "TELEGRAM_PHONE is required for TELEGRAM_BACKEND=tdlib." }
     }
 
     fun resolveChatId(chat: String): Long {
@@ -186,6 +344,11 @@ private class TdlibJsonSession(private val config: AppConfig) {
         put("system_version", JsonPrimitive(System.getProperty("os.name")))
         put("application_version", JsonPrimitive("1.0.0"))
         put("enable_storage_optimizer", JsonPrimitive(true))
+    }
+
+    private fun qrAuthenticationRequest(): JsonObject = buildJsonObject {
+        put("@type", JsonPrimitive("requestQrCodeAuthentication"))
+        put("other_user_ids", JsonArray(emptyList()))
     }
 }
 
@@ -249,4 +412,44 @@ private fun tdlibError(error: JsonObject): String {
     val message = error["message"]?.jsonPrimitive?.contentOrNull
     val fatal = error["@fatal"]?.jsonPrimitive?.booleanOrNull
     return "TDLib error code=$code fatal=$fatal message=${message ?: "no message"}"
+}
+
+private fun describeAuthCodeInfo(codeInfo: JsonObject?): String {
+    if (codeInfo == null) return "code info: unavailable"
+    val phone = maskPhone(codeInfo["phone_number"]?.jsonPrimitive?.contentOrNull)
+    val type = describeAuthCodeType(codeInfo["type"]?.jsonObject)
+    val nextType = describeAuthCodeType(codeInfo["next_type"]?.jsonObject)
+    val timeout = codeInfo["timeout"]?.jsonPrimitive?.intOrNull
+    return buildString {
+        appendLine("code info:")
+        appendLine("  phone: $phone")
+        appendLine("  current delivery: ${type ?: "unknown"}")
+        appendLine("  next delivery: ${nextType ?: "none"}")
+        appendLine("  resend timeout seconds: ${timeout ?: "unknown"}")
+    }.trimEnd()
+}
+
+private fun describeAuthCodeType(type: JsonObject?): String? {
+    type ?: return null
+    return when (val name = type["@type"]?.jsonPrimitive?.contentOrNull) {
+        "authenticationCodeTypeTelegramMessage" ->
+            "Telegram service message, length=${type["length"]?.jsonPrimitive?.intOrNull ?: "unknown"}"
+        "authenticationCodeTypeSms" ->
+            "SMS, length=${type["length"]?.jsonPrimitive?.intOrNull ?: "unknown"}"
+        "authenticationCodeTypeCall" ->
+            "phone call, length=${type["length"]?.jsonPrimitive?.intOrNull ?: "unknown"}"
+        "authenticationCodeTypeFlashCall" ->
+            "flash call, pattern=${type["pattern"]?.jsonPrimitive?.contentOrNull ?: "unknown"}"
+        "authenticationCodeTypeMissedCall" ->
+            "missed call, prefix=${type["phone_number_prefix"]?.jsonPrimitive?.contentOrNull ?: "unknown"}, length=${type["length"]?.jsonPrimitive?.intOrNull ?: "unknown"}"
+        "authenticationCodeTypeFragment" ->
+            "Fragment anonymous number, url=${type["url"]?.jsonPrimitive?.contentOrNull ?: "unknown"}"
+        else -> name ?: type.toString()
+    }
+}
+
+private fun maskPhone(phone: String?): String {
+    val normalized = phone?.trim().orEmpty()
+    if (normalized.length <= 5) return normalized.ifBlank { "unknown" }
+    return normalized.take(2) + "***" + normalized.takeLast(3)
 }

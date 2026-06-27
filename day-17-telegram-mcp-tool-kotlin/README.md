@@ -65,6 +65,28 @@ TELEGRAM_CODE=12345 day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="a
 TELEGRAM_PASSWORD=... day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="agent-demo"
 ```
 
+Если код не приходит, сначала посмотрите диагностику способа доставки:
+
+```bash
+day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="auth-check"
+```
+
+Она печатает `current delivery`, `next delivery` и `resend timeout seconds`. Повторную отправку можно запросить после timeout:
+
+```bash
+day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="auth-resend"
+```
+
+TDLib разрешает resend только в состоянии `authorizationStateWaitCode`, когда `next delivery` не `none` и серверный timeout уже прошёл.
+
+Если delivery показывает `Telegram service message`, но сообщение не приходит и `next delivery` равно `none`, используйте QR-login:
+
+```bash
+day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="auth-qr"
+```
+
+Команда напечатает `tg://` link для подтверждения входа на другом уже залогиненном Telegram-устройстве. В мобильном Telegram путь обычно такой: Settings -> Devices -> Link Desktop Device.
+
 Не коммитьте `.env`, `telegram-session/`, `telegram-files/`, коды авторизации и пароли.
 
 ## Запуск
@@ -91,6 +113,14 @@ Run server only:
 
 ```bash
 day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="server"
+```
+
+Telegram login diagnostics:
+
+```bash
+day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="auth-check"
+day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="auth-resend"
+day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="auth-qr"
 ```
 
 Live TDLib demo:

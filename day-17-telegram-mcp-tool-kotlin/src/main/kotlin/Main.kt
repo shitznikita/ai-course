@@ -18,6 +18,15 @@ fun main(args: Array<String>) {
         "raw-check" -> runBlocking {
             runEmbeddedRawCheck(config.copy(telegramBackend = "fixture", telegramLimit = 3))
         }
+        "auth-check" -> {
+            println(TdlibAuthInspector(config).inspect(resendCode = false))
+        }
+        "auth-resend" -> {
+            println(TdlibAuthInspector(config).inspect(resendCode = true))
+        }
+        "auth-qr" -> {
+            println(TdlibAuthInspector(config).inspect(resendCode = false, requestQr = true))
+        }
         else -> printUsage()
     }
 }
@@ -63,5 +72,8 @@ private fun printUsage() {
     println("  fixture-demo  Start local MCP server with fixture Telegram data and run agent demo")
     println("  raw-check     Start local MCP server and show raw JSON-RPC initialize/tools/list/tools/call")
     println("  agent-demo    Start local MCP server with configured TELEGRAM_BACKEND and run agent demo")
+    println("  auth-check    Run TDLib login diagnostics without starting MCP")
+    println("  auth-resend   Ask TDLib to resend the login code when Telegram allows it")
+    println("  auth-qr       Request QR login confirmation from another logged-in Telegram device")
     println("  server        Start MCP server only")
 }
