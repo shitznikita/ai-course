@@ -56,6 +56,11 @@ class TdlibAuthInspector(private val config: AppConfig) {
         val session = TdlibJsonSession(config)
         return session.inspectAuthorization(resendCode, requestQr)
     }
+
+    fun inspectLive(resendCode: Boolean, requestQr: Boolean = false) {
+        val session = TdlibJsonSession(config)
+        session.inspectAuthorization(resendCode, requestQr, streamOutput = true)
+    }
 }
 
 private class TdlibJsonSession(private val config: AppConfig) {
@@ -148,38 +153,48 @@ private class TdlibJsonSession(private val config: AppConfig) {
         error("Timed out while waiting for TDLib authorization. Increase MCP_TIMEOUT_SECONDS if needed.")
     }
 
-    fun inspectAuthorization(resendCode: Boolean, requestQr: Boolean): String {
+    fun inspectAuthorization(resendCode: Boolean, requestQr: Boolean, streamOutput: Boolean = false): String {
         validateLoginConfig()
         Files.createDirectories(config.tdlibSessionDir)
         Files.createDirectories(config.tdlibFilesDir)
 
         val output = StringBuilder()
-        output.appendLine("TDLib auth diagnostics")
-        output.appendLine("session: ${config.tdlibSessionDir.toAbsolutePath()}")
-        output.appendLine("files: ${config.tdlibFilesDir.toAbsolutePath()}")
-        output.appendLine("phone: ${maskPhone(config.telegramPhone)}")
-        output.appendLine("resend requested: $resendCode")
-        output.appendLine("qr requested: $requestQr")
-        output.appendLine()
+        fun emit(line: String = "") {
+            output.appendLine(line)
+            if (streamOutput) println(line)
+        }
+
+        emit("TDLib auth diagnostics")
+        emit("session: ${config.tdlibSessionDir.toAbsolutePath()}")
+        emit("files: ${config.tdlibFilesDir.toAbsolutePath()}")
+        emit("phone: ${maskPhone(config.telegramPhone)}")
+        emit("resend requested: $resendCode")
+        emit("qr requested: $requestQr")
+        if (requestQr) {
+            emit("qr wait seconds: ${config.telegramQrWaitSeconds}")
+        }
+        emit()
 
         var resendAttempted = false
         var qrAttempted = false
-        val deadline = System.currentTimeMillis() + config.timeoutSeconds * 1000L
+        var lastQrLink: String? = null
+        val waitSeconds = if (requestQr) config.telegramQrWaitSeconds else config.timeoutSeconds
+        val deadline = System.currentTimeMillis() + waitSeconds * 1000L
         while (System.currentTimeMillis() < deadline) {
             val update = receive(1.0) ?: continue
             if (update["@type"]?.jsonPrimitive?.contentOrNull == "error") {
-                output.appendLine(tdlibError(update))
+                emit(tdlibError(update))
                 return output.toString()
             }
 
             val state = update["authorization_state"]?.jsonObject ?: continue
             when (val stateType = state["@type"]?.jsonPrimitive?.contentOrNull) {
                 "authorizationStateWaitTdlibParameters" -> {
-                    output.appendLine("state: wait TDLib parameters -> sending safe local parameters")
+                    emit("state: wait TDLib parameters -> sending safe local parameters")
                     send(tdlibParameters())
                 }
                 "authorizationStateWaitEncryptionKey" -> {
-                    output.appendLine("state: wait encryption key -> using empty local database key")
+                    emit("state: wait encryption key -> using empty local database key")
                     send(
                         buildJsonObject {
                             put("@type", JsonPrimitive("checkDatabaseEncryptionKey"))
@@ -189,18 +204,18 @@ private class TdlibJsonSession(private val config: AppConfig) {
                 }
                 "authorizationStateWaitPhoneNumber" -> {
                     if (requestQr && !qrAttempted) {
-                        output.appendLine("state: wait phone number -> requesting QR authentication instead of phone code")
+                        emit("state: wait phone number -> requesting QR authentication instead of phone code")
                         qrAttempted = true
                         val qrResult = runCatching { request(qrAuthenticationRequest()) }
-                        output.appendLine(
+                        emit(
                             qrResult.fold(
                                 onSuccess = { "qr request result: ${it["@type"]?.jsonPrimitive?.contentOrNull ?: it}" },
                                 onFailure = { "qr request failed: ${it.message ?: it::class.simpleName}" },
                             ),
                         )
-                        output.appendLine()
+                        emit()
                     } else {
-                        output.appendLine("state: wait phone number -> sending configured TELEGRAM_PHONE")
+                        emit("state: wait phone number -> sending configured TELEGRAM_PHONE")
                         send(
                             buildJsonObject {
                                 put("@type", JsonPrimitive("setAuthenticationPhoneNumber"))
@@ -210,23 +225,23 @@ private class TdlibJsonSession(private val config: AppConfig) {
                     }
                 }
                 "authorizationStateWaitCode" -> {
-                    output.appendLine("state: wait login code")
-                    output.appendLine(describeAuthCodeInfo(state["code_info"]?.jsonObject))
+                    emit("state: wait login code")
+                    describeAuthCodeInfo(state["code_info"]?.jsonObject).lineSequence().forEach { emit(it) }
                     if (requestQr && !qrAttempted) {
-                        output.appendLine("auth-qr requested from wait-code state -> trying requestQrCodeAuthentication")
+                        emit("auth-qr requested from wait-code state -> trying requestQrCodeAuthentication")
                         qrAttempted = true
                         val qrResult = runCatching { request(qrAuthenticationRequest()) }
-                        output.appendLine(
+                        emit(
                             qrResult.fold(
                                 onSuccess = { "qr request result: ${it["@type"]?.jsonPrimitive?.contentOrNull ?: it}" },
                                 onFailure = { "qr request failed: ${it.message ?: it::class.simpleName}" },
                             ),
                         )
-                        output.appendLine()
+                        emit()
                         continue
                     }
                     if (config.telegramCode != null) {
-                        output.appendLine("TELEGRAM_CODE is configured -> sending checkAuthenticationCode")
+                        emit("TELEGRAM_CODE is configured -> sending checkAuthenticationCode")
                         send(
                             buildJsonObject {
                                 put("@type", JsonPrimitive("checkAuthenticationCode"))
@@ -236,50 +251,55 @@ private class TdlibJsonSession(private val config: AppConfig) {
                         continue
                     }
                     if (resendCode && !resendAttempted) {
-                        output.appendLine("auth-resend requested -> sending resendAuthenticationCode")
+                        emit("auth-resend requested -> sending resendAuthenticationCode")
                         resendAttempted = true
                         val resendResult = runCatching {
                             request(buildJsonObject { put("@type", JsonPrimitive("resendAuthenticationCode")) })
                         }
-                        output.appendLine(
+                        emit(
                             resendResult.fold(
                                 onSuccess = { "resend result: ${it["@type"]?.jsonPrimitive?.contentOrNull ?: it}" },
                                 onFailure = { "resend failed: ${it.message ?: it::class.simpleName}" },
                             ),
                         )
-                        output.appendLine()
+                        emit()
                         continue
                     }
-                    output.appendLine("Next step: check delivery above, then run with TELEGRAM_CODE=... or use auth-resend after timeout.")
+                    emit("Next step: check delivery above, then run with TELEGRAM_CODE=... or use auth-resend after timeout.")
                     return output.toString()
                 }
                 "authorizationStateWaitOtherDeviceConfirmation" -> {
                     val link = state["link"]?.jsonPrimitive?.contentOrNull
-                    output.appendLine("state: wait other device confirmation")
-                    output.appendLine("Open or convert this tg:// link to a QR code, then confirm from an already logged-in Telegram device:")
-                    output.appendLine(link ?: "link unavailable")
-                    output.appendLine()
-                    output.appendLine("Telegram mobile path: Settings -> Devices -> Link Desktop Device.")
-                    return output.toString()
+                    if (link != lastQrLink) {
+                        lastQrLink = link
+                        emit("state: wait other device confirmation")
+                        emit("Keep this command running while you scan. Stopping it expires the token.")
+                        emit("Open or convert this tg:// link to a QR code, then confirm from an already logged-in Telegram device:")
+                        emit(link ?: "link unavailable")
+                        emit()
+                        emit("Telegram mobile path: Settings -> Devices -> Link Desktop Device.")
+                        emit("Waiting for confirmation...")
+                    }
+                    if (!requestQr) return output.toString()
                 }
                 "authorizationStateWaitPassword" -> {
-                    output.appendLine("state: wait 2FA password")
-                    output.appendLine("Next step: run with TELEGRAM_PASSWORD=... in local environment.")
+                    emit("state: wait 2FA password")
+                    emit("Next step: run with TELEGRAM_PASSWORD=... in local environment.")
                     return output.toString()
                 }
                 "authorizationStateReady" -> {
                     authorized = true
-                    output.appendLine("state: ready")
-                    output.appendLine("Telegram session is authorized; agent-demo can read chats now.")
+                    emit("state: ready")
+                    emit("Telegram session is authorized; agent-demo can read chats now.")
                     return output.toString()
                 }
                 "authorizationStateClosed", "authorizationStateClosing" -> {
-                    output.appendLine("state: $stateType")
+                    emit("state: $stateType")
                     return output.toString()
                 }
             }
         }
-        output.appendLine("Timed out while waiting for TDLib authorization state. Increase MCP_TIMEOUT_SECONDS if needed.")
+        emit("Timed out while waiting for TDLib authorization state. Increase TELEGRAM_QR_WAIT_SECONDS or MCP_TIMEOUT_SECONDS if needed.")
         return output.toString()
     }
 

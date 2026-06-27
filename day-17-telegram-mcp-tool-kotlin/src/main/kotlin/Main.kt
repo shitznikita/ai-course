@@ -25,7 +25,7 @@ fun main(args: Array<String>) {
             println(TdlibAuthInspector(config).inspect(resendCode = true))
         }
         "auth-qr" -> {
-            println(TdlibAuthInspector(config).inspect(resendCode = false, requestQr = true))
+            TdlibAuthInspector(config).inspectLive(resendCode = false, requestQr = true)
         }
         else -> printUsage()
     }

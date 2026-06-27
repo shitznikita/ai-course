@@ -86,6 +86,8 @@ day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="auth-qr"
 ```
 
 Команда напечатает `tg://` link для подтверждения входа на другом уже залогиненном Telegram-устройстве. В мобильном Telegram путь обычно такой: Settings -> Devices -> Link Desktop Device.
+Важно: держите `auth-qr` команду запущенной, пока сканируете QR. Если остановить процесс, Telegram login token протухнет и при сканировании будет `AUTH_TOKEN_EXPIRED`.
+Время ожидания настраивается через `TELEGRAM_QR_WAIT_SECONDS`, по умолчанию 180 секунд.
 
 Не коммитьте `.env`, `telegram-session/`, `telegram-files/`, коды авторизации и пароли.
 
