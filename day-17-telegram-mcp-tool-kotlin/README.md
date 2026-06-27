@@ -21,7 +21,7 @@ list_telegram_chats
 
 ```text
 chat: required string, numeric chat id / public @username / fixture chat
-limit: optional integer, default 10, max 50
+limit: optional integer, default 10, max 500
 onlyLocal: optional boolean, default false
 includeSender: optional boolean, default false
 ```
@@ -38,7 +38,7 @@ limit: optional integer, default 20, max 100
 - показывает список чатов аккаунта с `id/title/type`, чтобы можно было читать приватные чаты без public username;
 - не отправляет, не удаляет, не помечает прочитанным и не меняет состояние чата;
 - по умолчанию скрывает sender id;
-- ограничивает `limit` диапазоном `1..50`;
+- ограничивает message `limit` диапазоном `1..500`;
 - возвращает readable text и structured MCP content.
 
 ## Настройка

@@ -51,9 +51,9 @@ object TelegramMcpServerFactory {
                     })
                     put("limit", buildJsonObject {
                         put("type", JsonPrimitive("integer"))
-                        put("description", JsonPrimitive("How many recent messages to return. Default 10, maximum 50."))
+                        put("description", JsonPrimitive("How many recent messages to return. Default 10, maximum 500."))
                         put("minimum", JsonPrimitive(1))
-                        put("maximum", JsonPrimitive(50))
+                        put("maximum", JsonPrimitive(500))
                     })
                     put("onlyLocal", buildJsonObject {
                         put("type", JsonPrimitive("boolean"))
@@ -124,7 +124,7 @@ object TelegramMcpServerFactory {
         require(!chat.contains('\n') && !chat.contains('\r')) { "chat must be a single-line identifier" }
 
         val limit = arguments["limit"]?.jsonPrimitive?.intOrNull ?: 10
-        require(limit in 1..50) { "limit must be between 1 and 50" }
+        require(limit in 1..500) { "limit must be between 1 and 500" }
 
         return TelegramReadRequest(
             chat = chat,

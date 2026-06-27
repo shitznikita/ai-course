@@ -38,7 +38,7 @@ data class AppConfig(
                 timeoutSeconds = env["MCP_TIMEOUT_SECONDS"]?.toLongOrNull() ?: 30L,
                 telegramBackend = env["TELEGRAM_BACKEND"] ?: "fixture",
                 telegramChat = env["TELEGRAM_CHAT"] ?: "fixture-course-chat",
-                telegramLimit = env["TELEGRAM_LIMIT"]?.toIntOrNull()?.coerceIn(1, 50) ?: 10,
+                telegramLimit = env["TELEGRAM_LIMIT"]?.toIntOrNull()?.coerceIn(1, 500) ?: 10,
                 telegramApiId = env["TELEGRAM_API_ID"]?.toIntOrNull(),
                 telegramApiHash = env["TELEGRAM_API_HASH"]?.secretValueOrNull(),
                 telegramPhone = env["TELEGRAM_PHONE"]?.secretValueOrNull(),
