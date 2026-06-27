@@ -24,21 +24,12 @@ class TdlibTelegramMessageReader(private val config: AppConfig) : TelegramMessag
     override fun readMessages(request: TelegramReadRequest): TelegramReadResult {
         session.ensureAuthorized()
         val chatId = session.resolveChatId(request.chat)
-        val response = session.request(
-            buildJsonObject {
-                put("@type", JsonPrimitive("getChatHistory"))
-                put("chat_id", JsonPrimitive(chatId))
-                put("from_message_id", JsonPrimitive(0))
-                put("offset", JsonPrimitive(0))
-                put("limit", JsonPrimitive(request.limit))
-                put("only_local", JsonPrimitive(request.onlyLocal))
-            },
+        val messages = session.readChatHistory(
+            chatId = chatId,
+            limit = request.limit,
+            onlyLocal = request.onlyLocal,
+            includeSender = request.includeSender,
         )
-
-        val messages = response["messages"]
-            ?.jsonArray
-            ?.mapNotNull { it.jsonObject.toTelegramMessage(request.includeSender) }
-            ?: emptyList()
 
         return TelegramReadResult(
             backend = "tdlib",
@@ -339,6 +330,45 @@ private class TdlibJsonSession(private val config: AppConfig) {
         require(config.telegramApiId != null) { "TELEGRAM_API_ID is required for TELEGRAM_BACKEND=tdlib." }
         require(!config.telegramApiHash.isNullOrBlank()) { "TELEGRAM_API_HASH is required for TELEGRAM_BACKEND=tdlib." }
         require(!config.telegramPhone.isNullOrBlank()) { "TELEGRAM_PHONE is required for TELEGRAM_BACKEND=tdlib." }
+    }
+
+    fun readChatHistory(
+        chatId: Long,
+        limit: Int,
+        onlyLocal: Boolean,
+        includeSender: Boolean,
+    ): List<TelegramMessage> {
+        val messages = linkedMapOf<Long, TelegramMessage>()
+        var fromMessageId = 0L
+        var attempts = 0
+
+        while (messages.size < limit && attempts < 10) {
+            attempts += 1
+            val batch = request(
+                buildJsonObject {
+                    put("@type", JsonPrimitive("getChatHistory"))
+                    put("chat_id", JsonPrimitive(chatId))
+                    put("from_message_id", JsonPrimitive(fromMessageId))
+                    put("offset", JsonPrimitive(0))
+                    put("limit", JsonPrimitive((limit - messages.size + 1).coerceIn(1, 100)))
+                    put("only_local", JsonPrimitive(onlyLocal))
+                },
+            )["messages"]
+                ?.jsonArray
+                ?.mapNotNull { it.jsonObject.toTelegramMessage(includeSender) }
+                ?: emptyList()
+
+            if (batch.isEmpty()) break
+
+            val sizeBefore = messages.size
+            batch.forEach { messages.putIfAbsent(it.id, it) }
+
+            val oldestId = batch.minOf { it.id }
+            if (oldestId == fromMessageId || messages.size == sizeBefore) break
+            fromMessageId = oldestId
+        }
+
+        return messages.values.take(limit)
     }
 
     fun resolveChatId(chat: String): Long {

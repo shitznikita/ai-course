@@ -131,6 +131,13 @@ TELEGRAM_BACKEND=tdlib TELEGRAM_LIMIT=50 day-17-telegram-mcp-tool-kotlin/scripts
 TELEGRAM_BACKEND=tdlib TELEGRAM_CHAT=-1001234567890 day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="agent-demo"
 ```
 
+Если TDLib падает с `database disk image is malformed`, локальная TDLib database повреждена. Удалите только runtime state и авторизуйтесь заново:
+
+```bash
+rm -rf day-17-telegram-mcp-tool-kotlin/telegram-session day-17-telegram-mcp-tool-kotlin/telegram-files
+day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="auth-qr"
+```
+
 Run server only:
 
 ```bash
