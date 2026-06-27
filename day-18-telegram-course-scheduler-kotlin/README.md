@@ -30,6 +30,8 @@ persist: optional boolean, default true
 
 `get_latest_course_day_prompt` не принимает аргументы и возвращает последний сохраненный prompt без нового Telegram/LLM вызова.
 
+Default `MCP_TIMEOUT_SECONDS` равен `120`, потому что live Telegram + Eliza prompt generation может занимать заметно больше 30 секунд.
+
 ## Поведение
 
 - читает Telegram через fixture или TDLib backend;
@@ -89,6 +91,7 @@ LLM_MODEL=meta-llama/llama-3.3-70b-instruct
 Для production scheduler:
 
 ```text
+MCP_TIMEOUT_SECONDS=120
 SCHEDULE_TIME=13:00
 SCHEDULE_ZONE=Europe/Moscow
 ```

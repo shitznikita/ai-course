@@ -49,9 +49,13 @@ private suspend fun runEmbeddedOnce(config: AppConfig) {
         println()
         println("AGENT CONNECTING")
         println("CLIENT: ${config.clientName}")
-        CourseSchedulerAgent(config).runOnce()
+        val ok = CourseSchedulerAgent(config).runOnce()
         println()
-        println("CHECK: scheduled MCP tool call ok, prompt saved and returned")
+        if (ok) {
+            println("CHECK: scheduled MCP tool call ok, prompt saved and returned")
+        } else {
+            println("CHECK: scheduled MCP tool call attempted, but no successful prompt was returned")
+        }
     } finally {
         server.stop(500, 1_000)
     }

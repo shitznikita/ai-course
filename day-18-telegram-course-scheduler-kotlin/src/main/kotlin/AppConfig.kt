@@ -43,7 +43,7 @@ data class AppConfig(
                 serverHost = env["MCP_SERVER_HOST"] ?: "127.0.0.1",
                 serverPort = env["MCP_SERVER_PORT"]?.toIntOrNull() ?: 3018,
                 clientName = env["MCP_CLIENT_NAME"] ?: "ai-course-day-18-scheduler-agent",
-                timeoutSeconds = env["MCP_TIMEOUT_SECONDS"]?.toLongOrNull()?.coerceAtLeast(1) ?: 30L,
+                timeoutSeconds = env["MCP_TIMEOUT_SECONDS"]?.toLongOrNull()?.coerceAtLeast(1) ?: 120L,
                 telegramBackend = env["TELEGRAM_BACKEND"] ?: "fixture",
                 telegramChat = env["TELEGRAM_CHAT"] ?: "fixture-course-chat",
                 telegramLimit = env["TELEGRAM_LIMIT"]?.toIntOrNull()?.coerceIn(1, 500) ?: 100,
