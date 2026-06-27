@@ -2,6 +2,7 @@ import java.time.Instant
 
 interface TelegramMessageReader {
     fun readMessages(request: TelegramReadRequest): TelegramReadResult
+    fun listChats(request: TelegramListChatsRequest): TelegramListChatsResult
 }
 
 object TelegramBackends {
@@ -41,6 +42,23 @@ object FixtureTelegramMessageReader : TelegramMessageReader {
         ),
     )
 
+    private val chats = listOf(
+        TelegramChatSummary(
+            id = -1001700000001,
+            title = "fixture-course-chat",
+            type = "supergroup",
+            unreadCount = 2,
+            lastMessageDateIso = "2026-06-27T09:13:00Z",
+        ),
+        TelegramChatSummary(
+            id = 420000001,
+            title = "Private fixture dialog",
+            type = "private",
+            unreadCount = 0,
+            lastMessageDateIso = "2026-06-27T08:30:00Z",
+        ),
+    )
+
     override fun readMessages(request: TelegramReadRequest): TelegramReadResult {
         val selected = messages.take(request.limit).map {
             if (request.includeSender) it else it.copy(sender = null)
@@ -54,6 +72,13 @@ object FixtureTelegramMessageReader : TelegramMessageReader {
             messages = selected,
         )
     }
+
+    override fun listChats(request: TelegramListChatsRequest): TelegramListChatsResult =
+        TelegramListChatsResult(
+            backend = "fixture",
+            requestedLimit = request.limit,
+            chats = chats.take(request.limit),
+        )
 }
 
 fun unixSecondsToIso(seconds: Long): String =

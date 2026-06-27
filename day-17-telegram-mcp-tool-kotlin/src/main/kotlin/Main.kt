@@ -12,6 +12,9 @@ fun main(args: Array<String>) {
         "agent-demo" -> runBlocking {
             runEmbeddedAgentDemo(config)
         }
+        "list-chats" -> runBlocking {
+            runEmbeddedListChats(config)
+        }
         "fixture-demo" -> runBlocking {
             runEmbeddedAgentDemo(config.copy(telegramBackend = "fixture"))
         }
@@ -47,6 +50,22 @@ private suspend fun runEmbeddedAgentDemo(config: AppConfig) {
     }
 }
 
+private suspend fun runEmbeddedListChats(config: AppConfig) {
+    printServerBanner(config)
+    val server = startTelegramMcpServer(config, wait = false)
+    try {
+        delay(300)
+        println()
+        println("AGENT CONNECTING")
+        println("CLIENT: ${config.clientName}")
+        TelegramMcpAgent(config).listChats()
+        println()
+        println("CHECK: MCP list_telegram_chats tool call ok")
+    } finally {
+        server.stop(500, 1_000)
+    }
+}
+
 private suspend fun runEmbeddedRawCheck(config: AppConfig) {
     printServerBanner(config)
     val server = startTelegramMcpServer(config, wait = false)
@@ -72,6 +91,7 @@ private fun printUsage() {
     println("  fixture-demo  Start local MCP server with fixture Telegram data and run agent demo")
     println("  raw-check     Start local MCP server and show raw JSON-RPC initialize/tools/list/tools/call")
     println("  agent-demo    Start local MCP server with configured TELEGRAM_BACKEND and run agent demo")
+    println("  list-chats    Start local MCP server and list chat ids visible to the Telegram account")
     println("  auth-check    Run TDLib login diagnostics without starting MCP")
     println("  auth-resend   Ask TDLib to resend the login code when Telegram allows it")
     println("  auth-qr       Request QR login confirmation from another logged-in Telegram device")

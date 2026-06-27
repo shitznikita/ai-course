@@ -7,6 +7,36 @@ ROOT_DIR="$(cd "$PROJECT_DIR/.." && pwd)"
 
 LOCAL_ENV="$PROJECT_DIR/.env"
 SHARED_ENV="$ROOT_DIR/day-01-llm-rest-kotlin/.env"
+OVERRIDE_VARS=(
+  MCP_SERVER_HOST
+  MCP_SERVER_PORT
+  MCP_CLIENT_NAME
+  MCP_TIMEOUT_SECONDS
+  TELEGRAM_BACKEND
+  TELEGRAM_CHAT
+  TELEGRAM_LIMIT
+  TELEGRAM_API_ID
+  TELEGRAM_API_HASH
+  TELEGRAM_PHONE
+  TELEGRAM_CODE
+  TELEGRAM_PASSWORD
+  TELEGRAM_RESEND_CODE
+  TELEGRAM_QR_WAIT_SECONDS
+  TDLIB_LIBRARY_PATH
+  TDLIB_SESSION_DIR
+  TDLIB_FILES_DIR
+  LLM_API_KEY
+  LLM_AUTH_SCHEME
+  LLM_API_URL
+  LLM_MODEL
+)
+
+for name in "${OVERRIDE_VARS[@]}"; do
+  if [[ -n "${!name+x}" ]]; then
+    export "CALLER_HAS_${name}=1"
+    export "CALLER_VALUE_${name}=${!name}"
+  fi
+done
 
 if [[ -f "$LOCAL_ENV" ]]; then
   set -a
@@ -19,6 +49,16 @@ elif [[ -f "$SHARED_ENV" ]]; then
   source "$SHARED_ENV"
   set +a
 fi
+
+for name in "${OVERRIDE_VARS[@]}"; do
+  has_name="CALLER_HAS_${name}"
+  value_name="CALLER_VALUE_${name}"
+  if [[ -n "${!has_name:-}" ]]; then
+    export "$name=${!value_name}"
+    unset "$has_name"
+    unset "$value_name"
+  fi
+done
 
 export MCP_SERVER_HOST="${MCP_SERVER_HOST:-127.0.0.1}"
 export MCP_SERVER_PORT="${MCP_SERVER_PORT:-3017}"

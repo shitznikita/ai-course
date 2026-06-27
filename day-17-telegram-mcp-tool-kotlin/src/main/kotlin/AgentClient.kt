@@ -39,7 +39,7 @@ class TelegramMcpAgent(private val config: AppConfig) {
             println()
 
             val result = client.callTool(
-                name = TelegramTool.NAME,
+                name = TelegramTool.READ_MESSAGES,
                 arguments = mapOf(
                     "chat" to config.telegramChat,
                     "limit" to config.telegramLimit,
@@ -58,6 +58,39 @@ class TelegramMcpAgent(private val config: AppConfig) {
             println("AGENT SUMMARY")
             val summarizer = if (config.llmApiKey.isNullOrBlank()) LocalTelegramSummarizer else ElizaTelegramSummarizer(config)
             println(summarizer.summarize(toolText))
+        }
+    }
+
+    suspend fun listChats() {
+        HttpClient(CIO) {
+            install(SSE)
+            install(HttpTimeout) {
+                requestTimeoutMillis = config.timeoutSeconds.seconds.inWholeMilliseconds
+                connectTimeoutMillis = config.timeoutSeconds.seconds.inWholeMilliseconds
+                socketTimeoutMillis = config.timeoutSeconds.seconds.inWholeMilliseconds
+            }
+        }.use { httpClient ->
+            val client = Client(
+                clientInfo = Implementation(
+                    name = config.clientName,
+                    version = "1.0.0",
+                ),
+            )
+            val transport = StreamableHttpClientTransport(
+                client = httpClient,
+                url = config.serverUrl,
+            )
+
+            client.connect(transport)
+            val result = client.callTool(
+                name = TelegramTool.LIST_CHATS,
+                arguments = mapOf("limit" to config.telegramLimit.coerceIn(1, 100)),
+            )
+            val toolText = result.content
+                .filterIsInstance<TextContent>()
+                .joinToString("\n") { it.text }
+            println("TOOL RESULT")
+            println(toolText)
         }
     }
 }

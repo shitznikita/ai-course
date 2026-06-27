@@ -49,6 +49,38 @@ class TdlibTelegramMessageReader(private val config: AppConfig) : TelegramMessag
             messages = messages,
         )
     }
+
+    override fun listChats(request: TelegramListChatsRequest): TelegramListChatsResult {
+        session.ensureAuthorized()
+        val response = session.request(
+            buildJsonObject {
+                put("@type", JsonPrimitive("getChats"))
+                put("chat_list", buildJsonObject { put("@type", JsonPrimitive("chatListMain")) })
+                put("limit", JsonPrimitive(request.limit))
+            },
+        )
+        val chatIds = response["chat_ids"]
+            ?.jsonArray
+            ?.mapNotNull { it.jsonPrimitive.contentOrNull?.toLongOrNull() }
+            ?: emptyList()
+
+        val chats = chatIds.mapNotNull { chatId ->
+            runCatching {
+                session.request(
+                    buildJsonObject {
+                        put("@type", JsonPrimitive("getChat"))
+                        put("chat_id", JsonPrimitive(chatId))
+                    },
+                ).toChatSummary()
+            }.getOrNull()
+        }
+
+        return TelegramListChatsResult(
+            backend = "tdlib",
+            requestedLimit = request.limit,
+            chats = chats,
+        )
+    }
 }
 
 class TdlibAuthInspector(private val config: AppConfig) {
@@ -404,6 +436,41 @@ private fun JsonObject.toTelegramMessage(includeSender: Boolean): TelegramMessag
         sender = sender,
         text = text,
     )
+}
+
+private fun JsonObject.toChatSummary(): TelegramChatSummary? {
+    val id = this["id"]?.jsonPrimitive?.contentOrNull?.toLongOrNull() ?: return null
+    val title = this["title"]?.jsonPrimitive?.contentOrNull?.ifBlank { "(untitled)" } ?: "(untitled)"
+    val unreadCount = this["unread_count"]?.jsonPrimitive?.intOrNull ?: 0
+    val type = chatTypeLabel(this["type"]?.jsonObject)
+    val lastMessageDate = this["last_message"]
+        ?.jsonObject
+        ?.get("date")
+        ?.jsonPrimitive
+        ?.contentOrNull
+        ?.toLongOrNull()
+        ?.let(::unixSecondsToIso)
+    return TelegramChatSummary(
+        id = id,
+        title = title,
+        type = type,
+        unreadCount = unreadCount,
+        lastMessageDateIso = lastMessageDate,
+    )
+}
+
+private fun chatTypeLabel(type: JsonObject?): String {
+    type ?: return "unknown"
+    return when (type["@type"]?.jsonPrimitive?.contentOrNull) {
+        "chatTypePrivate" -> "private"
+        "chatTypeBasicGroup" -> "basic_group"
+        "chatTypeSupergroup" -> {
+            val isChannel = type["is_channel"]?.jsonPrimitive?.booleanOrNull ?: false
+            if (isChannel) "channel" else "supergroup"
+        }
+        "chatTypeSecret" -> "secret"
+        else -> type["@type"]?.jsonPrimitive?.contentOrNull ?: "unknown"
+    }
 }
 
 private fun senderLabel(sender: JsonObject?): String? {

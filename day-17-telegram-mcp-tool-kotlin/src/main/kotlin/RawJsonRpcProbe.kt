@@ -89,7 +89,7 @@ class RawJsonRpcProbe(private val config: AppConfig) {
         put(
             "params",
             buildJsonObject {
-                put("name", JsonPrimitive(TelegramTool.NAME))
+                put("name", JsonPrimitive(TelegramTool.READ_MESSAGES))
                 put(
                     "arguments",
                     buildJsonObject {

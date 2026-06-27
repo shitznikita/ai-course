@@ -10,13 +10,14 @@
 
 ## MCP Tool
 
-Tool name:
+Tool names:
 
 ```text
 read_telegram_chat_messages
+list_telegram_chats
 ```
 
-Input schema:
+`read_telegram_chat_messages` input schema:
 
 ```text
 chat: required string, numeric chat id / public @username / fixture chat
@@ -25,9 +26,16 @@ onlyLocal: optional boolean, default false
 includeSender: optional boolean, default false
 ```
 
+`list_telegram_chats` input schema:
+
+```text
+limit: optional integer, default 20, max 100
+```
+
 Поведение:
 
 - читает последние сообщения;
+- показывает список чатов аккаунта с `id/title/type`, чтобы можно было читать приватные чаты без public username;
 - не отправляет, не удаляет, не помечает прочитанным и не меняет состояние чата;
 - по умолчанию скрывает sender id;
 - ограничивает `limit` диапазоном `1..50`;
@@ -111,6 +119,18 @@ Raw protocol smoke:
 day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="raw-check"
 ```
 
+List private chat ids:
+
+```bash
+TELEGRAM_BACKEND=tdlib TELEGRAM_LIMIT=50 day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="list-chats"
+```
+
+Для непубличного чата возьмите `id` из вывода `list-chats` и передайте его как `TELEGRAM_CHAT`:
+
+```bash
+TELEGRAM_BACKEND=tdlib TELEGRAM_CHAT=-1001234567890 day-17-telegram-mcp-tool-kotlin/scripts/run-mcp.sh --args="agent-demo"
+```
+
 Run server only:
 
 ```bash
@@ -141,8 +161,9 @@ MCP SERVER: http://127.0.0.1:3017/mcp
 TELEGRAM BACKEND: fixture
 
 AGENT CONNECTING
-TOOLS RETURNED: 1
+TOOLS RETURNED: 2
 1. read_telegram_chat_messages
+2. list_telegram_chats
 
 TOOL RESULT
 Telegram messages
@@ -164,17 +185,20 @@ CHECK: MCP tool call ok, result used by agent
 
 1. Показать `build.gradle.kts`: есть MCP server/client SDK, Ktor и JNA для TDLib JSON.
 2. Показать регистрацию `read_telegram_chat_messages`: name, description, input schema, required `chat`.
-3. Показать validation: `limit` ограничен, sender скрывается по умолчанию.
-4. Запустить `fixture-demo` и показать `TOOLS RETURNED: 1`, `TOOL RESULT`, `AGENT SUMMARY`.
-5. Запустить `raw-check`, чтобы увидеть `initialize`, `tools/list`, `tools/call`.
-6. Кратко показать `.env.example` для live TDLib без реальных секретов.
+3. Показать регистрацию `list_telegram_chats`: tool возвращает `chat_id` для приватных чатов.
+4. Показать validation: `limit` ограничен, sender скрывается по умолчанию.
+5. Запустить `fixture-demo` и показать `TOOLS RETURNED: 2`, `TOOL RESULT`, `AGENT SUMMARY`.
+6. Запустить `list-chats` после live login и показать, что приватные чаты читаются через numeric `chat_id`.
+7. Запустить `raw-check`, чтобы увидеть `initialize`, `tools/list`, `tools/call`.
+8. Кратко показать `.env.example` для live TDLib без реальных секретов.
 
 ## Проверка Требований
 
 - Свой MCP server реализован: да.
-- Tool зарегистрирован: да, `read_telegram_chat_messages`.
+- Tools зарегистрированы: да, `read_telegram_chat_messages` и `list_telegram_chats`.
 - Входные параметры описаны schema: да.
 - Tool возвращает результат: да, text + structured content.
 - Агент подключается и вызывает tool: да, `fixture-demo` и `agent-demo`.
+- Приватные чаты поддержаны: да, через `list-chats` -> numeric `chat_id` -> `TELEGRAM_CHAT`.
 - Telegram MTProto path есть через TDLib JSON/JNA: да, включается `TELEGRAM_BACKEND=tdlib`.
 - Offline проверка не требует секретов: да.

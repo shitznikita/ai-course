@@ -21,7 +21,8 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 
 object TelegramTool {
-    const val NAME = "read_telegram_chat_messages"
+    const val READ_MESSAGES = "read_telegram_chat_messages"
+    const val LIST_CHATS = "list_telegram_chats"
 }
 
 object TelegramMcpServerFactory {
@@ -40,7 +41,7 @@ object TelegramMcpServerFactory {
         )
 
         server.addTool(
-            name = TelegramTool.NAME,
+            name = TelegramTool.READ_MESSAGES,
             description = "Read recent Telegram chat messages through a read-only TDLib/MTProto backend or offline fixture.",
             inputSchema = ToolSchema(
                 properties = buildJsonObject {
@@ -82,6 +83,36 @@ object TelegramMcpServerFactory {
             }
         }
 
+        server.addTool(
+            name = TelegramTool.LIST_CHATS,
+            description = "List recent Telegram chats visible to the authorized TDLib account and return chat ids for private chat reading.",
+            inputSchema = ToolSchema(
+                properties = buildJsonObject {
+                    put("limit", buildJsonObject {
+                        put("type", JsonPrimitive("integer"))
+                        put("description", JsonPrimitive("How many recent chats to return. Default 20, maximum 100."))
+                        put("minimum", JsonPrimitive(1))
+                        put("maximum", JsonPrimitive(100))
+                    })
+                },
+            ),
+        ) { request ->
+            try {
+                val listRequest = parseListChatsArguments(request.arguments)
+                val result = reader.listChats(listRequest)
+                CallToolResult(
+                    content = listOf(TextContent(text = TelegramResultFormatter.formatChats(result))),
+                    isError = false,
+                    structuredContent = result.toJson(),
+                )
+            } catch (e: Exception) {
+                CallToolResult(
+                    content = listOf(TextContent(text = "Tool call failed: ${e.message ?: e::class.simpleName}")),
+                    isError = true,
+                )
+            }
+        }
+
         return server
     }
 
@@ -101,6 +132,12 @@ object TelegramMcpServerFactory {
             onlyLocal = arguments["onlyLocal"]?.jsonPrimitive?.booleanOrNull ?: false,
             includeSender = arguments["includeSender"]?.jsonPrimitive?.booleanOrNull ?: false,
         )
+    }
+
+    private fun parseListChatsArguments(arguments: JsonObject?): TelegramListChatsRequest {
+        val limit = arguments?.get("limit")?.jsonPrimitive?.intOrNull ?: 20
+        require(limit in 1..100) { "limit must be between 1 and 100" }
+        return TelegramListChatsRequest(limit = limit)
     }
 }
 

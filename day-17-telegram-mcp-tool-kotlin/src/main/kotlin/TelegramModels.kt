@@ -11,6 +11,18 @@ data class TelegramReadRequest(
     val includeSender: Boolean,
 )
 
+data class TelegramListChatsRequest(
+    val limit: Int,
+)
+
+data class TelegramChatSummary(
+    val id: Long,
+    val title: String,
+    val type: String,
+    val unreadCount: Int,
+    val lastMessageDateIso: String?,
+)
+
 data class TelegramMessage(
     val id: Long,
     val dateIso: String,
@@ -49,6 +61,32 @@ data class TelegramReadResult(
     }
 }
 
+data class TelegramListChatsResult(
+    val backend: String,
+    val requestedLimit: Int,
+    val chats: List<TelegramChatSummary>,
+) {
+    fun toJson(): JsonObject = buildJsonObject {
+        put("backend", JsonPrimitive(backend))
+        put("requestedLimit", JsonPrimitive(requestedLimit))
+        put("returned", JsonPrimitive(chats.size))
+        put(
+            "chats",
+            JsonArray(
+                chats.map { chat ->
+                    buildJsonObject {
+                        put("id", JsonPrimitive(chat.id))
+                        put("title", JsonPrimitive(chat.title))
+                        put("type", JsonPrimitive(chat.type))
+                        put("unreadCount", JsonPrimitive(chat.unreadCount))
+                        put("lastMessageDateIso", JsonPrimitive(chat.lastMessageDateIso ?: "unknown"))
+                    }
+                },
+            ),
+        )
+    }
+}
+
 object TelegramResultFormatter {
     fun format(result: TelegramReadResult): String = buildString {
         appendLine("Telegram messages")
@@ -66,6 +104,22 @@ object TelegramResultFormatter {
             val sender = if (result.includeSender) " sender=${message.sender ?: "unknown"}" else ""
             appendLine("${index + 1}. [${message.dateIso}]$sender")
             appendLine("   ${message.text.lineSequence().joinToString(" ").take(500)}")
+        }
+    }
+
+    fun formatChats(result: TelegramListChatsResult): String = buildString {
+        appendLine("Telegram chats")
+        appendLine("backend: ${result.backend}")
+        appendLine("returned: ${result.chats.size} / requested ${result.requestedLimit}")
+        appendLine()
+        if (result.chats.isEmpty()) {
+            appendLine("No chats returned.")
+            return@buildString
+        }
+        result.chats.forEachIndexed { index, chat ->
+            appendLine("${index + 1}. ${chat.title}")
+            appendLine("   id=${chat.id}")
+            appendLine("   type=${chat.type}, unread=${chat.unreadCount}, last=${chat.lastMessageDateIso ?: "unknown"}")
         }
     }
 }
