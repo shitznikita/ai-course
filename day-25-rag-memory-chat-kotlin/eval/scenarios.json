@@ -1,0 +1,80 @@
+[
+  {
+    "id": "rag-video-readme",
+    "title": "Prepare RAG video and README across Days 21-24",
+    "expectedGoalTerms": ["видео", "RAG", "21"],
+    "expectedConstraintTerms": ["источник", "цитат", "live"],
+    "expectedTerms": ["rag", "day-21", "day-24", "readme", "kotlin", "cli"],
+    "steps": [
+      {
+        "user": "Цель: подготовить видео по RAG days 21-24. Ограничение: отвечай только с источниками и цитатами. С чего начать в README?"
+      },
+      {
+        "user": "Уточнение: live chunks нельзя отправлять во внешний endpoint без разрешения. Какой offline demo показать для Day 21?"
+      },
+      {
+        "user": "Какие metadata у chunk надо проговорить в ролике про Day 21?"
+      },
+      {
+        "user": "Теперь сравни Day 22: как показать отличие no-RAG и RAG?"
+      },
+      {
+        "user": "Зафиксируй термин RAG prompt. Какие sources должны быть видны в ответе?"
+      },
+      {
+        "user": "Как Day 23 улучшает retrieval через query rewrite и rerank?"
+      },
+      {
+        "user": "Ограничение остается: без live export. Как доказать reranking через dry-run report?"
+      },
+      {
+        "user": "Что именно Day 24 добавляет для citations и anti-hallucination?"
+      },
+      {
+        "user": "Какие команды Kotlin CLI лучше записать в видео для build и fixture-demo?"
+      },
+      {
+        "user": "Собери финальный порядок демонстрации, не теряя цель видео и требование sources/quotes."
+      }
+    ]
+  },
+  {
+    "id": "production-like-course-assistant",
+    "title": "Production-like course assistant with RAG, task state, and repo rules",
+    "expectedGoalTerms": ["assistant", "production-like", "course"],
+    "expectedConstraintTerms": ["секрет", "источник", "только"],
+    "expectedTerms": ["rag", "mcp", "task state", "readme", "kotlin", "cli"],
+    "steps": [
+      {
+        "user": "Цель: спроектировать production-like course assistant. Ограничение: секреты только в .env, ответы всегда с источниками. Какие правила repo важны?"
+      },
+      {
+        "user": "Уточнение: ассистент должен помнить goal и constraints. Что взять из Day 13 task state?"
+      },
+      {
+        "user": "Какие слои памяти из Day 11 полезны для такого чата?"
+      },
+      {
+        "user": "Как Day 7 доказывает persistence истории между запусками?"
+      },
+      {
+        "user": "Добавь термин MCP orchestration. Как Day 20 демонстрирует длинный flow?"
+      },
+      {
+        "user": "Теперь вернись к RAG: какие источники из Day 24 нужны для grounded ответа?"
+      },
+      {
+        "user": "Ограничение: только прямой REST, без high-level SDK. Где это зафиксировано?"
+      },
+      {
+        "user": "Как production-like chat должен вести себя при weak context и низкой релевантности?"
+      },
+      {
+        "user": "Какие runtime файлы state/index/reports нельзя коммитить?"
+      },
+      {
+        "user": "Собери итоговый Kotlin CLI README чек-лист ассистента, сохранив goal, MCP/RAG terms и ограничения про secrets/sources."
+      }
+    ]
+  }
+]
