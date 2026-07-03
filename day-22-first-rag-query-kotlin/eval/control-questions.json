@@ -1,0 +1,98 @@
+[
+  {
+    "id": "q01",
+    "question": "Какой endpoint и модель по умолчанию используются для последних LLM-дней?",
+    "expectedAnswerPoints": [
+      "https://api.eliza.yandex.net/openrouter/v1/chat/completions",
+      "meta-llama/llama-3.3-70b-instruct"
+    ],
+    "expectedSources": ["README.md", "AGENTS.md"]
+  },
+  {
+    "id": "q02",
+    "question": "Как запустить Day 21 offline indexing demo?",
+    "expectedAnswerPoints": [
+      "day-21-document-indexing-kotlin/scripts/run-indexer.sh --args=\"fixture-demo\""
+    ],
+    "expectedSources": ["day-21-document-indexing-kotlin/README.md"]
+  },
+  {
+    "id": "q03",
+    "question": "Какие metadata хранит Day 21 для каждого chunk?",
+    "expectedAnswerPoints": [
+      "source",
+      "title",
+      "section",
+      "chunk_id"
+    ],
+    "expectedSources": ["day-21-document-indexing-kotlin/README.md", "day-21-document-indexing-kotlin/src/main/kotlin/Models.kt"]
+  },
+  {
+    "id": "q04",
+    "question": "Чем отличается fixed chunking от structured chunking?",
+    "expectedAnswerPoints": [
+      "fixed режет окнами по токенам",
+      "structured режет по заголовкам, объявлениям или абзацам"
+    ],
+    "expectedSources": ["day-21-document-indexing-kotlin/README.md"]
+  },
+  {
+    "id": "q05",
+    "question": "Как запустить Day 20 fixture orchestration demo?",
+    "expectedAnswerPoints": [
+      "day-20-mcp-orchestration-kotlin/scripts/run-orchestration.sh --args=\"fixture-demo\""
+    ],
+    "expectedSources": ["README.md", "day-20-mcp-orchestration-kotlin/README.md"]
+  },
+  {
+    "id": "q06",
+    "question": "Какие runtime файлы Day 21 нельзя коммитить?",
+    "expectedAnswerPoints": [
+      "day-21-document-indexing-kotlin/index/",
+      "generated indexes"
+    ],
+    "expectedSources": [".gitignore", "day-21-document-indexing-kotlin/README.md"]
+  },
+  {
+    "id": "q07",
+    "question": "Почему проект не использует high-level LLM SDKs?",
+    "expectedAnswerPoints": [
+      "задания требуют прямой REST",
+      "java.net.http.HttpClient"
+    ],
+    "expectedSources": ["AGENTS.md", "skills/course-continuity/SKILL.md"]
+  },
+  {
+    "id": "q08",
+    "question": "Как Day 8 показывает переполнение контекста?",
+    "expectedAnswerPoints": [
+      "APP_CONTEXT_LIMIT_TOKENS",
+      "overflow",
+      "file-dry-run"
+    ],
+    "expectedSources": ["README.md", "day-08-token-accounting-kotlin/README.md"]
+  },
+  {
+    "id": "q09",
+    "question": "Какие MCP servers есть в Day 20 orchestration?",
+    "expectedAnswerPoints": [
+      "source-mcp",
+      "window-mcp",
+      "brief-mcp",
+      "storage-mcp"
+    ],
+    "expectedSources": ["day-20-mcp-orchestration-kotlin/README.md"]
+  },
+  {
+    "id": "q10",
+    "question": "Что должен содержать README каждого day folder?",
+    "expectedAnswerPoints": [
+      "goal",
+      "stack",
+      "setup",
+      "run commands",
+      "expected output"
+    ],
+    "expectedSources": ["AGENTS.md"]
+  }
+]
