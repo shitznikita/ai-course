@@ -4,13 +4,13 @@
 
 ## Current Snapshot
 
-- Статус на `2026-07-03`: репозиторий содержит задания дней 1-21; день 21 добавляет локальный pipeline индексации документов.
+- Статус на `2026-07-03`: репозиторий содержит задания дней 1-22; день 22 добавляет первый RAG-запрос поверх локального индекса.
 - Основной стек всех последних заданий: Kotlin CLI + Gradle + прямой REST через `java.net.http.HttpClient`.
 - Основной провайдер: Eliza API, OpenRouter-compatible endpoint `https://api.eliza.yandex.net/openrouter/v1/chat/completions`.
 - Основная модель для последних LLM-дней: `meta-llama/llama-3.3-70b-instruct`.
 - Реальный API-ключ хранится только в `.env` или переменных окружения. `.env`, `.certs/`, build outputs, history/summary/tmp-файлы не коммитятся.
 - Для продолжения после сжатия контекста сначала читать [AGENTS.md](AGENTS.md), затем [skills/course-continuity/SKILL.md](skills/course-continuity/SKILL.md).
-- Для проверки текущего состояния полезнее всего запускать день 21 в `fixture-demo`, потому что он офлайн строит оба индекса и comparison report.
+- Для проверки текущего состояния полезнее всего запускать день 22 в `fixture-demo`, потому что он офлайн показывает retrieval и RAG prompt без секретов.
 
 ## Структура
 
@@ -39,6 +39,7 @@ ai-course/
   day-19-mcp-tool-composition-kotlin/ # День 19: композиция MCP-инструментов
   day-20-mcp-orchestration-kotlin/ # День 20: orchestration нескольких MCP-серверов
   day-21-document-indexing-kotlin/ # День 21: индексация документов, embeddings, chunking
+  day-22-first-rag-query-kotlin/ # День 22: первый RAG-запрос и сравнение с no-RAG
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -67,6 +68,7 @@ ai-course/
 - [День 19: Композиция MCP-инструментов](day-19-mcp-tool-composition-kotlin/README.md)
 - [День 20: Orchestration MCP](day-20-mcp-orchestration-kotlin/README.md)
 - [День 21: Индексация документов](day-21-document-indexing-kotlin/README.md)
+- [День 22: Первый RAG-запрос](day-22-first-rag-query-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -93,6 +95,7 @@ ai-course/
 | 19 | `day-19-mcp-tool-composition-kotlin` | agent вызывает MCP tools цепочкой search -> summarize -> save | `day-19-mcp-tool-composition-kotlin/scripts/run-pipeline.sh --args="fixture-demo"` |
 | 20 | `day-20-mcp-orchestration-kotlin` | agent оркестрирует tools с 4 MCP servers в длинном flow | `day-20-mcp-orchestration-kotlin/scripts/run-orchestration.sh --args="fixture-demo"` |
 | 21 | `day-21-document-indexing-kotlin` | documents -> chunks -> embeddings -> JSON index + comparison | `day-21-document-indexing-kotlin/scripts/run-indexer.sh --args="fixture-demo"` |
+| 22 | `day-22-first-rag-query-kotlin` | question -> retrieve chunks -> RAG prompt -> LLM, плюс no-RAG comparison | `day-22-first-rag-query-kotlin/scripts/run-rag.sh --args="fixture-demo"` |
 
 ## Запуск дня 1
 
@@ -421,6 +424,28 @@ day-21-document-indexing-kotlin/scripts/run-indexer.sh --args="search structured
 
 ```bash
 ./gradlew :day-21-document-indexing-kotlin:build
+```
+
+## Запуск дня 22
+
+Для первого RAG-запроса в offline fixture-режиме:
+
+```bash
+day-22-first-rag-query-kotlin/scripts/run-rag.sh --args="fixture-demo"
+day-22-first-rag-query-kotlin/scripts/run-rag.sh --args="eval-dry-run"
+```
+
+Для live-сравнения no-RAG vs RAG:
+
+```bash
+day-22-first-rag-query-kotlin/scripts/run-rag.sh --args="compare-demo"
+day-22-first-rag-query-kotlin/scripts/run-rag.sh --args="ask rag \"как запустить Day 21 offline demo?\""
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-22-first-rag-query-kotlin:build
 ```
 
 ## Правила безопасности
