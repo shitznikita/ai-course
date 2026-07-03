@@ -4,13 +4,13 @@
 
 ## Current Snapshot
 
-- Статус на `2026-07-03`: репозиторий содержит задания дней 1-22; день 22 добавляет первый RAG-запрос поверх локального индекса.
+- Статус на `2026-07-03`: репозиторий содержит задания дней 1-23; день 23 добавляет query rewrite, reranking и filtering поверх RAG.
 - Основной стек всех последних заданий: Kotlin CLI + Gradle + прямой REST через `java.net.http.HttpClient`.
 - Основной провайдер: Eliza API, OpenRouter-compatible endpoint `https://api.eliza.yandex.net/openrouter/v1/chat/completions`.
 - Основная модель для последних LLM-дней: `meta-llama/llama-3.3-70b-instruct`.
 - Реальный API-ключ хранится только в `.env` или переменных окружения. `.env`, `.certs/`, build outputs, history/summary/tmp-файлы не коммитятся.
 - Для продолжения после сжатия контекста сначала читать [AGENTS.md](AGENTS.md), затем [skills/course-continuity/SKILL.md](skills/course-continuity/SKILL.md).
-- Для проверки текущего состояния полезнее всего запускать день 22 в `fixture-demo`, потому что он офлайн показывает retrieval и RAG prompt без секретов.
+- Для проверки текущего состояния полезнее всего запускать день 23 в `fixture-demo`, потому что он офлайн показывает query rewrite, top-K до/после фильтра и RAG prompt без секретов.
 
 ## Структура
 
@@ -40,6 +40,7 @@ ai-course/
   day-20-mcp-orchestration-kotlin/ # День 20: orchestration нескольких MCP-серверов
   day-21-document-indexing-kotlin/ # День 21: индексация документов, embeddings, chunking
   day-22-first-rag-query-kotlin/ # День 22: первый RAG-запрос и сравнение с no-RAG
+  day-23-reranking-filtering-kotlin/ # День 23: RAG reranking, filtering, query rewrite
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -69,6 +70,7 @@ ai-course/
 - [День 20: Orchestration MCP](day-20-mcp-orchestration-kotlin/README.md)
 - [День 21: Индексация документов](day-21-document-indexing-kotlin/README.md)
 - [День 22: Первый RAG-запрос](day-22-first-rag-query-kotlin/README.md)
+- [День 23: Реранкинг и фильтрация](day-23-reranking-filtering-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -96,6 +98,7 @@ ai-course/
 | 20 | `day-20-mcp-orchestration-kotlin` | agent оркестрирует tools с 4 MCP servers в длинном flow | `day-20-mcp-orchestration-kotlin/scripts/run-orchestration.sh --args="fixture-demo"` |
 | 21 | `day-21-document-indexing-kotlin` | documents -> chunks -> embeddings -> JSON index + comparison | `day-21-document-indexing-kotlin/scripts/run-indexer.sh --args="fixture-demo"` |
 | 22 | `day-22-first-rag-query-kotlin` | question -> retrieve chunks -> RAG prompt -> LLM, плюс no-RAG comparison | `day-22-first-rag-query-kotlin/scripts/run-rag.sh --args="fixture-demo"` |
+| 23 | `day-23-reranking-filtering-kotlin` | query rewrite -> top-K before -> rerank/filter -> top-K after | `day-23-reranking-filtering-kotlin/scripts/run-rerank.sh --args="fixture-demo"` |
 
 ## Запуск дня 1
 
@@ -446,6 +449,28 @@ day-22-first-rag-query-kotlin/scripts/run-rag.sh --args="ask rag \"как зап
 
 ```bash
 ./gradlew :day-22-first-rag-query-kotlin:build
+```
+
+## Запуск дня 23
+
+Для RAG reranking/filtering в offline fixture-режиме:
+
+```bash
+day-23-reranking-filtering-kotlin/scripts/run-rerank.sh --args="fixture-demo"
+day-23-reranking-filtering-kotlin/scripts/run-rerank.sh --args="compare-dry-run"
+```
+
+Для live-сравнения baseline RAG vs reranked RAG:
+
+```bash
+day-23-reranking-filtering-kotlin/scripts/run-rerank.sh --args="compare-demo"
+day-23-reranking-filtering-kotlin/scripts/run-rerank.sh --args="ask reranked \"как запустить Day 21 offline demo?\""
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-23-reranking-filtering-kotlin:build
 ```
 
 ## Правила безопасности
