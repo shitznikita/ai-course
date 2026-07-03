@@ -4,13 +4,13 @@
 
 ## Current Snapshot
 
-- Статус на `2026-06-12`: на `main` есть завершенные задания дней 1-9, день 10 готовится отдельной веткой.
+- Статус на `2026-07-03`: репозиторий содержит задания дней 1-21; день 21 добавляет локальный pipeline индексации документов.
 - Основной стек всех последних заданий: Kotlin CLI + Gradle + прямой REST через `java.net.http.HttpClient`.
 - Основной провайдер: Eliza API, OpenRouter-compatible endpoint `https://api.eliza.yandex.net/openrouter/v1/chat/completions`.
-- Основная модель для дней 6-10: `meta-llama/llama-3.3-70b-instruct`.
+- Основная модель для последних LLM-дней: `meta-llama/llama-3.3-70b-instruct`.
 - Реальный API-ключ хранится только в `.env` или переменных окружения. `.env`, `.certs/`, build outputs, history/summary/tmp-файлы не коммитятся.
 - Для продолжения после сжатия контекста сначала читать [AGENTS.md](AGENTS.md), затем [skills/course-continuity/SKILL.md](skills/course-continuity/SKILL.md).
-- Для проверки текущего состояния полезнее всего запускать день 9 в режиме `multi`, потому что он показывает несколько тематик и финальную таблицу расходов.
+- Для проверки текущего состояния полезнее всего запускать день 21 в `fixture-demo`, потому что он офлайн строит оба индекса и comparison report.
 
 ## Структура
 
@@ -38,6 +38,7 @@ ai-course/
   day-18-telegram-course-scheduler-kotlin/ # День 18: scheduler поверх Telegram MCP
   day-19-mcp-tool-composition-kotlin/ # День 19: композиция MCP-инструментов
   day-20-mcp-orchestration-kotlin/ # День 20: orchestration нескольких MCP-серверов
+  day-21-document-indexing-kotlin/ # День 21: индексация документов, embeddings, chunking
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -65,6 +66,7 @@ ai-course/
 - [День 18: Telegram Course Scheduler MCP](day-18-telegram-course-scheduler-kotlin/README.md)
 - [День 19: Композиция MCP-инструментов](day-19-mcp-tool-composition-kotlin/README.md)
 - [День 20: Orchestration MCP](day-20-mcp-orchestration-kotlin/README.md)
+- [День 21: Индексация документов](day-21-document-indexing-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -90,6 +92,7 @@ ai-course/
 | 18 | `day-18-telegram-course-scheduler-kotlin` | scheduler-agent вызывает MCP tool, сохраняет Telegram day prompt | `day-18-telegram-course-scheduler-kotlin/scripts/run-scheduler.sh --args="fixture-demo"` |
 | 19 | `day-19-mcp-tool-composition-kotlin` | agent вызывает MCP tools цепочкой search -> summarize -> save | `day-19-mcp-tool-composition-kotlin/scripts/run-pipeline.sh --args="fixture-demo"` |
 | 20 | `day-20-mcp-orchestration-kotlin` | agent оркестрирует tools с 4 MCP servers в длинном flow | `day-20-mcp-orchestration-kotlin/scripts/run-orchestration.sh --args="fixture-demo"` |
+| 21 | `day-21-document-indexing-kotlin` | documents -> chunks -> embeddings -> JSON index + comparison | `day-21-document-indexing-kotlin/scripts/run-indexer.sh --args="fixture-demo"` |
 
 ## Запуск дня 1
 
@@ -403,6 +406,21 @@ day-20-mcp-orchestration-kotlin/scripts/run-orchestration.sh --args="raw-check"
 
 ```bash
 ./gradlew :day-20-mcp-orchestration-kotlin:build
+```
+
+## Запуск дня 21
+
+Для индексации документов в offline fixture-режиме:
+
+```bash
+day-21-document-indexing-kotlin/scripts/run-indexer.sh --args="fixture-demo"
+day-21-document-indexing-kotlin/scripts/run-indexer.sh --args="search structured \"как устроен MCP orchestration\""
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-21-document-indexing-kotlin:build
 ```
 
 ## Правила безопасности
