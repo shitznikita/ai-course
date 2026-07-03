@@ -54,3 +54,6 @@ day-22-first-rag-query-kotlin/*.tmp
 day-23-reranking-filtering-kotlin/index/
 day-23-reranking-filtering-kotlin/reports/
 day-23-reranking-filtering-kotlin/*.tmp
+day-24-citations-anti-hallucination-kotlin/index/
+day-24-citations-anti-hallucination-kotlin/reports/
+day-24-citations-anti-hallucination-kotlin/*.tmp
