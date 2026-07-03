@@ -4,13 +4,13 @@
 
 ## Current Snapshot
 
-- Статус на `2026-07-03`: репозиторий содержит задания дней 1-24; день 24 добавляет обязательные источники, цитаты и anti-hallucination gate для RAG.
+- Статус на `2026-07-03`: репозиторий содержит задания дней 1-25; день 25 добавляет production-like мини-чат с RAG, источниками, persisted history и task state.
 - Основной стек всех последних заданий: Kotlin CLI + Gradle + прямой REST через `java.net.http.HttpClient`.
 - Основной провайдер: Eliza API, OpenRouter-compatible endpoint `https://api.eliza.yandex.net/openrouter/v1/chat/completions`.
 - Основная модель для последних LLM-дней: `meta-llama/llama-3.3-70b-instruct`.
 - Реальный API-ключ хранится только в `.env` или переменных окружения. `.env`, `.certs/`, build outputs, history/summary/tmp-файлы не коммитятся.
 - Для продолжения после сжатия контекста сначала читать [AGENTS.md](AGENTS.md), затем [skills/course-continuity/SKILL.md](skills/course-continuity/SKILL.md).
-- Для проверки текущего состояния полезнее всего запускать день 24 в `fixture-demo`, потому что он офлайн показывает sources, quotes, validation и режим `не знаю` без секретов.
+- Для проверки текущего состояния полезнее всего запускать день 25 в `fixture-demo`, потому что он офлайн показывает chat history, task state, RAG, sources и quotes без секретов.
 
 ## Структура
 
@@ -42,6 +42,7 @@ ai-course/
   day-22-first-rag-query-kotlin/ # День 22: первый RAG-запрос и сравнение с no-RAG
   day-23-reranking-filtering-kotlin/ # День 23: RAG reranking, filtering, query rewrite
   day-24-citations-anti-hallucination-kotlin/ # День 24: citations, sources, anti-hallucination
+  day-25-rag-memory-chat-kotlin/ # День 25: mini-chat with RAG, sources, task memory
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -73,6 +74,7 @@ ai-course/
 - [День 22: Первый RAG-запрос](day-22-first-rag-query-kotlin/README.md)
 - [День 23: Реранкинг и фильтрация](day-23-reranking-filtering-kotlin/README.md)
 - [День 24: Цитаты, источники и анти-галлюцинации](day-24-citations-anti-hallucination-kotlin/README.md)
+- [День 25: Мини-чат с RAG + памятью задачи](day-25-rag-memory-chat-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -102,6 +104,7 @@ ai-course/
 | 22 | `day-22-first-rag-query-kotlin` | question -> retrieve chunks -> RAG prompt -> LLM, плюс no-RAG comparison | `day-22-first-rag-query-kotlin/scripts/run-rag.sh --args="fixture-demo"` |
 | 23 | `day-23-reranking-filtering-kotlin` | query rewrite -> top-K before -> rerank/filter -> top-K after | `day-23-reranking-filtering-kotlin/scripts/run-rerank.sh --args="fixture-demo"` |
 | 24 | `day-24-citations-anti-hallucination-kotlin` | grounded RAG answer -> sources -> quotes -> validation / unknown gate | `day-24-citations-anti-hallucination-kotlin/scripts/run-citations.sh --args="fixture-demo"` |
+| 25 | `day-25-rag-memory-chat-kotlin` | persisted mini-chat -> task state -> RAG every turn -> sources/quotes | `day-25-rag-memory-chat-kotlin/scripts/run-chat.sh --args="fixture-demo"` |
 
 ## Запуск дня 1
 
@@ -496,6 +499,28 @@ day-24-citations-anti-hallucination-kotlin/scripts/run-citations.sh --args="ask 
 
 ```bash
 ./gradlew :day-24-citations-anti-hallucination-kotlin:build
+```
+
+## Запуск дня 25
+
+Для RAG mini-chat с task memory в offline fixture-режиме:
+
+```bash
+day-25-rag-memory-chat-kotlin/scripts/run-chat.sh --args="fixture-demo"
+day-25-rag-memory-chat-kotlin/scripts/run-chat.sh --args="scenario-dry-run"
+```
+
+Для одного turn без live LLM или live chat:
+
+```bash
+day-25-rag-memory-chat-kotlin/scripts/run-chat.sh --args="ask-dry-run \"как запустить Day 21 offline demo?\""
+day-25-rag-memory-chat-kotlin/scripts/run-chat.sh --args="chat"
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-25-rag-memory-chat-kotlin:build
 ```
 
 ## Правила безопасности
