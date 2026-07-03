@@ -51,3 +51,6 @@ day-21-document-indexing-kotlin/*.tmp
 day-22-first-rag-query-kotlin/index/
 day-22-first-rag-query-kotlin/reports/
 day-22-first-rag-query-kotlin/*.tmp
+day-23-reranking-filtering-kotlin/index/
+day-23-reranking-filtering-kotlin/reports/
+day-23-reranking-filtering-kotlin/*.tmp
