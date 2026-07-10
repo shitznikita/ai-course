@@ -4,7 +4,7 @@
 
 ## Current Snapshot
 
-- Статус на `2026-07-10`: репозиторий содержит задания дней 1-27; день 26 запускает локальную Qwen3 14B через Ollama, а день 27 интегрирует её в loopback веб-анализатор заметок.
+- Статус на `2026-07-10`: репозиторий содержит задания дней 1-28; день 26 запускает локальную Qwen3 14B через Ollama, день 27 интегрирует её в loopback веб-анализатор заметок, а день 28 строит полностью локальный RAG поверх Day 21 index и сравнивает генерацию с облаком.
 - Основной стек всех последних заданий: Kotlin CLI + Gradle + прямой REST через `java.net.http.HttpClient`.
 - Основной провайдер: Eliza API, OpenRouter-compatible endpoint `https://api.eliza.yandex.net/openrouter/v1/chat/completions`.
 - Основная модель для последних LLM-дней: `meta-llama/llama-3.3-70b-instruct`.
@@ -13,6 +13,7 @@
 - Для проверки текущего состояния полезнее всего запускать день 25 в `fixture-demo`, потому что он офлайн показывает chat history, task state, RAG, sources и quotes без секретов.
 - День 26 не использует Eliza: он обращается только к loopback Ollama API `http://127.0.0.1:11434` и требует один раз скачать локальную модель.
 - День 27 принимает `.txt`/`.md` заметку через браузер, держит её только в памяти и показывает локальный структурированный анализ через Ollama.
+- День 28 использует локальные `nomic-embed-text` и `qwen3:14b`: Day 21 structured index → cosine retrieval → grounded ответ с sources/quotes; cloud нужен только для осознанного сравнения на том же контексте.
 
 ## Структура
 
@@ -47,6 +48,7 @@ ai-course/
   day-25-rag-memory-chat-kotlin/ # День 25: mini-chat with RAG, sources, task memory
   day-26-local-llm-kotlin/       # День 26: локальная LLM через Ollama
   day-27-local-notes-web-kotlin/ # День 27: локальный веб-анализатор заметок
+  day-28-local-rag-kotlin/       # День 28: local RAG + cloud comparison
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -81,6 +83,7 @@ ai-course/
 - [День 25: Мини-чат с RAG + памятью задачи](day-25-rag-memory-chat-kotlin/README.md)
 - [День 26: Запуск локальной LLM](day-26-local-llm-kotlin/README.md)
 - [День 27: Веб-анализатор заметок с локальной LLM](day-27-local-notes-web-kotlin/README.md)
+- [День 28: Локальная LLM + RAG](day-28-local-rag-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -113,6 +116,7 @@ ai-course/
 | 25 | `day-25-rag-memory-chat-kotlin` | persisted mini-chat -> task state -> RAG every turn -> sources/quotes | `day-25-rag-memory-chat-kotlin/scripts/run-chat.sh --args="fixture-demo"` |
 | 26 | `day-26-local-llm-kotlin` | Ollama + Qwen3 14B локально, CLI и 3 HTTP-запроса | `day-26-local-llm-kotlin/scripts/run-local-llm.sh` |
 | 27 | `day-27-local-notes-web-kotlin` | `.txt`/`.md` upload -> local Ollama -> structured web report | `day-27-local-notes-web-kotlin/scripts/run-notes-web.sh` |
+| 28 | `day-28-local-rag-kotlin` | Day 21 index -> local embeddings/retrieval -> Qwen3 grounded RAG, optional cloud compare | `day-28-local-rag-kotlin/scripts/run-local-rag.sh --args="diagnose"` |
 
 ## Запуск дня 1
 
@@ -569,6 +573,31 @@ day-27-local-notes-web-kotlin/scripts/run-notes-web.sh
 
 ```bash
 ./gradlew :day-27-local-notes-web-kotlin:build
+```
+
+## Запуск дня 28
+
+День 28 требует локальные `qwen3:14b`, `nomic-embed-text` и настоящий Ollama structured index Дня 21. Сначала проверьте готовность:
+
+```bash
+ollama pull qwen3:14b
+ollama pull nomic-embed-text
+day-28-local-rag-kotlin/scripts/run-local-rag.sh --args="diagnose"
+```
+
+Один полностью локальный RAG-вопрос:
+
+```bash
+day-28-local-rag-kotlin/scripts/run-local-rag.sh \
+  --args='local "Как запустить Day 21 offline indexing demo?"'
+```
+
+`compare` и default `benchmark` дополнительно используют локальный Day 1 OAuth config и передают retrieved course chunks в configured cloud endpoint. Полная инструкция, команды пересборки index, privacy warning и video scenario — в [README дня 28](day-28-local-rag-kotlin/README.md).
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-28-local-rag-kotlin:build
 ```
 
 ## Правила безопасности

@@ -1,0 +1,43 @@
+{
+  "generatedAtIso": "2026-07-03T20:58:37Z",
+  "strategy": "structured",
+  "embeddingBackend": "ollama",
+  "embeddingModel": "nomic-embed-text",
+  "sourceDocumentCount": 1,
+  "chunkCount": 2,
+  "embeddingDimensions": 2,
+  "config": {
+    "documentsDir": "/tmp/ai-course",
+    "fixedChunkTokens": 200,
+    "fixedChunkOverlap": 40,
+    "structuredMaxTokens": 300
+  },
+  "chunks": [
+    {
+      "metadata": {
+        "source": "day-21-document-indexing-kotlin/README.md",
+        "title": "Day 21",
+        "section": "Run",
+        "chunkId": "structured-a",
+        "strategy": "structured",
+        "ordinal": 1,
+        "approxTokens": 12
+      },
+      "text": "Run fixture-demo with the Day 21 run-indexer script.",
+      "embedding": [1.0, 0.0]
+    },
+    {
+      "metadata": {
+        "source": "day-21-document-indexing-kotlin/README.md",
+        "title": "Day 21",
+        "section": "Metadata",
+        "chunkId": "structured-b",
+        "strategy": "structured",
+        "ordinal": 2,
+        "approxTokens": 12
+      },
+      "text": "Each chunk stores source, title, section and chunk_id metadata.",
+      "embedding": [0.0, 1.0]
+    }
+  ]
+}
