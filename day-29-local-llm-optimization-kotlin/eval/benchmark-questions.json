@@ -1,0 +1,37 @@
+[
+  {
+    "id": "q02",
+    "question": "Как запустить Day 21 offline indexing demo?",
+    "expectedAnswerPoints": [
+      "day-21-document-indexing-kotlin/scripts/run-indexer.sh --args=\"fixture-demo\""
+    ],
+    "expectedSources": [
+      "day-21-document-indexing-kotlin/README.md"
+    ]
+  },
+  {
+    "id": "q03",
+    "question": "Какие поля metadata — source, title, section и chunk_id — хранит каждый chunk в Day 21?",
+    "expectedAnswerPoints": [
+      "source",
+      "title",
+      "section",
+      "chunk_id"
+    ],
+    "expectedSources": [
+      "day-21-document-indexing-kotlin/README.md",
+      "day-21-document-indexing-kotlin/src/main/kotlin/Models.kt"
+    ]
+  },
+  {
+    "id": "q04",
+    "question": "В Day 21 fixed chunking использует FIXED_CHUNK_TOKENS и overlap, а structured chunking — Markdown headings, code declarations и paragraphs. Чем они отличаются?",
+    "expectedAnswerPoints": [
+      "fixed режет окнами по токенам",
+      "structured режет по заголовкам, объявлениям или абзацам"
+    ],
+    "expectedSources": [
+      "day-21-document-indexing-kotlin/README.md"
+    ]
+  }
+]
