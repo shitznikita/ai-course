@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Локальный анализатор заметок</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="hero">
+        <p class="eyebrow">День 27 · Ollama + Qwen3</p>
+        <h1>Локальный анализатор заметок</h1>
+        <p class="lead">
+          Загрузите одну UTF-8 заметку <code>.txt</code> или <code>.md</code>.
+          Она будет проанализирована локальной моделью, без облачного API.
+        </p>
+        <p id="health" class="health" role="status" aria-live="polite">Проверяем локальный Ollama…</p>
+      </header>
+
+      <section class="panel upload-panel" aria-labelledby="upload-title">
+        <h2 id="upload-title">Загрузить заметку</h2>
+        <form id="analyze-form" novalidate>
+          <label class="file-picker" for="note-file">
+            <span class="file-picker-title">Выбрать файл</span>
+            <span class="file-picker-subtitle">Поддерживаются .txt и .md</span>
+            <input id="note-file" name="note" type="file" accept=".txt,.md,text/plain,text/markdown" required>
+          </label>
+          <p id="selected-file" class="selected-file" aria-live="polite">Файл ещё не выбран</p>
+          <button id="analyze-button" type="submit">Проанализировать локально</button>
+        </form>
+        <p class="limits">До 1 MiB и 24 000 символов. Заметка и отчёт не сохраняются на диск.</p>
+      </section>
+
+      <section id="error-panel" class="panel error-panel" hidden aria-live="assertive">
+        <h2>Не удалось выполнить анализ</h2>
+        <p id="error-message"></p>
+        <p id="error-hint" class="hint"></p>
+      </section>
+
+      <section id="result-panel" class="result" hidden aria-live="polite">
+        <div class="result-heading">
+          <div>
+            <p class="eyebrow">Готово</p>
+            <h2>Структурированный отчёт</h2>
+          </div>
+          <p id="source-meta" class="source-meta"></p>
+        </div>
+
+        <article class="panel summary-card">
+          <h3>Краткое резюме</h3>
+          <p id="summary"></p>
+        </article>
+
+        <div class="report-grid">
+          <article class="panel">
+            <h3>Решения</h3>
+            <ul id="decisions" class="report-list"></ul>
+          </article>
+          <article class="panel">
+            <h3>Задачи</h3>
+            <ul id="action-items" class="report-list"></ul>
+          </article>
+          <article class="panel">
+            <h3>Риски</h3>
+            <ul id="risks" class="report-list"></ul>
+          </article>
+          <article class="panel">
+            <h3>Открытые вопросы</h3>
+            <ul id="open-questions" class="report-list"></ul>
+          </article>
+        </div>
+
+        <p id="model-meta" class="model-meta"></p>
+      </section>
+    </main>
+  </body>
+</html>

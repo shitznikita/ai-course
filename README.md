@@ -4,7 +4,7 @@
 
 ## Current Snapshot
 
-- Статус на `2026-07-10`: репозиторий содержит задания дней 1-26; день 26 запускает локальную Qwen3 14B через Ollama и проверяет CLI + HTTP API на трёх запросах.
+- Статус на `2026-07-10`: репозиторий содержит задания дней 1-27; день 26 запускает локальную Qwen3 14B через Ollama, а день 27 интегрирует её в loopback веб-анализатор заметок.
 - Основной стек всех последних заданий: Kotlin CLI + Gradle + прямой REST через `java.net.http.HttpClient`.
 - Основной провайдер: Eliza API, OpenRouter-compatible endpoint `https://api.eliza.yandex.net/openrouter/v1/chat/completions`.
 - Основная модель для последних LLM-дней: `meta-llama/llama-3.3-70b-instruct`.
@@ -12,6 +12,7 @@
 - Для продолжения после сжатия контекста сначала читать [AGENTS.md](AGENTS.md), затем [skills/course-continuity/SKILL.md](skills/course-continuity/SKILL.md).
 - Для проверки текущего состояния полезнее всего запускать день 25 в `fixture-demo`, потому что он офлайн показывает chat history, task state, RAG, sources и quotes без секретов.
 - День 26 не использует Eliza: он обращается только к loopback Ollama API `http://127.0.0.1:11434` и требует один раз скачать локальную модель.
+- День 27 принимает `.txt`/`.md` заметку через браузер, держит её только в памяти и показывает локальный структурированный анализ через Ollama.
 
 ## Структура
 
@@ -45,6 +46,7 @@ ai-course/
   day-24-citations-anti-hallucination-kotlin/ # День 24: citations, sources, anti-hallucination
   day-25-rag-memory-chat-kotlin/ # День 25: mini-chat with RAG, sources, task memory
   day-26-local-llm-kotlin/       # День 26: локальная LLM через Ollama
+  day-27-local-notes-web-kotlin/ # День 27: локальный веб-анализатор заметок
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -78,6 +80,7 @@ ai-course/
 - [День 24: Цитаты, источники и анти-галлюцинации](day-24-citations-anti-hallucination-kotlin/README.md)
 - [День 25: Мини-чат с RAG + памятью задачи](day-25-rag-memory-chat-kotlin/README.md)
 - [День 26: Запуск локальной LLM](day-26-local-llm-kotlin/README.md)
+- [День 27: Веб-анализатор заметок с локальной LLM](day-27-local-notes-web-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -109,6 +112,7 @@ ai-course/
 | 24 | `day-24-citations-anti-hallucination-kotlin` | grounded RAG answer -> sources -> quotes -> validation / unknown gate | `day-24-citations-anti-hallucination-kotlin/scripts/run-citations.sh --args="fixture-demo"` |
 | 25 | `day-25-rag-memory-chat-kotlin` | persisted mini-chat -> task state -> RAG every turn -> sources/quotes | `day-25-rag-memory-chat-kotlin/scripts/run-chat.sh --args="fixture-demo"` |
 | 26 | `day-26-local-llm-kotlin` | Ollama + Qwen3 14B локально, CLI и 3 HTTP-запроса | `day-26-local-llm-kotlin/scripts/run-local-llm.sh` |
+| 27 | `day-27-local-notes-web-kotlin` | `.txt`/`.md` upload -> local Ollama -> structured web report | `day-27-local-notes-web-kotlin/scripts/run-notes-web.sh` |
 
 ## Запуск дня 1
 
@@ -548,6 +552,23 @@ day-26-local-llm-kotlin/scripts/run-local-llm.sh
 
 ```bash
 ./gradlew :day-26-local-llm-kotlin:build
+```
+
+## Запуск дня 27
+
+После установки модели из дня 26 проверьте Ollama и запустите локальное веб-приложение:
+
+```bash
+day-27-local-notes-web-kotlin/scripts/run-notes-web.sh --args="diagnose"
+day-27-local-notes-web-kotlin/scripts/run-notes-web.sh
+```
+
+Откройте `http://127.0.0.1:8787`, загрузите `.txt` или `.md` заметку и получите структурированный отчёт. Полная инструкция, curl API и video scenario — в [README дня 27](day-27-local-notes-web-kotlin/README.md).
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-27-local-notes-web-kotlin:build
 ```
 
 ## Правила безопасности
