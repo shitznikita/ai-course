@@ -4,13 +4,14 @@
 
 ## Current Snapshot
 
-- Статус на `2026-07-03`: репозиторий содержит задания дней 1-25; день 25 добавляет production-like мини-чат с RAG, источниками, persisted history и task state.
+- Статус на `2026-07-10`: репозиторий содержит задания дней 1-26; день 26 запускает локальную Qwen3 14B через Ollama и проверяет CLI + HTTP API на трёх запросах.
 - Основной стек всех последних заданий: Kotlin CLI + Gradle + прямой REST через `java.net.http.HttpClient`.
 - Основной провайдер: Eliza API, OpenRouter-compatible endpoint `https://api.eliza.yandex.net/openrouter/v1/chat/completions`.
 - Основная модель для последних LLM-дней: `meta-llama/llama-3.3-70b-instruct`.
 - Реальный API-ключ хранится только в `.env` или переменных окружения. `.env`, `.certs/`, build outputs, history/summary/tmp-файлы не коммитятся.
 - Для продолжения после сжатия контекста сначала читать [AGENTS.md](AGENTS.md), затем [skills/course-continuity/SKILL.md](skills/course-continuity/SKILL.md).
 - Для проверки текущего состояния полезнее всего запускать день 25 в `fixture-demo`, потому что он офлайн показывает chat history, task state, RAG, sources и quotes без секретов.
+- День 26 не использует Eliza: он обращается только к loopback Ollama API `http://127.0.0.1:11434` и требует один раз скачать локальную модель.
 
 ## Структура
 
@@ -43,6 +44,7 @@ ai-course/
   day-23-reranking-filtering-kotlin/ # День 23: RAG reranking, filtering, query rewrite
   day-24-citations-anti-hallucination-kotlin/ # День 24: citations, sources, anti-hallucination
   day-25-rag-memory-chat-kotlin/ # День 25: mini-chat with RAG, sources, task memory
+  day-26-local-llm-kotlin/       # День 26: локальная LLM через Ollama
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -75,6 +77,7 @@ ai-course/
 - [День 23: Реранкинг и фильтрация](day-23-reranking-filtering-kotlin/README.md)
 - [День 24: Цитаты, источники и анти-галлюцинации](day-24-citations-anti-hallucination-kotlin/README.md)
 - [День 25: Мини-чат с RAG + памятью задачи](day-25-rag-memory-chat-kotlin/README.md)
+- [День 26: Запуск локальной LLM](day-26-local-llm-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -105,6 +108,7 @@ ai-course/
 | 23 | `day-23-reranking-filtering-kotlin` | query rewrite -> top-K before -> rerank/filter -> top-K after | `day-23-reranking-filtering-kotlin/scripts/run-rerank.sh --args="fixture-demo"` |
 | 24 | `day-24-citations-anti-hallucination-kotlin` | grounded RAG answer -> sources -> quotes -> validation / unknown gate | `day-24-citations-anti-hallucination-kotlin/scripts/run-citations.sh --args="fixture-demo"` |
 | 25 | `day-25-rag-memory-chat-kotlin` | persisted mini-chat -> task state -> RAG every turn -> sources/quotes | `day-25-rag-memory-chat-kotlin/scripts/run-chat.sh --args="fixture-demo"` |
+| 26 | `day-26-local-llm-kotlin` | Ollama + Qwen3 14B локально, CLI и 3 HTTP-запроса | `day-26-local-llm-kotlin/scripts/run-local-llm.sh` |
 
 ## Запуск дня 1
 
@@ -521,6 +525,29 @@ day-25-rag-memory-chat-kotlin/scripts/run-chat.sh --args="chat"
 
 ```bash
 ./gradlew :day-25-rag-memory-chat-kotlin:build
+```
+
+## Запуск дня 26
+
+Сначала запустите Ollama и один раз скачайте локальную модель:
+
+```bash
+ollama serve
+ollama pull qwen3:14b
+ollama run qwen3:14b "Ответь одним предложением: что такое локальная LLM?"
+```
+
+Затем проверьте loopback API и три запроса из Kotlin CLI:
+
+```bash
+day-26-local-llm-kotlin/scripts/run-local-llm.sh --args="diagnose"
+day-26-local-llm-kotlin/scripts/run-local-llm.sh
+```
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-26-local-llm-kotlin:build
 ```
 
 ## Правила безопасности
