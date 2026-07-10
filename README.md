@@ -49,6 +49,7 @@ ai-course/
   day-26-local-llm-kotlin/       # День 26: локальная LLM через Ollama
   day-27-local-notes-web-kotlin/ # День 27: локальный веб-анализатор заметок
   day-28-local-rag-kotlin/       # День 28: local RAG + cloud comparison
+  day-29-local-llm-optimization-kotlin/ # День 29: оптимизация local RAG на Qwen3
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -84,6 +85,7 @@ ai-course/
 - [День 26: Запуск локальной LLM](day-26-local-llm-kotlin/README.md)
 - [День 27: Веб-анализатор заметок с локальной LLM](day-27-local-notes-web-kotlin/README.md)
 - [День 28: Локальная LLM + RAG](day-28-local-rag-kotlin/README.md)
+- [День 29: Оптимизация локальной LLM](day-29-local-llm-optimization-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -117,6 +119,7 @@ ai-course/
 | 26 | `day-26-local-llm-kotlin` | Ollama + Qwen3 14B локально, CLI и 3 HTTP-запроса | `day-26-local-llm-kotlin/scripts/run-local-llm.sh` |
 | 27 | `day-27-local-notes-web-kotlin` | `.txt`/`.md` upload -> local Ollama -> structured web report | `day-27-local-notes-web-kotlin/scripts/run-notes-web.sh` |
 | 28 | `day-28-local-rag-kotlin` | Day 21 index -> local embeddings/retrieval -> Qwen3 grounded RAG, optional cloud compare | `day-28-local-rag-kotlin/scripts/run-local-rag.sh --args="diagnose"` |
+| 29 | `day-29-local-llm-optimization-kotlin` | baseline Q4 -> optimized Q4 -> Q8 на одинаковом local RAG context | `day-29-local-llm-optimization-kotlin/scripts/run-optimization.sh --args="diagnose"` |
 
 ## Запуск дня 1
 
@@ -598,6 +601,33 @@ day-28-local-rag-kotlin/scripts/run-local-rag.sh \
 
 ```bash
 ./gradlew :day-28-local-rag-kotlin:build
+```
+
+## Запуск дня 29
+
+День 29 сравнивает baseline Q4, оптимизированный Q4 и Q8-вариант `qwen3:14b` на одинаковом локальном RAG-контексте Дня 21. Подготовьте модели и проверьте зависимости:
+
+```bash
+ollama pull qwen3:14b
+ollama pull qwen3:14b-q8_0
+ollama pull nomic-embed-text
+day-29-local-llm-optimization-kotlin/scripts/run-optimization.sh --args="diagnose"
+```
+
+Один профиль и полный benchmark:
+
+```bash
+day-29-local-llm-optimization-kotlin/scripts/run-optimization.sh \
+  --args='profile optimized-q4 "Как запустить Day 21 offline indexing demo?"'
+day-29-local-llm-optimization-kotlin/scripts/run-optimization.sh
+```
+
+Команда по умолчанию выполняет 3 вопроса × 3 профиля × 3 повтора и сохраняет локальный отчёт в ignored `reports/`. Полные setup, метрики и video scenario — в [README дня 29](day-29-local-llm-optimization-kotlin/README.md).
+
+Обычная Gradle-команда для сборки:
+
+```bash
+./gradlew :day-29-local-llm-optimization-kotlin:build
 ```
 
 ## Правила безопасности
