@@ -1,0 +1,26 @@
+# Optional public HTTPS entry point. Replace the hostname only after its A/AAAA
+# records point to this VPS. Keep the application and Ollama on loopback.
+cosmetics.example.com {
+	encode zstd gzip
+
+	request_body {
+		max_size 6MB
+	}
+
+	reverse_proxy 127.0.0.1:8787 {
+		# Cheap process liveness only; dependency readiness is cached at /api/health.
+		health_uri /api/health/live
+		health_interval 30s
+		health_timeout 5s
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+
+	# Access logging is intentionally omitted so product names and session paths
+	# are not persisted. Application logs must not contain request bodies or tokens.
+}
