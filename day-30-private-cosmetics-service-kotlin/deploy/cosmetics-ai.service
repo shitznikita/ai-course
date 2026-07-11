@@ -1,0 +1,49 @@
+[Unit]
+Description=Day 30 private cosmetics AI service
+Documentation=https://github.com/shitznikita/ai-course
+Wants=network-online.target ollama.service
+After=network-online.target ollama.service
+
+[Service]
+Type=simple
+User=cosmetics-ai
+Group=cosmetics-ai
+WorkingDirectory=/opt/cosmetics-ai/current
+EnvironmentFile=/etc/cosmetics-ai/cosmetics-ai.env
+Environment=APP_ALLOW_INSECURE_NO_AUTH=false
+ExecStart=/opt/cosmetics-ai/current/bin/day-30-private-cosmetics-service-kotlin serve
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=60s
+TimeoutStopSec=30s
+KillSignal=SIGTERM
+SuccessExitStatus=143
+
+# The service only needs its packaged files, a private /tmp for OCR, and loopback HTTP.
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+RemoveIPC=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+AmbientCapabilities=
+LockPersonality=true
+IPAddressDeny=any
+IPAddressAllow=localhost
+UMask=0077
+LimitNOFILE=16384
+
+[Install]
+WantedBy=multi-user.target

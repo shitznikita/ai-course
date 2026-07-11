@@ -6,11 +6,11 @@ For durable course memory after context compaction, read `skills/course-continui
 
 ## Current Snapshot For New Agents
 
-- Current date of this snapshot: 2026-06-12.
-- `main` contains completed course days 1-9; Day 10 is developed as a separate PR.
+- Current date of this snapshot: 2026-07-11.
+- `main` contains completed course days 1-29; Day 30 is developed as a separate PR.
 - Preferred stack remains Kotlin CLI with direct REST calls through `java.net.http.HttpClient`.
 - Preferred provider remains Eliza API with OAuth token from `.env`/environment variables.
-- Recent default endpoint/model for agent tasks:
+- Cloud assignments still use the Eliza/OpenRouter endpoint when required:
 
 ```text
 LLM_API_URL=https://api.eliza.yandex.net/openrouter/v1/chat/completions
@@ -18,11 +18,13 @@ LLM_MODEL=meta-llama/llama-3.3-70b-instruct
 ```
 
 - Do not use high-level LLM SDKs or ready-made agents as a replacement for the required REST request.
-- Day 10 uses a cleaner multi-file Kotlin layout for new work. The best Day 10 smoke test is:
+- Days 26-30 use local Ollama through a loopback-only HTTP API. Day 30 targets a CPU VPS with `qwen3:4b`, Tesseract OCR, strict JSON, a `<50%` coverage gate before LLM, claim-level source IDs, deterministic allergy/regulatory checks and bounded chat; Caddy may expose only the Ktor UI/API over HTTPS behind a persistent browser-stored access token.
+- The best Day 30 offline smoke tests are:
 
 ```bash
-./gradlew :day-10-context-strategies-kotlin:build
-day-10-context-strategies-kotlin/scripts/run-eliza.sh
+./gradlew :day-30-private-cosmetics-service-kotlin:test
+day-30-private-cosmetics-service-kotlin/scripts/run-local.sh fixture-demo
+day-30-private-cosmetics-service-kotlin/scripts/run-local.sh eval-dry-run
 ```
 
 ## Repository Layout
@@ -37,6 +39,8 @@ day-10-context-strategies-kotlin/scripts/run-eliza.sh
 - `day-08-token-accounting-kotlin/`: Day 8 token accounting and context overflow demos.
 - `day-09-history-compression-kotlin/`: Day 9 history compression with summary and multi-scenario comparison.
 - `day-10-context-strategies-kotlin/`: Day 10 context strategies without summary: sliding, facts, branching.
+- `day-26-local-llm-kotlin/` through `day-29-local-llm-optimization-kotlin/`: local Ollama, local web/RAG and optimization assignments.
+- `day-30-private-cosmetics-service-kotlin/`: private VPS web/API with OCR, local evidence retrieval, grounded report and chat.
 - Add future assignments as `day-11-...`, `day-12-...`, and so on.
 - Keep Gradle Wrapper files at the repository root.
 
@@ -62,6 +66,9 @@ day-10-context-strategies-kotlin/scripts/run-eliza.sh
   - `day-09-history-compression-kotlin/*.tmp`
   - `day-10-context-strategies-kotlin/context-state.json`
   - `day-10-context-strategies-kotlin/*.tmp`
+  - `day-30-private-cosmetics-service-kotlin/reports/`
+  - `day-30-private-cosmetics-service-kotlin/runtime/`
+  - `day-30-private-cosmetics-service-kotlin/*.tmp`
 
 ## Assignment Quality Bar
 
@@ -144,4 +151,13 @@ day-09-history-compression-kotlin/scripts/run-eliza.sh --args="multi"
 ```bash
 ./gradlew :day-10-context-strategies-kotlin:build
 day-10-context-strategies-kotlin/scripts/run-eliza.sh
+```
+
+- For Day 30:
+
+```bash
+./gradlew :day-30-private-cosmetics-service-kotlin:test
+./gradlew :day-30-private-cosmetics-service-kotlin:build
+day-30-private-cosmetics-service-kotlin/scripts/run-local.sh fixture-demo
+day-30-private-cosmetics-service-kotlin/scripts/run-local.sh eval-dry-run
 ```
