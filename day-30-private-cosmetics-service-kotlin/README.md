@@ -189,7 +189,7 @@ curl http://127.0.0.1:8787/api/chat \
 
 ## VPS Ubuntu 24.04
 
-Deployment не использует Docker и экономит RAM. На чистом VDS обычно существует только `root`, поэтому bootstrap явно создаёт отдельного key-only пользователя `deploy`, копирует уже установленный root SSH public key и даёт ему passwordless sudo. Root login скрипт не отключает: это можно сделать отдельно только после проверки второго входа.
+Deployment не использует Docker и экономит RAM. На чистом VDS обычно существует только `root`, поэтому bootstrap явно создаёт отдельного key-only пользователя `deploy`, копирует уже установленный root SSH public key и даёт ему passwordless sudo. Парольный SSH-вход отключается отдельно и только после проверки второго key-based входа, чтобы не заблокировать сервер.
 
 ```bash
 sudo ./scripts/setup-vps.sh \
@@ -216,6 +216,20 @@ sudo chmod 0600 /etc/cosmetics-ai/cosmetics-ai.env
 ./scripts/deploy-vps.sh --pull-model
 ./scripts/diagnose.sh
 ```
+
+Когда `ssh deploy@SERVER_IP` уже проверен в отдельном терминале, можно оставить
+root только как аварийный key-based вход и отключить SSH-пароли:
+
+```bash
+sudo install -o root -g root -m 0644 \
+  deploy/sshd-hardening.conf \
+  /etc/ssh/sshd_config.d/00-cosmetics-ai-hardening.conf
+sudo sshd -t
+sudo systemctl reload ssh
+```
+
+Конфиг сохраняет только локальный `-L` forwarding, нужный для приватного web UI.
+После reload нужно снова проверить входы `deploy` и `root` по ключу в новых SSH-сессиях.
 
 Systemd assets:
 
