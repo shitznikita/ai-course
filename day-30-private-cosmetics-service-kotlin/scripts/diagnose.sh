@@ -89,7 +89,7 @@ if command -v ss >/dev/null 2>&1; then
     [[ -n "$address" ]] || continue
     ollama_listener_count=$((ollama_listener_count + 1))
     case "$address" in
-      127.0.0.1:11434|\[::1\]:11434)
+      127.0.0.1:11434|\[::1\]:11434|\[::ffff:127.0.0.1\]:11434)
         pass "Ollama listener is private ($address)"
         ;;
       *)
@@ -104,7 +104,7 @@ if command -v ss >/dev/null 2>&1; then
   while IFS= read -r address; do
     [[ -n "$address" ]] || continue
     case "$address" in
-      127.0.0.1:8787|\[::1\]:8787)
+      127.0.0.1:8787|\[::1\]:8787|\[::ffff:127.0.0.1\]:8787)
         pass "Application listener is private ($address)"
         ;;
       *)
