@@ -69,6 +69,7 @@ class KnowledgeAndServiceTest {
         assertEquals(26, analysis.input.recognizedIngredientCount)
         assertEquals(12, analysis.input.evidenceIngredientCount)
         assertTrue(analysis.report.keyIngredients.isNotEmpty())
+        assertTrue(analysis.report.keyIngredients.map { it.ingredientId }.containsAll(listOf("niacinamide", "tranexamic-acid", "arbutin")))
         assertEquals("после очищения", analysis.report.routine.step)
         val sessionId = assertNotNull(analysis.sessionId)
         assertEquals(1, gateway.chatCalls)

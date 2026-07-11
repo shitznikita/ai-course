@@ -303,14 +303,14 @@ class LocalCosmeticsService(
             coverageCeiling
         }
         val resolvedType = input.productTypeHint ?: return decision.copy(confidence = boundedConfidence)
-        val groundedIds = decision.keyIngredientIds.ifEmpty {
-            cards.asSequence()
-                .filterNot { it.id == "aqua" }
-                .map { it.id }
-                .take(6)
-                .toList()
-                .ifEmpty { cards.take(1).map { it.id } }
-        }
+        val priorityIds = cards.asSequence()
+            .map { it.id }
+            .filter(KEY_INGREDIENT_PRIORITIES::contains)
+            .take(3)
+            .toList()
+        val fallbackIds = cards.asSequence().filterNot { it.id == "aqua" }.map { it.id }.toList()
+            .ifEmpty { cards.take(1).map { it.id } }
+        val groundedIds = (priorityIds + decision.keyIngredientIds + fallbackIds).distinct().take(6)
         if (groundedIds.isEmpty()) return decision.copy(productType = resolvedType)
         return decision.copy(
             status = "answered",
@@ -491,6 +491,21 @@ class LocalCosmeticsService(
         "Модель вернула решение, которое не прошло серверную проверку allowlist и локальных фактов.",
         message,
     )
+
+    private companion object {
+        val KEY_INGREDIENT_PRIORITIES = setOf(
+            "niacinamide",
+            "tranexamic-acid",
+            "arbutin",
+            "retinol",
+            "ascorbic-acid",
+            "salicylic-acid",
+            "glycolic-acid",
+            "lactic-acid",
+            "zinc-oxide",
+            "titanium-dioxide",
+        )
+    }
 }
 
 fun InciParser.runCatchingInstruction(text: String): Boolean = runCatching { parse(text); false }
