@@ -74,7 +74,10 @@ for file in \
   [[ -f "$file" ]] || { echo "Missing deployment asset: $file" >&2; exit 1; }
 done
 
-sudo -v
+if ! sudo -n true; then
+  echo "Passwordless sudo is required for non-interactive deployment." >&2
+  exit 1
+fi
 
 if ! sudo test -f "$ENV_FILE"; then
   echo "Missing $ENV_FILE." >&2
