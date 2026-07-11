@@ -21,7 +21,7 @@ while [[ "$#" -gt 0 ]]; do
   case "$1" in
     --hostname)
       [[ "$#" -ge 2 ]] || { echo 'Missing value for --hostname.' >&2; exit 2; }
-      PUBLIC_HOSTNAME="${2,,}"
+      PUBLIC_HOSTNAME="$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')"
       shift 2
       ;;
     -h|--help)
