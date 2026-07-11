@@ -1,0 +1,102 @@
+{
+  "version": "1.0",
+  "updatedAt": "2026-07-11",
+  "sources": [
+    {
+      "id": "eu-cosing",
+      "title": "Cosmetic ingredient database (CosIng)",
+      "organization": "European Commission",
+      "type": "regulatory_database",
+      "url": "https://single-market-economy.ec.europa.eu/sectors/cosmetics/cosmetic-ingredient-database_en",
+      "notes": "Источник INCI-названий, заявленных функций и регуляторных ссылок. Наличие записи в CosIng само по себе не означает одобрение ингредиента или безопасность конкретного продукта."
+    },
+    {
+      "id": "eu-cosmetics-framework",
+      "title": "Cosmetics: product safety and legislation",
+      "organization": "European Commission",
+      "type": "regulatory_overview",
+      "url": "https://single-market-economy.ec.europa.eu/sectors/cosmetics_en",
+      "notes": "Обзор требований ЕС: безопасность оценивается для готового продукта, а ответственность несёт производитель."
+    },
+    {
+      "id": "fda-cosmetic-ingredients",
+      "title": "Cosmetic Ingredients",
+      "organization": "U.S. Food and Drug Administration",
+      "type": "regulatory_overview",
+      "url": "https://www.fda.gov/cosmetics/cosmetic-products-ingredients/cosmetic-ingredients",
+      "notes": "Обзор регулирования и подборка материалов FDA по ингредиентам косметики."
+    },
+    {
+      "id": "fda-aha",
+      "title": "Alpha Hydroxy Acids",
+      "organization": "U.S. Food and Drug Administration",
+      "type": "consumer_guidance",
+      "url": "https://www.fda.gov/cosmetics/cosmetic-ingredients/alpha-hydroxy-acids",
+      "notes": "Описывает применение AHA, зависимость эффекта от концентрации и pH, риск раздражения и возможное повышение чувствительности к солнцу."
+    },
+    {
+      "id": "fda-bha",
+      "title": "Beta Hydroxy Acids",
+      "organization": "U.S. Food and Drug Administration",
+      "type": "consumer_guidance",
+      "url": "https://www.fda.gov/cosmetics/cosmetic-ingredients/beta-hydroxy-acids",
+      "notes": "Обзор BHA в косметике, включая салициловую кислоту, и напоминание учитывать раздражение и инструкции готового продукта."
+    },
+    {
+      "id": "fda-allergens",
+      "title": "Allergens in Cosmetics",
+      "organization": "U.S. Food and Drug Administration",
+      "type": "consumer_guidance",
+      "url": "https://www.fda.gov/cosmetics/cosmetic-ingredients/allergens-cosmetics",
+      "notes": "Перечисляет распространённые классы косметических аллергенов и отдельные отдушечные аллергены, включая limonene и linalool."
+    },
+    {
+      "id": "fda-fragrances",
+      "title": "Fragrances in Cosmetics",
+      "organization": "U.S. Food and Drug Administration",
+      "type": "consumer_guidance",
+      "url": "https://www.fda.gov/cosmetics/cosmetic-ingredients/fragrances-cosmetics",
+      "notes": "Поясняет, что fragrance/parfum может обозначать смесь и что у отдельных людей возможна чувствительность к компонентам отдушки."
+    },
+    {
+      "id": "fda-sunscreen",
+      "title": "Sunscreen: How to Help Protect Your Skin from the Sun",
+      "organization": "U.S. Food and Drug Administration",
+      "type": "consumer_guidance",
+      "url": "https://www.fda.gov/drugs/understanding-over-counter-medicines/sunscreen-how-help-protect-your-skin-sun",
+      "notes": "Объясняет роль активных ингредиентов солнцезащитного продукта и приводит zinc oxide и titanium dioxide среди используемых UV-фильтров."
+    },
+    {
+      "id": "aad-patch-test",
+      "title": "How to test skin care products",
+      "organization": "American Academy of Dermatology",
+      "type": "dermatology_guidance",
+      "url": "https://www.aad.org/public/everyday-care/skin-care-secrets/prevent-skin-problems/test-skin-care-products",
+      "notes": "Практическая рекомендация дерматологов тестировать новый готовый продукт на небольшом участке и прекратить использование при реакции."
+    },
+    {
+      "id": "aad-retinol",
+      "title": "Retinoid or retinol?",
+      "organization": "American Academy of Dermatology",
+      "type": "dermatology_guidance",
+      "url": "https://www.aad.org/public/everyday-care/skin-care-secrets/anti-aging/retinoid-retinol",
+      "notes": "Обзор retinol/retinoids, возможного раздражения, вечернего применения и необходимости защиты от солнца."
+    },
+    {
+      "id": "aad-sunscreen",
+      "title": "How do I know if I'm using the right sunscreen?",
+      "organization": "American Academy of Dermatology",
+      "type": "dermatology_guidance",
+      "url": "https://www.aad.org/public/everyday-care/sun-protection/shade-clothing-sunscreen/choosing-right-sunscreen",
+      "notes": "Рекомендации по выбору готового солнцезащитного продукта, в том числе для чувствительной кожи."
+    },
+    {
+      "id": "eu-sccs-phenoxyethanol",
+      "title": "SCCS Final Opinion on Phenoxyethanol",
+      "organization": "European Commission, Scientific Committee on Consumer Safety",
+      "type": "scientific_opinion",
+      "url": "https://health.ec.europa.eu/latest-updates/sccs-final-opinion-phenoxyethanol-2016-10-14_en",
+      "notes": "Научное заключение SCCS о phenoxyethanol как консерванте; применимость вывода зависит от концентрации и условий использования."
+    }
+  ]
+}

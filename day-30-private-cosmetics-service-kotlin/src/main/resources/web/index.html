@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Приватный анализ состава косметики локальной LLM">
+  <title>Private Cosmetics AI</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">DAY 30 · LOCAL LLM SERVICE</p>
+        <h1>Private Cosmetics AI</h1>
+        <p class="lead">Фото этикетки, INCI или название из локального каталога — без облачной LLM.</p>
+      </div>
+      <div id="health" class="health">Проверяем сервис…</div>
+    </header>
+
+    <section class="panel privacy">
+      <strong>Приватность:</strong> Ollama доступен только на сервере. Фото обрабатывается без сохранения,
+      чат живёт временно в RAM. Сервис не ставит диагнозы и не гарантирует безопасность продукта.
+    </section>
+
+    <section class="panel">
+      <h2>Доступ и профиль</h2>
+      <div class="grid two">
+        <label>API token
+          <input id="token" type="password" autocomplete="off" placeholder="Bearer token">
+          <small>Хранится только в sessionStorage текущей вкладки.</small>
+        </label>
+        <label>Тип кожи
+          <select id="skin-type">
+            <option value="unknown">Не указан</option>
+            <option value="dry">Сухая</option>
+            <option value="oily">Жирная</option>
+            <option value="combination">Комбинированная</option>
+            <option value="normal">Нормальная</option>
+            <option value="sensitive">Чувствительная</option>
+          </select>
+        </label>
+        <label>Известные аллергии
+          <input id="allergies" placeholder="например, fragrance, limonene">
+        </label>
+        <label>Цели ухода
+          <input id="goals" placeholder="например, увлажнение, мягкое очищение">
+        </label>
+      </div>
+      <label class="check"><input id="sensitive" type="checkbox"> Кожа склонна к чувствительности</label>
+    </section>
+
+    <section class="panel">
+      <h2>1. Введите данные продукта</h2>
+      <div class="input-grid">
+        <form id="photo-form" class="input-card">
+          <h3>Фото этикетки</h3>
+          <p>JPEG/PNG до 5 МБ. OCR не отправляет изображение в модель.</p>
+          <input id="photo" name="photo" type="file" accept="image/jpeg,image/png" required>
+          <button type="submit">Распознать INCI</button>
+          <small id="ocr-note"></small>
+        </form>
+
+        <form id="name-form" class="input-card">
+          <h3>Название</h3>
+          <p>Поиск только в локальном demo-каталоге; неизвестный состав не угадывается.</p>
+          <input id="product-name" placeholder="DemoLab Hydro Balance Serum" required>
+          <button type="submit">Найти и проанализировать</button>
+        </form>
+      </div>
+
+      <form id="text-form" class="composition">
+        <label>Название или подсказка о типе продукта
+          <input id="name-hint" placeholder="например, увлажняющая сыворотка">
+        </label>
+        <label>Подтверждённый INCI
+          <textarea id="inci" rows="7" maxlength="12000" placeholder="AQUA, GLYCERIN, NIACINAMIDE…" required></textarea>
+        </label>
+        <button type="submit" class="primary">Проанализировать локально</button>
+      </form>
+      <p id="status" class="status" role="status"></p>
+    </section>
+
+    <section id="result-panel" class="panel hidden">
+      <h2>2. Обоснованный отчёт</h2>
+      <div id="result"></div>
+      <div id="sources"></div>
+      <p id="metrics" class="metrics"></p>
+    </section>
+
+    <section id="chat-panel" class="panel hidden">
+      <h2>3. Чат по этому продукту</h2>
+      <div id="chat-log" class="chat-log"></div>
+      <form id="chat-form" class="chat-form">
+        <input id="chat-message" maxlength="2000" placeholder="Когда использовать это средство?" required>
+        <button type="submit">Спросить</button>
+      </form>
+    </section>
+  </main>
+  <script src="/app.js" defer></script>
+</body>
+</html>

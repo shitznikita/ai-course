@@ -1,0 +1,229 @@
+{
+  "version": "1.0",
+  "language": "ru",
+  "updatedAt": "2026-07-11",
+  "limitations": [
+    "Карточки описывают распространённые косметические функции ингредиента, а не безопасность или эффективность готового продукта.",
+    "Порядок INCI не раскрывает точную концентрацию, pH, чистоту сырья, стабильность и взаимодействие компонентов.",
+    "suitableFor — поисковые подсказки для типов кожи, а не индивидуальная медицинская рекомендация.",
+    "Наличие потенциального раздражителя или аллергена не означает, что реакция обязательно возникнет."
+  ],
+  "ingredients": [
+    {
+      "id": "aqua",
+      "inci": "AQUA",
+      "aliases": ["Water", "Eau"],
+      "functions": ["solvent"],
+      "cautions": ["Специфическую переносимость определяет готовая формула, а не наличие воды само по себе."],
+      "suitableFor": ["all_skin_types"],
+      "sourceIds": ["eu-cosing", "eu-cosmetics-framework"]
+    },
+    {
+      "id": "glycerin",
+      "inci": "GLYCERIN",
+      "aliases": ["Glycerol"],
+      "functions": ["humectant", "skin_conditioning"],
+      "cautions": ["Ощущение на коже зависит от концентрации и остальных компонентов формулы."],
+      "suitableFor": ["dry", "dehydrated", "all_skin_types"],
+      "sourceIds": ["eu-cosing", "aad-patch-test"]
+    },
+    {
+      "id": "niacinamide",
+      "inci": "NIACINAMIDE",
+      "aliases": ["Nicotinamide"],
+      "functions": ["skin_conditioning"],
+      "cautions": ["Даже хорошо переносимый ингредиент может раздражать в конкретной формуле; новый продукт стоит вводить постепенно."],
+      "suitableFor": ["oily", "combination", "dry", "all_skin_types"],
+      "sourceIds": ["eu-cosing", "aad-patch-test"]
+    },
+    {
+      "id": "sodium-hyaluronate",
+      "inci": "SODIUM HYALURONATE",
+      "aliases": ["Sodium Salt of Hyaluronic Acid"],
+      "functions": ["humectant", "skin_conditioning"],
+      "cautions": ["Не следует приравнивать эту соль ко всем производным hyaluronic acid; свойства готового продукта зависят от формулы."],
+      "suitableFor": ["dry", "dehydrated", "all_skin_types"],
+      "sourceIds": ["eu-cosing", "eu-cosmetics-framework"]
+    },
+    {
+      "id": "panthenol",
+      "inci": "PANTHENOL",
+      "aliases": ["D-Panthenol", "Provitamin B5"],
+      "functions": ["humectant", "skin_conditioning"],
+      "cautions": ["Индивидуальная реакция возможна на любой готовый продукт; вывод делается по всей формуле."],
+      "suitableFor": ["dry", "dehydrated", "sensitive"],
+      "sourceIds": ["eu-cosing", "aad-patch-test"]
+    },
+    {
+      "id": "squalane",
+      "inci": "SQUALANE",
+      "aliases": [],
+      "functions": ["emollient", "skin_conditioning"],
+      "cautions": ["Насыщенность и комфорт продукта зависят от доли squalane и остальных эмолентов."],
+      "suitableFor": ["dry", "normal", "combination", "sensitive"],
+      "sourceIds": ["eu-cosing", "eu-cosmetics-framework"]
+    },
+    {
+      "id": "dimethicone",
+      "inci": "DIMETHICONE",
+      "aliases": ["Polydimethylsiloxane"],
+      "functions": ["emollient", "skin_protecting", "antifoaming"],
+      "cautions": ["Ощущение окклюзивности и совместимость с конкретной кожей определяются всей формулой."],
+      "suitableFor": ["dry", "sensitive", "all_skin_types"],
+      "sourceIds": ["eu-cosing", "eu-cosmetics-framework"]
+    },
+    {
+      "id": "ceramide-np",
+      "inci": "CERAMIDE NP",
+      "aliases": ["Ceramide 3"],
+      "functions": ["skin_conditioning"],
+      "cautions": ["По одному INCI нельзя определить количество ceramide и эффективность системы липидов в готовом продукте."],
+      "suitableFor": ["dry", "sensitive", "dehydrated"],
+      "sourceIds": ["eu-cosing", "eu-cosmetics-framework"]
+    },
+    {
+      "id": "allantoin",
+      "inci": "ALLANTOIN",
+      "aliases": [],
+      "functions": ["skin_protecting", "skin_conditioning"],
+      "cautions": ["Переносимость оценивается для готового продукта; редкая индивидуальная реакция не исключена."],
+      "suitableFor": ["dry", "sensitive"],
+      "sourceIds": ["eu-cosing", "aad-patch-test"]
+    },
+    {
+      "id": "salicylic-acid",
+      "inci": "SALICYLIC ACID",
+      "aliases": ["2-Hydroxybenzoic Acid"],
+      "functions": ["exfoliant", "keratolytic", "preservative"],
+      "cautions": ["Может раздражать или сушить; эффект и переносимость зависят от концентрации, pH и формата продукта.", "Следуйте инструкции на упаковке и не считайте наличие в INCI доказательством лечебного действия."],
+      "suitableFor": ["oily", "combination"],
+      "sourceIds": ["eu-cosing", "fda-bha", "aad-patch-test"]
+    },
+    {
+      "id": "glycolic-acid",
+      "inci": "GLYCOLIC ACID",
+      "aliases": ["Hydroxyacetic Acid"],
+      "functions": ["exfoliant", "buffering"],
+      "cautions": ["AHA может раздражать и повышать чувствительность кожи к солнцу; учитывайте инструкцию продукта и защиту от солнца.", "Интенсивность зависит от концентрации и pH, которые нельзя надёжно восстановить из INCI."],
+      "suitableFor": ["normal", "combination", "oily"],
+      "sourceIds": ["eu-cosing", "fda-aha", "aad-patch-test"]
+    },
+    {
+      "id": "lactic-acid",
+      "inci": "LACTIC ACID",
+      "aliases": ["2-Hydroxypropanoic Acid"],
+      "functions": ["exfoliant", "humectant", "buffering"],
+      "cautions": ["AHA может раздражать и повышать чувствительность кожи к солнцу; учитывайте инструкцию продукта и защиту от солнца.", "Концентрация и pH определяют роль lactic acid и не видны из одного списка INCI."],
+      "suitableFor": ["dry", "normal", "combination"],
+      "sourceIds": ["eu-cosing", "fda-aha", "aad-patch-test"]
+    },
+    {
+      "id": "retinol",
+      "inci": "RETINOL",
+      "aliases": ["Vitamin A1"],
+      "functions": ["skin_conditioning"],
+      "cautions": ["Может вызывать сухость или раздражение, особенно при чувствительной коже; начинайте по инструкции готового продукта.", "Обычно используется вечером, а днём важна защита от солнца; при сомнениях обсудите применение с дерматологом."],
+      "suitableFor": ["normal", "combination", "oily"],
+      "sourceIds": ["eu-cosing", "aad-retinol", "aad-patch-test"]
+    },
+    {
+      "id": "ascorbic-acid",
+      "inci": "ASCORBIC ACID",
+      "aliases": ["L-Ascorbic Acid"],
+      "functions": ["antioxidant", "skin_conditioning", "buffering"],
+      "cautions": ["Кислая формула может щипать или раздражать; стабильность и переносимость зависят от pH, концентрации и упаковки.", "Производные vitamin C нельзя автоматически считать эквивалентными ascorbic acid."],
+      "suitableFor": ["normal", "combination", "oily", "dry"],
+      "sourceIds": ["eu-cosing", "aad-patch-test"]
+    },
+    {
+      "id": "zinc-oxide",
+      "inci": "ZINC OXIDE",
+      "aliases": ["CI 77947"],
+      "functions": ["uv_filter", "skin_protecting", "colorant"],
+      "cautions": ["Наличие zinc oxide в INCI не доказывает SPF или broad-spectrum защиту: такие свойства подтверждаются испытаниями готового продукта."],
+      "suitableFor": ["sensitive", "all_skin_types"],
+      "sourceIds": ["eu-cosing", "fda-sunscreen", "aad-sunscreen"]
+    },
+    {
+      "id": "titanium-dioxide",
+      "inci": "TITANIUM DIOXIDE",
+      "aliases": ["CI 77891"],
+      "functions": ["uv_filter", "opacifying", "colorant"],
+      "cautions": ["Наличие titanium dioxide в INCI не доказывает SPF или broad-spectrum защиту: важны форма вещества и испытания готового продукта."],
+      "suitableFor": ["sensitive", "all_skin_types"],
+      "sourceIds": ["eu-cosing", "fda-sunscreen", "aad-sunscreen"]
+    },
+    {
+      "id": "parfum",
+      "inci": "PARFUM",
+      "aliases": ["Fragrance", "Perfume"],
+      "functions": ["perfuming"],
+      "cautions": ["Parfum может обозначать смесь, полный состав которой не раскрыт в строке INCI.", "У отдельных людей отдушка вызывает раздражение или аллергическую реакцию; наличие parfum не означает реакцию у всех."],
+      "suitableFor": [],
+      "sourceIds": ["eu-cosing", "fda-fragrances", "fda-allergens"]
+    },
+    {
+      "id": "limonene",
+      "inci": "LIMONENE",
+      "aliases": ["d-Limonene"],
+      "functions": ["perfuming", "solvent"],
+      "cautions": ["Относится к известным отдушечным аллергенам; это фактор осторожности, а не прогноз обязательной реакции."],
+      "suitableFor": [],
+      "sourceIds": ["eu-cosing", "fda-allergens", "fda-fragrances"]
+    },
+    {
+      "id": "linalool",
+      "inci": "LINALOOL",
+      "aliases": [],
+      "functions": ["perfuming"],
+      "cautions": ["Относится к известным отдушечным аллергенам; это фактор осторожности, а не прогноз обязательной реакции."],
+      "suitableFor": [],
+      "sourceIds": ["eu-cosing", "fda-allergens", "fda-fragrances"]
+    },
+    {
+      "id": "phenoxyethanol",
+      "inci": "PHENOXYETHANOL",
+      "aliases": ["2-Phenoxyethanol"],
+      "functions": ["preservative"],
+      "cautions": ["По позиции в INCI нельзя надёжно определить концентрацию; безопасность оценивается в рамках готовой формулы и условий применения."],
+      "suitableFor": ["all_skin_types"],
+      "sourceIds": ["eu-cosing", "eu-sccs-phenoxyethanol", "eu-cosmetics-framework"]
+    },
+    {
+      "id": "alcohol-denat",
+      "inci": "ALCOHOL DENAT.",
+      "aliases": ["Alcohol Denat", "Denatured Alcohol"],
+      "functions": ["solvent", "astringent", "antimicrobial"],
+      "cautions": ["В некоторых формулах может ощущаться сушащим или раздражающим; значение имеют концентрация, формат и остальные компоненты."],
+      "suitableFor": ["oily", "normal"],
+      "sourceIds": ["eu-cosing", "aad-patch-test"]
+    },
+    {
+      "id": "cocamidopropyl-betaine",
+      "inci": "COCAMIDOPROPYL BETAINE",
+      "aliases": ["CAPB"],
+      "functions": ["cleansing", "surfactant", "foam_boosting"],
+      "cautions": ["Может раздражать отдельных пользователей; переносимость зависит от качества сырья, концентрации и смываемой формулы."],
+      "suitableFor": ["normal", "combination", "oily"],
+      "sourceIds": ["eu-cosing", "aad-patch-test"]
+    },
+    {
+      "id": "sodium-laureth-sulfate",
+      "inci": "SODIUM LAURETH SULFATE",
+      "aliases": ["SLES"],
+      "functions": ["cleansing", "surfactant", "foaming"],
+      "cautions": ["Смываемая формула может сушить или раздражать отдельных пользователей; нельзя оценивать мягкость только по одному ПАВ."],
+      "suitableFor": ["normal", "combination", "oily"],
+      "sourceIds": ["eu-cosing", "aad-patch-test"]
+    },
+    {
+      "id": "tocopherol",
+      "inci": "TOCOPHEROL",
+      "aliases": [],
+      "functions": ["antioxidant", "skin_conditioning"],
+      "cautions": ["Не следует автоматически приравнивать tocopherol ко всем производным vitamin E; индивидуальная реакция возможна."],
+      "suitableFor": ["dry", "normal", "combination"],
+      "sourceIds": ["eu-cosing", "aad-patch-test"]
+    }
+  ]
+}

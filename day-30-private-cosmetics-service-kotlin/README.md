@@ -1,0 +1,277 @@
+# День 30: приватный сервис анализа косметики на локальной LLM
+
+## Цель
+
+Развернуть локальную LLM как приватный HTTP-сервис с чатом и показать все требования задания на полезном продукте:
+
+```text
+фото этикетки -> локальный OCR -> подтверждённый INCI
+текст INCI / точное название из локального каталога
+  -> exact ingredient retrieval
+  -> компактные проверенные facts + source IDs
+  -> qwen3:4b через loopback Ollama /api/chat
+  -> strict enum/ID decision + server-side grounding validation
+  -> серверная сборка отчёта из allowlist-шаблонов и карточек
+  -> временный чат с allowlist topic decision
+```
+
+Приложение объясняет предполагаемый тип средства, возможное место в рутине, ключевые ингредиенты, типы кожи и ограничения. Оно не ставит диагноз, не вычисляет неизвестные концентрации/pH и не объявляет продукт «безопасным» или «токсичным».
+
+Стек: Kotlin/JVM 21, Ktor/CIO, `kotlinx.serialization`, Tesseract OCR и прямой `java.net.http.HttpClient` к локальному Ollama. LLM SDK, облачная модель и cloud fallback не используются.
+
+## Как прошлые дни улучшают маленькую модель
+
+- Day 2/27: JSON Schema, строгий parsing и безопасный web upload;
+- Day 10: bounded recent chat history;
+- Day 21–23: структурные knowledge cards, exact retrieval, filtering;
+- Day 24: source IDs, anti-hallucination gate и `unknown` вместо догадки;
+- Day 25: RAM session с текущим продуктом и профилем;
+- Day 28: только локальный HTTP inference;
+- Day 29: Q4, `temperature=0`, `think=false`, короткий prompt, ограниченные context/output и метрики.
+
+Веса модели от чата не меняются. Fine-tuning имеет смысл только после накопления проверенного экспертного датасета; для Day 30 retrieval, schema, validator и evaluation дают более надёжный результат на дешёвом VPS.
+
+## Входы
+
+1. **INCI-текст** — основной сценарий.
+2. **Фото JPEG/PNG** — `/api/ocr` возвращает текст; пользователь обязан проверить его перед анализом.
+3. **Название** — только точный поиск в локальном вымышленном каталоге. Неизвестный продукт получает `404 product_not_found`, а модель не вызывается.
+
+Локальные runtime-данные:
+
+- `knowledge/ingredient-cards.json`: 24 карточки распространённых INCI;
+- `knowledge/sources.json`: 12 источников EC/FDA/AAD/SCCS;
+- `catalog/products.json`: четыре вымышленных продукта и демонстрация reformulation;
+- `eval/eval-cases.json`: text/name/unknown/prompt-injection сценарии.
+
+Основная регуляторная оговорка: запись ингредиента в CosIng не означает одобрение ингредиента или безопасность готового продукта. Безопасность оценивается для полной формулы производителем.
+
+## Приватность и границы сети
+
+```text
+Browser -> SSH tunnel или Caddy HTTPS -> Ktor 127.0.0.1:8787
+                                      -> Ollama 127.0.0.1:11434
+```
+
+- `APP_HOST` и `OLLAMA_BASE_URL` принимают только loopback;
+- raw Ollama `11434` никогда не публикуется — локальный Ollama API не имеет своей аутентификации;
+- приватные API требуют `Authorization: Bearer <APP_API_TOKEN>`;
+- CORS не включён, UI и API работают same-origin;
+- token хранится браузером только в `sessionStorage`;
+- фото передаётся Tesseract через stdin и не создаёт временный файл;
+- INCI, фото и чат не попадают в application/access logs;
+- сессии существуют только в RAM, имеют TTL и удаляются через API;
+- модель не возвращает пользовательскую прозу: только enum/ID; UI выводит собранный сервером текст через DOM `textContent`;
+- CSP, `nosniff`, запрет framing и `no-store` выставляются сервером.
+- `/api/health/live` — публичный дешёвый liveness для proxy; dependency readiness в защищённом `/api/health` single-flight и кешируется на 10 секунд;
+
+VPS остаётся инфраструктурой хостинг-провайдера, поэтому «приватный» здесь означает отсутствие стороннего LLM API и закрытый сетевой контур приложения, а не абсолютный физический контроль над сервером.
+
+## Ограничения по умолчанию
+
+```text
+model=qwen3:4b Q4
+num_ctx=8192
+num_predict=192
+temperature=0
+think=false
+1 active inference + 2 queued
+12 API requests / 60 seconds
+INCI <= 12000 chars
+chat <= 2000 chars, last 8 messages
+photo <= 5 MiB and <= 20 MP
+100 RAM sessions, TTL 30 minutes + periodic RAM cleanup
+```
+
+Rate limit и inference queue возвращают `429` и `Retry-After`. Слишком большие данные отклоняются до Ollama. Все `ingredientId` из решения модели проверяются по текущему evidence pack; citations сервер получает только из карточек. Выдуманный ID или лишнее prose-поле превращается в `502`, а пользовательский текст собирается только сервером из allowlist-шаблонов и проверенных данных.
+
+Технический профиль сверён с официальной документацией Ollama: `/api/chat` принимает JSON Schema в `format` и `think=false`, а RAM растёт вместе с context/parallelism. Поэтому сервис использует structured output, `temperature=0`, одну параллельную генерацию и жёсткий предел 8192, хотя сама `qwen3:4b` поддерживает больше:
+
+- [Ollama Chat API](https://docs.ollama.com/api/chat)
+- [Structured Outputs](https://docs.ollama.com/capabilities/structured-outputs)
+- [Concurrency and queue FAQ](https://docs.ollama.com/faq)
+- [qwen3 model tags and sizes](https://ollama.com/library/qwen3/tags)
+
+## Локальная подготовка
+
+Нужны JDK 21, Ollama и Tesseract с языками `eng` и `rus`.
+
+```bash
+ollama serve
+ollama pull qwen3:4b
+ollama list
+
+cp day-30-private-cosmetics-service-kotlin/.env.example \
+  day-30-private-cosmetics-service-kotlin/.env
+```
+
+`.env.example` разрешает отсутствие token только для loopback local development. На VPS это значение принудительно выключено.
+
+## Offline-проверки
+
+```bash
+./gradlew :day-30-private-cosmetics-service-kotlin:test
+./gradlew :day-30-private-cosmetics-service-kotlin:build
+
+day-30-private-cosmetics-service-kotlin/scripts/run-local.sh fixture-demo
+day-30-private-cosmetics-service-kotlin/scripts/run-local.sh eval-dry-run
+```
+
+`fixture-demo` не обращается к модели. `eval-dry-run` проверяет exact retrieval, aliases, актуальную/историческую reformulation, неизвестный продукт и prompt injection.
+
+## Запуск web/API
+
+```bash
+day-30-private-cosmetics-service-kotlin/scripts/run-local.sh diagnose
+day-30-private-cosmetics-service-kotlin/scripts/run-local.sh
+```
+
+Откройте `http://127.0.0.1:8787`. Фото сначала заполняет INCI textarea результатом OCR; анализ начинается только после ручного подтверждения.
+
+### HTTP API
+
+Публичный liveness не запускает проверки зависимостей:
+
+```bash
+curl http://127.0.0.1:8787/api/health/live
+```
+
+Readiness Ollama, модели и OCR требует token:
+
+```bash
+curl http://127.0.0.1:8787/api/health \
+  -H "Authorization: Bearer $APP_API_TOKEN"
+```
+
+Анализ текста:
+
+```bash
+curl http://127.0.0.1:8787/api/analyze/text \
+  -H "Authorization: Bearer $APP_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "inciText": "AQUA, GLYCERIN, NIACINAMIDE, PANTHENOL",
+    "productName": "Demo serum",
+    "profile": {
+      "skinType": "sensitive",
+      "sensitive": true,
+      "allergies": [],
+      "goals": ["увлажнение"]
+    }
+  }'
+```
+
+Точное имя из demo-каталога:
+
+```bash
+curl http://127.0.0.1:8787/api/analyze/name \
+  -H "Authorization: Bearer $APP_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"DemoLab Hydro Balance Serum","profile":{}}'
+```
+
+OCR:
+
+```bash
+curl http://127.0.0.1:8787/api/ocr \
+  -H "Authorization: Bearer $APP_API_TOKEN" \
+  -F "photo=@/absolute/path/to/label.jpg"
+```
+
+Чат использует `sessionId` из анализа:
+
+```bash
+curl http://127.0.0.1:8787/api/chat \
+  -H "Authorization: Bearer $APP_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"sessionId":"...","message":"Когда использовать это средство?"}'
+```
+
+## VPS Ubuntu 24.04
+
+Deployment не использует Docker и экономит RAM. На чистом VDS обычно существует только `root`, поэтому bootstrap явно создаёт отдельного key-only пользователя `deploy`, копирует уже установленный root SSH public key и даёт ему passwordless sudo. Root login скрипт не отключает: это можно сделать отдельно только после проверки второго входа.
+
+```bash
+sudo ./scripts/setup-vps.sh \
+  --install-ollama \
+  --deploy-user deploy \
+  --copy-root-authorized-keys \
+  --configure-ufw \
+  --ssh-port 22
+```
+
+После bootstrap нужно переподключиться как `deploy` и разместить checkout в его home, а не в `/root`:
+
+```bash
+ssh deploy@SERVER_IP
+cd /home/deploy/ai-course/day-30-private-cosmetics-service-kotlin
+
+sudo cp /etc/cosmetics-ai/cosmetics-ai.env.example \
+  /etc/cosmetics-ai/cosmetics-ai.env
+sudo openssl rand -hex 32
+# вставить результат только в APP_API_TOKEN внутри root-owned env
+sudo chown root:root /etc/cosmetics-ai/cosmetics-ai.env
+sudo chmod 0600 /etc/cosmetics-ai/cosmetics-ai.env
+
+./scripts/deploy-vps.sh --pull-model
+./scripts/diagnose.sh
+```
+
+Systemd assets:
+
+- держат Kotlin и Ollama на loopback;
+- задают `OLLAMA_MAX_LOADED_MODELS=1`, `OLLAMA_NUM_PARALLEL=1`, `OLLAMA_MAX_QUEUE=2`;
+- запускают приложение непривилегированным пользователем;
+- включают systemd hardening;
+- используют versioned releases и rollback при неуспешном health-check.
+
+Приватный доступ с компьютера:
+
+```bash
+ssh -L 8787:127.0.0.1:8787 deploy@SERVER_IP
+```
+
+После этого браузер открывает обычный `http://127.0.0.1:8787`, но трафик идёт внутри SSH. Optional публичный HTTPS-конфиг лежит в `deploy/Caddyfile.example`; Ollama всё равно остаётся закрытым.
+
+## Smoke, несколько запросов и лимиты
+
+```bash
+./scripts/smoke-test.sh --deep
+./scripts/load-test.sh --requests 4 --concurrency 2
+./scripts/rate-limit-test.sh
+```
+
+- smoke проверяет health, `401`, oversized INCI и реальный grounded answer;
+- load test отправляет несколько model-backed запросов, печатает HTTP status и latency;
+- rate-limit test дешёво доказывает `429 + Retry-After`, не вызывая LLM.
+
+После rate-limit test нужно дождаться `Retry-After` перед deep smoke.
+
+## Проверка другой модели
+
+12 ГБ RAM позволяют после базового запуска отдельно сравнить `qwen3:4b` и `qwen3:8b` с одинаковыми prompt, context и eval cases. Одновременно загружается только одна модель. Основной безопасный default остаётся `qwen3:4b`; `qwen3:14b` для этого VPS не используется.
+
+## Сценарий видео
+
+1. Показать `ollama list`, закрытые listeners в `diagnose.sh` и модель Q4.
+2. Открыть web через SSH tunnel; health показывает model + OCR ready.
+3. Загрузить тестовую этикетку, проверить OCR-текст, затем запустить анализ.
+4. Показать report, source links, limitations и model latency.
+5. Спросить в чате, когда применять продукт.
+6. Ввести неизвестное название и показать, что состав не выдумывается.
+7. Запустить четыре запроса с concurrency 2.
+8. Показать `429 + Retry-After` и отклонение слишком длинного INCI.
+9. Выполнить `ollama ps` и подтвердить отсутствие cloud endpoint.
+
+Не показывать в видео `/etc/cosmetics-ai/cosmetics-ai.env`, token, приватные фотографии или SSH-ключи.
+
+## Проверка требований Дня 30
+
+- локальная LLM развёртывается на VPS через Ollama;
+- есть документированный HTTP API и web UI;
+- чат хранит ограниченную историю в RAM;
+- доступ по сети проверяется через SSH tunnel или optional HTTPS;
+- несколько запросов проходят bounded queue без неконтролируемого роста RAM;
+- rate limit, max body/context/output и session TTL реализованы явно;
+- raw Ollama не публикуется;
+- результат воспроизводим кодом, fixture/eval, smoke/load scripts и video scenario.

@@ -1,0 +1,66 @@
+:root {
+  color-scheme: light;
+  --ink: #17211b;
+  --muted: #617067;
+  --line: #dce6de;
+  --paper: #fbfdfb;
+  --soft: #eef6f0;
+  --green: #176b45;
+  --green-dark: #0f4d32;
+  --warn: #9b3c2e;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--ink); background: radial-gradient(circle at top left, #edf8ef, #f7f3eb 45%, #eef3f1); }
+.shell { width: min(1080px, calc(100% - 32px)); margin: 0 auto; padding: 40px 0 72px; }
+.hero { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; margin-bottom: 22px; }
+.eyebrow { color: var(--green); font-size: .75rem; font-weight: 800; letter-spacing: .16em; }
+h1 { margin: 6px 0 10px; font-size: clamp(2.1rem, 7vw, 4.8rem); line-height: .98; letter-spacing: -.05em; }
+h2 { margin-top: 0; font-size: 1.25rem; }
+h3 { margin: 0 0 10px; }
+.lead { max-width: 650px; color: var(--muted); font-size: 1.08rem; }
+.health, .badge { border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; background: #fff; font-size: .82rem; white-space: nowrap; }
+.health.ready { border-color: #8bc7a4; color: var(--green-dark); background: #e8f8ee; }
+.panel { margin: 16px 0; padding: 24px; border: 1px solid rgba(68, 91, 76, .16); border-radius: 22px; background: rgba(255, 255, 255, .9); box-shadow: 0 16px 50px rgba(32, 52, 39, .07); }
+.privacy { background: #173f2d; color: #f4fbf6; box-shadow: none; }
+.grid.two, .input-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+label { display: grid; gap: 7px; font-size: .88rem; font-weight: 700; }
+small { color: var(--muted); font-weight: 400; }
+input, select, textarea, button { font: inherit; }
+input, select, textarea { width: 100%; border: 1px solid #cbd8ce; border-radius: 12px; padding: 12px 13px; color: var(--ink); background: var(--paper); }
+textarea { resize: vertical; min-height: 140px; line-height: 1.45; }
+input:focus, select:focus, textarea:focus { outline: 3px solid rgba(54, 154, 101, .18); border-color: #4c9d70; }
+.check { display: flex; align-items: center; gap: 9px; margin-top: 14px; }
+.check input { width: auto; }
+.input-card { padding: 18px; border: 1px dashed #aabdb0; border-radius: 16px; background: var(--soft); }
+.input-card p { min-height: 42px; color: var(--muted); font-size: .9rem; }
+.composition { display: grid; gap: 14px; margin-top: 18px; }
+button { width: fit-content; margin-top: 12px; padding: 11px 16px; border: 0; border-radius: 11px; color: white; background: var(--green); cursor: pointer; font-weight: 800; }
+button:hover { background: var(--green-dark); }
+button.primary { padding-inline: 22px; }
+.status { min-height: 24px; margin-bottom: 0; color: var(--green-dark); }
+.status.error { color: var(--warn); }
+.hidden { display: none; }
+.report-heading { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.report-heading h3 { margin: 0 0 0 6px; }
+.badge { padding: 5px 9px; color: var(--green-dark); background: var(--soft); }
+.badge.muted { color: var(--muted); background: #f2f2ef; }
+.summary { font-size: 1.08rem; line-height: 1.6; }
+.report-block { padding: 14px 0; border-top: 1px solid var(--line); }
+.report-block ul, .sources-list { margin: 0; padding-left: 20px; line-height: 1.55; }
+.disclaimer { padding: 14px; border-radius: 12px; background: #fff4df; color: #674e1f; }
+.metrics { color: var(--muted); font-size: .82rem; }
+a { color: var(--green-dark); }
+.chat-log { display: grid; gap: 10px; margin-bottom: 14px; }
+.chat-message { padding: 12px 14px; border-radius: 13px; background: var(--soft); }
+.chat-message p { margin: 5px 0 0; white-space: pre-wrap; }
+.chat-form { display: flex; gap: 10px; }
+.chat-form button { margin: 0; }
+@media (max-width: 720px) {
+  .shell { width: min(100% - 20px, 1080px); padding-top: 24px; }
+  .hero { display: block; }
+  .health { display: inline-block; margin-top: 8px; }
+  .grid.two, .input-grid { grid-template-columns: 1fr; }
+  .panel { padding: 18px; border-radius: 17px; }
+  .chat-form { display: grid; }
+}

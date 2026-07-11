@@ -4,7 +4,7 @@
 
 ## Current Snapshot
 
-- Статус на `2026-07-10`: репозиторий содержит задания дней 1-28; день 26 запускает локальную Qwen3 14B через Ollama, день 27 интегрирует её в loopback веб-анализатор заметок, а день 28 строит полностью локальный RAG поверх Day 21 index и сравнивает генерацию с облаком.
+- Статус на `2026-07-11`: `main` содержит завершённые дни 1-29; Day 30 разрабатывает приватный VPS-сервис анализа косметики с HTTP API, OCR, локальным retrieval и чатом.
 - Основной стек всех последних заданий: Kotlin CLI + Gradle + прямой REST через `java.net.http.HttpClient`.
 - Основной провайдер: Eliza API, OpenRouter-compatible endpoint `https://api.eliza.yandex.net/openrouter/v1/chat/completions`.
 - Основная модель для последних LLM-дней: `meta-llama/llama-3.3-70b-instruct`.
@@ -14,6 +14,8 @@
 - День 26 не использует Eliza: он обращается только к loopback Ollama API `http://127.0.0.1:11434` и требует один раз скачать локальную модель.
 - День 27 принимает `.txt`/`.md` заметку через браузер, держит её только в памяти и показывает локальный структурированный анализ через Ollama.
 - День 28 использует локальные `nomic-embed-text` и `qwen3:14b`: Day 21 structured index → cosine retrieval → grounded ответ с sources/quotes; cloud нужен только для осознанного сравнения на том же контексте.
+- День 29 измеряет baseline/optimized Q4 и Q8 на одинаковом локальном RAG-контексте.
+- День 30 рассчитан на CPU VPS: Tesseract → exact INCI retrieval → `qwen3:4b` enum/ID decision → server-side grounded report assembler; Ollama и приложение остаются на loopback.
 
 ## Структура
 
@@ -50,6 +52,7 @@ ai-course/
   day-27-local-notes-web-kotlin/ # День 27: локальный веб-анализатор заметок
   day-28-local-rag-kotlin/       # День 28: local RAG + cloud comparison
   day-29-local-llm-optimization-kotlin/ # День 29: оптимизация local RAG на Qwen3
+  day-30-private-cosmetics-service-kotlin/ # День 30: приватный LLM-сервис анализа косметики
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -86,6 +89,7 @@ ai-course/
 - [День 27: Веб-анализатор заметок с локальной LLM](day-27-local-notes-web-kotlin/README.md)
 - [День 28: Локальная LLM + RAG](day-28-local-rag-kotlin/README.md)
 - [День 29: Оптимизация локальной LLM](day-29-local-llm-optimization-kotlin/README.md)
+- [День 30: Приватный сервис анализа косметики](day-30-private-cosmetics-service-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -120,6 +124,7 @@ ai-course/
 | 27 | `day-27-local-notes-web-kotlin` | `.txt`/`.md` upload -> local Ollama -> structured web report | `day-27-local-notes-web-kotlin/scripts/run-notes-web.sh` |
 | 28 | `day-28-local-rag-kotlin` | Day 21 index -> local embeddings/retrieval -> Qwen3 grounded RAG, optional cloud compare | `day-28-local-rag-kotlin/scripts/run-local-rag.sh --args="diagnose"` |
 | 29 | `day-29-local-llm-optimization-kotlin` | baseline Q4 -> optimized Q4 -> Q8 на одинаковом local RAG context | `day-29-local-llm-optimization-kotlin/scripts/run-optimization.sh --args="diagnose"` |
+| 30 | `day-30-private-cosmetics-service-kotlin` | private VPS API: OCR -> INCI retrieval -> local LLM -> grounded report/chat | `day-30-private-cosmetics-service-kotlin/scripts/run-local.sh fixture-demo` |
 
 ## Запуск дня 1
 
@@ -630,11 +635,40 @@ day-29-local-llm-optimization-kotlin/scripts/run-optimization.sh
 ./gradlew :day-29-local-llm-optimization-kotlin:build
 ```
 
+## Запуск дня 30
+
+Day 30 превращает локальную LLM в приватный web/API-сервис для анализа косметики. Основной VPS-профиль — `qwen3:4b`, один inference одновременно, bounded queue, Bearer auth, rate/context limits и RAM-only chat.
+
+Offline-проверки без Ollama:
+
+```bash
+./gradlew :day-30-private-cosmetics-service-kotlin:test
+day-30-private-cosmetics-service-kotlin/scripts/run-local.sh fixture-demo
+day-30-private-cosmetics-service-kotlin/scripts/run-local.sh eval-dry-run
+```
+
+Локальный запуск после установки Ollama/Tesseract:
+
+```bash
+ollama pull qwen3:4b
+day-30-private-cosmetics-service-kotlin/scripts/run-local.sh diagnose
+day-30-private-cosmetics-service-kotlin/scripts/run-local.sh
+```
+
+VPS systemd assets, HTTP examples, smoke/load/rate-limit checks и video scenario — в [README дня 30](day-30-private-cosmetics-service-kotlin/README.md).
+
+Обычная Gradle-команда:
+
+```bash
+./gradlew :day-30-private-cosmetics-service-kotlin:build
+```
+
 ## Правила безопасности
 
 - Не коммитить `.env`.
 - Не коммитить `.certs/`.
 - Не публиковать реальные API-ключи, OAuth-токены и приватные сертификаты.
+- Не коммитить VPS Bearer token, SSH private keys или заполненный `/etc/cosmetics-ai/cosmetics-ai.env`.
 - Для публичного репозитория внимательно проверить, что внутренние корпоративные URL допустимо показывать наружу.
 
 ## GitHub Workflow

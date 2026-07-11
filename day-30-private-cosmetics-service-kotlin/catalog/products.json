@@ -1,0 +1,89 @@
+{
+  "version": "1.0",
+  "updatedAt": "2026-07-11",
+  "disclaimer": "Все продукты в этом каталоге вымышлены и предназначены только для воспроизводимого учебного демо. Совпадения с реальными продуктами случайны.",
+  "products": [
+    {
+      "id": "demolab-hydro-balance-serum",
+      "brand": "DemoLab",
+      "name": "Hydro Balance Serum",
+      "aliases": ["Hydro Balance", "ДемоЛаб Гидро Баланс"],
+      "category": "face_serum",
+      "isFictional": true,
+      "versions": [
+        {
+          "version": "2.0",
+          "market": "RU",
+          "capturedAt": "2026-07-01",
+          "effectiveFrom": "2026-05-01",
+          "inci": "AQUA, GLYCERIN, NIACINAMIDE, PANTHENOL, SODIUM HYALURONATE, PHENOXYETHANOL"
+        },
+        {
+          "version": "1.0",
+          "market": "RU",
+          "capturedAt": "2025-03-15",
+          "effectiveFrom": "2025-01-10",
+          "inci": "AQUA, GLYCERIN, SODIUM HYALURONATE, PANTHENOL, PHENOXYETHANOL"
+        }
+      ]
+    },
+    {
+      "id": "demolab-barrier-cloud-cream",
+      "brand": "DemoLab",
+      "name": "Barrier Cloud Cream",
+      "aliases": ["Barrier Cloud", "ДемоЛаб Барьер Клауд"],
+      "category": "face_moisturizer",
+      "isFictional": true,
+      "versions": [
+        {
+          "version": "1.0",
+          "market": "RU",
+          "capturedAt": "2026-06-20",
+          "effectiveFrom": "2026-02-01",
+          "inci": "AQUA, GLYCERIN, SQUALANE, DIMETHICONE, PANTHENOL, CERAMIDE NP, ALLANTOIN, TOCOPHEROL, PHENOXYETHANOL"
+        }
+      ]
+    },
+    {
+      "id": "demolab-calm-wash-gel",
+      "brand": "DemoLab",
+      "name": "Calm Wash Gel",
+      "aliases": ["Calm Wash", "ДемоЛаб Калм Вош"],
+      "category": "face_cleanser",
+      "isFictional": true,
+      "versions": [
+        {
+          "version": "2.0",
+          "market": "RU",
+          "capturedAt": "2026-06-25",
+          "effectiveFrom": "2026-04-15",
+          "inci": "AQUA, COCAMIDOPROPYL BETAINE, GLYCERIN, PANTHENOL, ALLANTOIN, PHENOXYETHANOL"
+        },
+        {
+          "version": "1.0",
+          "market": "RU",
+          "capturedAt": "2025-11-10",
+          "effectiveFrom": "2025-09-01",
+          "inci": "AQUA, SODIUM LAURETH SULFATE, COCAMIDOPROPYL BETAINE, GLYCERIN, PARFUM, LIMONENE, PHENOXYETHANOL"
+        }
+      ]
+    },
+    {
+      "id": "demolab-mineral-veil-spf30",
+      "brand": "DemoLab",
+      "name": "Mineral Veil SPF 30",
+      "aliases": ["Mineral Veil", "ДемоЛаб Минерал Вейл SPF 30"],
+      "category": "face_sunscreen",
+      "isFictional": true,
+      "versions": [
+        {
+          "version": "1.0",
+          "market": "RU",
+          "capturedAt": "2026-05-30",
+          "effectiveFrom": "2026-03-01",
+          "inci": "AQUA, ZINC OXIDE, TITANIUM DIOXIDE, DIMETHICONE, GLYCERIN, TOCOPHEROL, PHENOXYETHANOL"
+        }
+      ]
+    }
+  ]
+}

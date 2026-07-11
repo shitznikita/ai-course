@@ -65,3 +65,6 @@ day-28-local-rag-kotlin/reports/
 day-28-local-rag-kotlin/*.tmp
 day-29-local-llm-optimization-kotlin/reports/
 day-29-local-llm-optimization-kotlin/*.tmp
+day-30-private-cosmetics-service-kotlin/reports/
+day-30-private-cosmetics-service-kotlin/runtime/
+day-30-private-cosmetics-service-kotlin/*.tmp
