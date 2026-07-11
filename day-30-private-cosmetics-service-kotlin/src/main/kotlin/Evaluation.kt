@@ -76,19 +76,7 @@ object OfflineEvaluation {
                 pack.unknown.isNotEmpty() -> "partial"
                 else -> "ok"
             }
-            EvalActual(status, inferType(case.input.nameHint), pack.recognized.map { it.card.id })
-        }
-    }
-
-    private fun inferType(hint: String?): String? {
-        val value = hint?.lowercase().orEmpty()
-        return when {
-            "сывор" in value || "serum" in value -> "face_serum"
-            "умыван" in value || "cleanser" in value || "wash" in value -> "face_cleanser"
-            "тоник" in value || "toner" in value -> "face_toner"
-            "spf" in value || "sunscreen" in value || "солнц" in value -> "face_sunscreen"
-            "крем" in value || "cream" in value -> "face_moisturizer"
-            else -> null
+            EvalActual(status, ProductTypeResolver.resolve(case.input.nameHint), pack.recognized.map { it.card.id })
         }
     }
 

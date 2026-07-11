@@ -3,13 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Приватный анализ состава косметики локальной LLM">
+  <meta name="description" content="Приватный локальный анализ состава косметики">
   <title>Private Cosmetics AI</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <section id="boot-view" class="access-view" aria-live="polite">
     <div class="access-card compact">
+      <div class="brand-mark" aria-hidden="true">CA</div>
       <p class="eyebrow">DAY 30 · LOCAL LLM SERVICE</p>
       <h1>Private Cosmetics AI</h1>
       <p class="lead">Проверяем сохранённый доступ…</p>
@@ -18,9 +19,10 @@
 
   <section id="login-view" class="access-view" hidden>
     <div class="access-card">
+      <div class="brand-mark" aria-hidden="true">CA</div>
       <p class="eyebrow">DAY 30 · LOCAL LLM SERVICE</p>
       <h1>Private Cosmetics AI</h1>
-      <p class="lead">Локальный анализ косметики на VPS с проверяемым распознаванием этикеток.</p>
+      <p class="lead">Локальный анализ косметики на приватном VPS. Фото, состав и вопросы обрабатываются без облачной LLM.</p>
       <form id="login-form" class="login-form" method="post" novalidate>
         <label for="login-token">Постоянный код доступа</label>
         <input
@@ -33,105 +35,207 @@
           placeholder="Введите код один раз на этом устройстве"
           required
         >
-        <button id="login-submit" type="submit">Войти</button>
+        <button id="login-submit" type="submit">Войти в сервис</button>
         <p id="login-error" class="status" role="alert" aria-live="polite"></p>
       </form>
       <p class="access-note">
-        После успешной проверки код сохраняется только в этом браузере. Его не нужно получать заново
-        при каждом открытии сайта; кнопка «Выйти» удалит сохранённый доступ с устройства.
+        После проверки код останется только в этом браузере. Кнопка «Выйти» удалит его с устройства
+        и очистит временную историю продуктов в текущей вкладке.
       </p>
     </div>
   </section>
 
   <main id="app-view" class="shell" hidden>
-    <header class="hero">
-      <div>
-        <p class="eyebrow">DAY 30 · LOCAL LLM SERVICE</p>
-        <h1>Private Cosmetics AI</h1>
-        <p class="lead">Фото этикетки, INCI или название — локальный анализ и чат на приватном VPS.</p>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark small" aria-hidden="true">CA</div>
+        <div>
+          <p class="eyebrow">DAY 30 · LOCAL LLM SERVICE</p>
+          <h1>Private Cosmetics AI</h1>
+          <p class="lead">Разберите состав, получите понятный отчёт и задайте вопросы по продукту.</p>
+        </div>
       </div>
-      <div class="hero-controls">
+      <div class="topbar-controls">
         <div id="health" class="health">Проверяем сервис…</div>
-        <button id="logout-button" class="secondary" type="button">Выйти</button>
+        <button id="workspace-toggle" class="secondary workspace-toggle" type="button" aria-controls="workspace-sidebar" aria-expanded="false">
+          Продукты <span id="workspace-toggle-count" class="count-badge">0</span>
+        </button>
+        <button id="logout-button" class="quiet-button" type="button">Выйти</button>
       </div>
     </header>
 
-    <section class="panel privacy">
-      <strong>Приватность:</strong> анализ и чат выполняет локальная Ollama. Если включён Eliza Vision, загруженное фото отправляется
-      во внешний API только для распознавания текста и не сохраняется этим приложением; не загружайте
-      чувствительные изображения. Чат живёт временно в RAM. Сервис не ставит диагнозы и не гарантирует безопасность продукта.
-    </section>
+    <div class="privacy-strip" role="note">
+      <span class="privacy-icon" aria-hidden="true">●</span>
+      <p><strong>Всё локально:</strong> этикетку читает Tesseract, анализ и чат выполняет Ollama. Фото не сохраняется, а история продуктов живёт только в RAM этой вкладки.</p>
+    </div>
 
-    <section class="panel">
-      <h2>Профиль кожи</h2>
-      <div class="grid two">
-        <label>Тип кожи
-          <select id="skin-type">
-            <option value="unknown">Не указан</option>
-            <option value="dry">Сухая</option>
-            <option value="oily">Жирная</option>
-            <option value="combination">Комбинированная</option>
-            <option value="normal">Нормальная</option>
-            <option value="sensitive">Чувствительная</option>
-          </select>
-        </label>
-        <label>Известные аллергии
-          <input id="allergies" placeholder="например, fragrance, limonene">
-        </label>
-        <label>Цели ухода
-          <input id="goals" placeholder="например, увлажнение, мягкое очищение">
-        </label>
+    <div class="workspace-layout">
+      <div class="main-column">
+        <details class="panel profile-panel" open>
+          <summary>
+            <span>
+              <span class="section-kicker">Необязательно</span>
+              <strong>Ваш профиль кожи</strong>
+            </span>
+            <span class="summary-help">Поможет сделать рекомендации осторожнее</span>
+          </summary>
+          <div class="profile-content">
+            <div class="grid profile-grid">
+              <label>Тип кожи
+                <select id="skin-type">
+                  <option value="unknown">Не указан</option>
+                  <option value="dry">Сухая</option>
+                  <option value="oily">Жирная</option>
+                  <option value="combination">Комбинированная</option>
+                  <option value="normal">Нормальная</option>
+                  <option value="sensitive">Чувствительная</option>
+                </select>
+              </label>
+              <label>Известные аллергии
+                <input id="allergies" placeholder="fragrance, limonene">
+              </label>
+              <label>Цели ухода
+                <input id="goals" placeholder="увлажнение, мягкое очищение">
+              </label>
+            </div>
+            <label class="check"><input id="sensitive" type="checkbox"> Кожа склонна к чувствительности</label>
+          </div>
+        </details>
+
+        <section id="analyze-panel" class="panel analyze-panel">
+          <div class="section-heading">
+            <div>
+              <span class="section-kicker">Новый анализ</span>
+              <h2>Добавьте продукт удобным способом</h2>
+              <p>Лучший результат даёт проверенный список INCI и понятная подсказка о типе средства.</p>
+            </div>
+          </div>
+
+          <div class="input-tabs" role="tablist" aria-label="Способ добавления продукта">
+            <button id="tab-photo" class="input-tab active" type="button" role="tab" aria-selected="true" aria-controls="photo-input-panel" data-input-tab="photo">Фото этикетки</button>
+            <button id="tab-inci" class="input-tab" type="button" role="tab" aria-selected="false" aria-controls="inci-input-panel" data-input-tab="inci">Вставить INCI</button>
+            <button id="tab-name" class="input-tab" type="button" role="tab" aria-selected="false" aria-controls="name-input-panel" data-input-tab="name">Найти по названию</button>
+          </div>
+
+          <div id="photo-input-panel" class="tab-panel" role="tabpanel" aria-labelledby="tab-photo">
+            <form id="photo-form" class="upload-card">
+              <div>
+                <h3>Сфотографируйте именно блок Ingredients</h3>
+                <p>JPEG или PNG до 5 МБ. Для лучшего OCR держите упаковку ровно, заполните текстом кадр и избегайте бликов.</p>
+              </div>
+              <div class="upload-actions">
+                <input id="photo" name="photo" type="file" accept="image/jpeg,image/png" required>
+                <button type="submit">Распознать состав</button>
+              </div>
+              <small id="ocr-note" class="ocr-note" aria-live="polite"></small>
+            </form>
+          </div>
+
+          <div id="inci-input-panel" class="tab-panel" role="tabpanel" aria-labelledby="tab-inci" hidden>
+            <div class="input-tip">
+              <strong>Вставьте состав с упаковки</strong>
+              <span>Разделяйте ингредиенты запятыми. Незнакомые позиции сервис не будет угадывать.</span>
+            </div>
+          </div>
+
+          <div id="name-input-panel" class="tab-panel" role="tabpanel" aria-labelledby="tab-name" hidden>
+            <form id="name-form" class="name-form">
+              <label>Точное название из локального demo-каталога
+                <input id="product-name" placeholder="DemoLab Hydro Balance Serum" required>
+              </label>
+              <button type="submit">Найти и проанализировать</button>
+              <small>Если продукта нет в каталоге, используйте фото или вставьте INCI: состав по названию не угадывается.</small>
+            </form>
+          </div>
+
+          <form id="text-form" class="composition">
+            <div class="composition-heading">
+              <div>
+                <h3>Проверьте распознанный состав</h3>
+                <p>Исправьте явные ошибки OCR перед анализом.</p>
+              </div>
+            </div>
+            <div class="composition-fields">
+              <label>Тип средства
+                <select id="product-type-hint" required>
+                  <option value="">Выберите тип</option>
+                  <option value="face_cleanser">Очищение лица</option>
+                  <option value="face_toner">Тонер или тонер-пэды</option>
+                  <option value="face_serum">Сыворотка</option>
+                  <option value="face_moisturizer">Крем или увлажняющее средство</option>
+                  <option value="face_sunscreen">Солнцезащитное средство</option>
+                  <option value="other">Другое</option>
+                </select>
+              </label>
+              <label>Название <span class="optional-label">необязательно</span>
+                <input id="name-hint" placeholder="например, Niacinamide Toner Pad">
+              </label>
+            </div>
+            <label>Подтверждённый INCI
+              <textarea id="inci" rows="8" maxlength="12000" placeholder="AQUA, GLYCERIN, NIACINAMIDE…" required></textarea>
+            </label>
+            <div class="form-footer">
+              <small>Модель получит текст, но не исходное фото.</small>
+              <button type="submit" class="primary">Получить локальный отчёт</button>
+            </div>
+          </form>
+          <p id="status" class="status" role="status" aria-live="polite"></p>
+        </section>
+
+        <section id="result-panel" class="panel result-panel hidden">
+          <div class="section-heading result-title">
+            <div>
+              <span class="section-kicker">Результат</span>
+              <h2>Обоснованный отчёт</h2>
+            </div>
+            <button id="new-analysis-inline" class="secondary compact-button" type="button">Другой продукт</button>
+          </div>
+          <div id="result"></div>
+          <div id="sources" class="sources"></div>
+          <p id="metrics" class="metrics"></p>
+        </section>
       </div>
-      <label class="check"><input id="sensitive" type="checkbox"> Кожа склонна к чувствительности</label>
-    </section>
 
-    <section class="panel">
-      <h2>1. Введите данные продукта</h2>
-      <div class="input-grid">
-        <form id="photo-form" class="input-card">
-          <h3>Фото этикетки</h3>
-          <p>JPEG/PNG до 5 МБ. Внешний Eliza Vision используется только при включённом серверном режиме; состав нужно проверить вручную.</p>
-          <input id="photo" name="photo" type="file" accept="image/jpeg,image/png" required>
-          <button type="submit">Распознать INCI</button>
-          <small id="ocr-note"></small>
-        </form>
+      <aside id="workspace-sidebar" class="workspace-sidebar" aria-label="Продукты и чаты">
+        <div class="sidebar-head">
+          <div>
+            <span class="section-kicker">Текущая вкладка</span>
+            <h2>Продукты и чаты <span id="workspace-count" class="count-badge">0</span></h2>
+          </div>
+          <button id="workspace-close" class="icon-button sidebar-close" type="button" aria-label="Закрыть панель">×</button>
+        </div>
+        <p class="memory-note">История не сохраняется после обновления страницы или выхода.</p>
+        <button id="new-analysis-button" class="new-product-button" type="button"><span aria-hidden="true">＋</span> Новый продукт</button>
 
-        <form id="name-form" class="input-card">
-          <h3>Название</h3>
-          <p>Поиск только в локальном demo-каталоге; неизвестный состав не угадывается.</p>
-          <input id="product-name" placeholder="DemoLab Hydro Balance Serum" required>
-          <button type="submit">Найти и проанализировать</button>
-        </form>
-      </div>
+        <div id="workspace-empty" class="workspace-empty">
+          <div class="empty-orb" aria-hidden="true">◎</div>
+          <strong>Здесь появятся продукты</strong>
+          <p>После анализа переключайтесь между отчётами и отдельными чатами.</p>
+        </div>
+        <div id="workspace-list" class="workspace-list" aria-label="Ранее проанализированные продукты"></div>
 
-      <form id="text-form" class="composition">
-        <label>Название или подсказка о типе продукта
-          <input id="name-hint" placeholder="например, увлажняющая сыворотка">
-        </label>
-        <label>Подтверждённый INCI
-          <textarea id="inci" rows="7" maxlength="12000" placeholder="AQUA, GLYCERIN, NIACINAMIDE…" required></textarea>
-        </label>
-        <button type="submit" class="primary">Проанализировать локально</button>
-      </form>
-      <p id="status" class="status" role="status"></p>
-    </section>
-
-    <section id="result-panel" class="panel hidden">
-      <h2>2. Обоснованный отчёт</h2>
-      <div id="result"></div>
-      <div id="sources"></div>
-      <p id="metrics" class="metrics"></p>
-    </section>
-
-    <section id="chat-panel" class="panel hidden">
-      <h2>3. Чат по этому продукту</h2>
-      <div id="chat-log" class="chat-log"></div>
-      <form id="chat-form" class="chat-form">
-        <input id="chat-message" maxlength="2000" placeholder="Когда использовать это средство?" required>
-        <button type="submit">Спросить</button>
-      </form>
-    </section>
+        <section id="chat-panel" class="chat-panel hidden" aria-labelledby="chat-title">
+          <div class="chat-head">
+            <span class="section-kicker">Чат по продукту</span>
+            <h3 id="chat-title">Выберите продукт</h3>
+          </div>
+          <div id="chat-log" class="chat-log" aria-live="polite"></div>
+          <div class="prompt-chips" aria-label="Примеры вопросов">
+            <button type="button" data-chat-prompt="Для чего и когда использовать это средство?">Краткий обзор</button>
+            <button type="button" data-chat-prompt="Когда и на каком шаге использовать это средство?">Когда использовать?</button>
+            <button type="button" data-chat-prompt="Подойдёт ли это средство моему типу кожи?">Подойдёт моей коже?</button>
+          </div>
+          <form id="chat-form" class="chat-form">
+            <label class="sr-only" for="chat-message">Вопрос о выбранном продукте</label>
+            <textarea id="chat-message" rows="2" maxlength="2000" placeholder="Спросите о применении или составе…" required></textarea>
+            <button type="submit" aria-label="Отправить вопрос">Отправить</button>
+          </form>
+        </section>
+      </aside>
+    </div>
   </main>
+
+  <button id="workspace-backdrop" class="workspace-backdrop" type="button" aria-label="Закрыть панель продуктов" hidden></button>
   <script src="/app.js" defer></script>
 </body>
 </html>

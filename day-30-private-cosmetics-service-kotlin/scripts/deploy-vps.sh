@@ -156,6 +156,7 @@ if [[ ! -x "$launcher" ]]; then
 fi
 for runtime_file in \
   knowledge/ingredient-cards.json \
+  knowledge/ocr-corrections.json \
   knowledge/sources.json \
   catalog/products.json; do
   if [[ ! -f "$DIST_DIR/$runtime_file" ]]; then

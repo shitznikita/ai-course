@@ -38,12 +38,7 @@ private fun serve(config: AppConfig, service: CosmeticsUseCases) {
     println("OLLAMA: ${config.ollamaBaseUrl} (loopback only)")
     println("MODEL: ${config.model}")
     println("LIMITS: context=${config.contextLength}, concurrent=${config.maxConcurrentInference}, queue=${config.inferenceQueueCapacity}")
-    val photoPrivacy = if (config.elizaVisionEnabled) {
-        "Eliza Vision is configured, so a photo may be sent externally after readiness succeeds"
-    } else {
-        "photos stay in RAM"
-    }
-    println("PRIVACY: $photoPrivacy; INCI/chat stay in RAM; raw Ollama is not exposed.")
+    println("PRIVACY: photos, INCI and chat stay on the VPS in RAM; raw Ollama is not exposed.")
     println("Press Ctrl+C to stop.")
     embeddedServer(CIO, host = config.serverHost, port = config.serverPort) {
         cosmeticsWebModule(config, service)
@@ -55,7 +50,7 @@ private fun diagnose(service: CosmeticsUseCases) {
     println("STATUS: ${health.status}")
     println("OLLAMA: ${health.ollamaVersion ?: "unavailable"}")
     println("MODEL: ${health.model} installed=${health.modelInstalled}")
-    println("OCR: ready=${health.ocrReady}, provider=${health.photoOcrProvider}, external=${health.externalPhotoProcessing}")
+    println("OCR: ready=${health.ocrReady}, provider=${health.photoOcrProvider}")
     println("LOCAL DATA: ingredients=${health.ingredientCards}, products=${health.catalogProducts}")
     if (health.status != "ready") exitProcess(2)
 }

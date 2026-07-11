@@ -27,6 +27,19 @@ data class IngredientCardsDocument(
 )
 
 @Serializable
+data class OcrCorrectionsDocument(
+    val version: String,
+    val updatedAt: String,
+    val corrections: List<OcrIngredientCorrection>,
+)
+
+@Serializable
+data class OcrIngredientCorrection(
+    val ocr: String,
+    val canonicalInci: String,
+)
+
+@Serializable
 data class IngredientCard(
     val id: String,
     @SerialName("inci")
@@ -95,6 +108,7 @@ data class SkinProfile(
 data class AnalyzeTextRequest(
     val inciText: String,
     val productName: String? = null,
+    val productTypeHint: String? = null,
     val profile: SkinProfile = SkinProfile(),
 )
 
@@ -116,11 +130,20 @@ data class AnalysisInputSummary(
     val productName: String? = null,
     val matchedProductId: String? = null,
     val catalogVersion: String? = null,
-    val catalogCategory: String? = null,
+    val productTypeHint: String? = null,
+    val productTypeSource: String? = null,
     val inciText: String,
     val parsedIngredientCount: Int,
     val recognizedIngredientCount: Int,
+    val evidenceIngredientCount: Int = recognizedIngredientCount,
     val unknownIngredients: List<String>,
+    val ingredientCorrections: List<IngredientCorrection> = emptyList(),
+)
+
+@Serializable
+data class IngredientCorrection(
+    val rawName: String,
+    val canonicalInci: String,
 )
 
 @Serializable
@@ -197,7 +220,6 @@ data class OcrResponse(
     val extractedText: String,
     val quality: String,
     val provider: String = "local_tesseract",
-    val externalProcessing: Boolean = false,
     val uncertainFragments: List<String> = emptyList(),
     val notice: String? = null,
     val reviewRequired: Boolean = true,
@@ -240,7 +262,6 @@ data class HealthResponse(
     val ingredientCards: Int,
     val catalogProducts: Int,
     val photoOcrProvider: String = "local_tesseract",
-    val externalPhotoProcessing: Boolean = false,
 )
 
 @Serializable
@@ -263,13 +284,16 @@ data class ParsedInci(
 data class RecognizedIngredient(
     val rawName: String,
     val card: IngredientCard,
+    val ocrCorrected: Boolean = false,
 )
 
 data class EvidencePack(
     val parsed: ParsedInci,
     val recognized: List<RecognizedIngredient>,
+    val evidenceIngredients: List<RecognizedIngredient>,
     val unknown: List<String>,
     val sources: List<KnowledgeSource>,
+    val corrections: List<IngredientCorrection> = emptyList(),
 )
 
 data class UploadedPhoto(
@@ -284,7 +308,6 @@ data class OcrResult(
     val text: String,
     val quality: String,
     val provider: String = "local_tesseract",
-    val externalProcessing: Boolean = false,
     val uncertainFragments: List<String> = emptyList(),
     val notice: String? = null,
 )

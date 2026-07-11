@@ -20,7 +20,7 @@ class LocalCosmeticsService(
     private val config: AppConfig,
     private val knowledge: IngredientKnowledgeBase,
     private val gateway: LocalLlmGateway = OllamaClient(config),
-    private val ocr: OcrEngine = HybridOcrEngine(config),
+    private val ocr: OcrEngine = TesseractOcrEngine(config),
     private val inferenceGate: InferenceGate = InferenceGate(
         config.maxConcurrentInference,
         config.inferenceQueueCapacity,
@@ -61,7 +61,6 @@ class LocalCosmeticsService(
                 ingredientCards = knowledge.ingredientCount,
                 catalogProducts = knowledge.productCount,
                 photoOcrProvider = ocr.currentProvider(),
-                externalPhotoProcessing = ocr.externalProcessingAvailable(),
             ).also { response ->
                 cachedReadiness = CachedReadiness(
                     response,
@@ -79,6 +78,8 @@ class LocalCosmeticsService(
             if (it.length > 200) throw invalidInput("product_name_too_long", "Название продукта длиннее 200 символов.")
             rejectInstructionText(it)
         }
+        val productTypeHint = validateProductTypeHint(request.productTypeHint)
+            ?: ProductTypeResolver.resolve(productName)
         validateProfile(request.profile)
         return analyze(
             inputType = "text",
@@ -86,6 +87,8 @@ class LocalCosmeticsService(
             productName = productName,
             matchedProduct = null,
             version = null,
+            productTypeHint = productTypeHint,
+            productTypeSource = productTypeHint?.let { "user_hint" },
             profile = request.profile,
         )
     }
@@ -108,6 +111,8 @@ class LocalCosmeticsService(
             productName = "${product.brand} ${product.name}",
             matchedProduct = product,
             version = version,
+            productTypeHint = product.category,
+            productTypeSource = "local_catalog",
             profile = request.profile,
         )
     }
@@ -141,7 +146,6 @@ class LocalCosmeticsService(
             extractedText = result.text,
             quality = result.quality,
             provider = result.provider,
-            externalProcessing = result.externalProcessing,
             uncertainFragments = result.uncertainFragments,
             notice = result.notice,
         )
@@ -159,7 +163,7 @@ class LocalCosmeticsService(
         val (systemPrompt, userPrompt) = PromptBuilder.chatPrompt(session, message)
         PromptBuilder.ensureBudget(systemPrompt, userPrompt, config)
         val reply = callModel(systemPrompt, userPrompt, PromptBuilder.chatSchema())
-        val decision = parseChatDecision(reply.content)
+        val decision = groundChatDecision(parseChatDecision(reply.content), message)
         validateChatDecision(decision)
         val answer = assembleChatAnswer(decision, session)
         sessions.append(session.id, message, answer.answer)
@@ -179,6 +183,8 @@ class LocalCosmeticsService(
         productName: String?,
         matchedProduct: CatalogProduct?,
         version: ProductVersion?,
+        productTypeHint: String?,
+        productTypeSource: String?,
         profile: SkinProfile,
     ): AnalyzeResponse {
         val pack = knowledge.retrieve(inciText, config.maxKnowledgeCards)
@@ -187,19 +193,22 @@ class LocalCosmeticsService(
             productName = productName,
             matchedProductId = matchedProduct?.id,
             catalogVersion = version?.version,
-            catalogCategory = matchedProduct?.category,
+            productTypeHint = productTypeHint,
+            productTypeSource = productTypeSource,
             inciText = inciText,
             parsedIngredientCount = pack.parsed.ingredients.size,
             recognizedIngredientCount = pack.recognized.size,
+            evidenceIngredientCount = pack.evidenceIngredients.size,
             unknownIngredients = pack.unknown,
+            ingredientCorrections = pack.corrections,
         )
         if (pack.recognized.isEmpty()) return needsMoreData(input)
 
-        val cards = pack.recognized.map { it.card }
+        val cards = pack.evidenceIngredients.map { it.card }
         val (systemPrompt, userPrompt) = PromptBuilder.analysisPrompt(input, profile, cards)
         PromptBuilder.ensureBudget(systemPrompt, userPrompt, config)
-        val reply = callModel(systemPrompt, userPrompt, PromptBuilder.reportSchema())
-        val decision = parseAnalysisDecision(reply.content)
+        val reply = callModel(systemPrompt, userPrompt, PromptBuilder.reportSchema(input, cards))
+        val decision = groundAnalysisDecision(parseAnalysisDecision(reply.content), input, cards)
         validateAnalysisDecision(decision, input, cards)
         val report = ReportAssembler.assemble(decision, input, profile, cards, pack.sources)
         validateReport(report, input, cards, pack.sources)
@@ -218,7 +227,7 @@ class LocalCosmeticsService(
         input = input,
         report = CosmeticsReport(
             status = "needs_clarification",
-            productType = input.catalogCategory ?: "unknown",
+            productType = input.productTypeHint ?: "unknown",
             summary = "В локальной базе не нашлось достаточно распознанных ингредиентов для обоснованного анализа.",
             suitableSkinTypes = emptyList(),
             routine = RoutineAdvice(emptyList(), "unknown", "Сверьте INCI на упаковке и исправьте OCR.", "unknown", emptyList()),
@@ -265,6 +274,52 @@ class LocalCosmeticsService(
         throw ApiProblem(HttpStatusCode.BadGateway, "invalid_chat_json", "Модель нарушила строгий JSON-контракт чата.")
     }
 
+    private fun groundAnalysisDecision(
+        decision: ModelAnalysisDecision,
+        input: AnalysisInputSummary,
+        cards: List<IngredientCard>,
+    ): ModelAnalysisDecision {
+        if (decision.status !in setOf("answered", "needs_clarification")) invalidModel("Unknown analysis status.")
+        val productTypes = setOf("face_cleanser", "face_toner", "face_serum", "face_moisturizer", "face_sunscreen", "other", "unknown")
+        if (decision.productType !in productTypes) invalidModel("Unknown product type.")
+        if (decision.confidence !in setOf("low", "medium", "high")) invalidModel("Unknown confidence.")
+        if (decision.keyIngredientIds.size > 6 || decision.keyIngredientIds.distinct().size != decision.keyIngredientIds.size) {
+            invalidModel("Key ingredient IDs are duplicated or exceed the limit.")
+        }
+        val allowedCards = cards.map { it.id }.toSet()
+        if (decision.keyIngredientIds.any { it !in allowedCards }) invalidModel("Decision contains an ungrounded ingredient ID.")
+
+        val coverageCeiling = when {
+            input.parsedIngredientCount <= 0 || input.recognizedIngredientCount * 2 < input.parsedIngredientCount -> "low"
+            input.unknownIngredients.isNotEmpty() ||
+                input.recognizedIngredientCount < input.parsedIngredientCount ||
+                input.evidenceIngredientCount < input.recognizedIngredientCount -> "medium"
+            else -> "high"
+        }
+        val confidenceOrder = mapOf("low" to 0, "medium" to 1, "high" to 2)
+        val boundedConfidence = if (confidenceOrder.getValue(decision.confidence) <= confidenceOrder.getValue(coverageCeiling)) {
+            decision.confidence
+        } else {
+            coverageCeiling
+        }
+        val resolvedType = input.productTypeHint ?: return decision.copy(confidence = boundedConfidence)
+        val groundedIds = decision.keyIngredientIds.ifEmpty {
+            cards.asSequence()
+                .filterNot { it.id == "aqua" }
+                .map { it.id }
+                .take(6)
+                .toList()
+                .ifEmpty { cards.take(1).map { it.id } }
+        }
+        if (groundedIds.isEmpty()) return decision.copy(productType = resolvedType)
+        return decision.copy(
+            status = "answered",
+            productType = resolvedType,
+            keyIngredientIds = groundedIds,
+            confidence = boundedConfidence,
+        )
+    }
+
     private fun validateAnalysisDecision(
         decision: ModelAnalysisDecision,
         input: AnalysisInputSummary,
@@ -273,8 +328,8 @@ class LocalCosmeticsService(
         if (decision.status !in setOf("answered", "needs_clarification")) invalidModel("Unknown analysis status.")
         val productTypes = setOf("face_cleanser", "face_toner", "face_serum", "face_moisturizer", "face_sunscreen", "other", "unknown")
         if (decision.productType !in productTypes) invalidModel("Unknown product type.")
-        if (input.catalogCategory != null && decision.productType != input.catalogCategory) {
-            invalidModel("Decision contradicts catalog product type.")
+        if (input.productTypeHint != null && decision.productType != input.productTypeHint) {
+            invalidModel("Decision contradicts the resolved product type.")
         }
         if (decision.confidence !in setOf("low", "medium", "high")) invalidModel("Unknown confidence.")
         if (decision.keyIngredientIds.size > 6 || decision.keyIngredientIds.distinct().size != decision.keyIngredientIds.size) {
@@ -296,7 +351,7 @@ class LocalCosmeticsService(
         if (report.status !in setOf("answered", "needs_clarification")) invalidModel("Unknown report status.")
         val productTypes = setOf("face_cleanser", "face_toner", "face_serum", "face_moisturizer", "face_sunscreen", "other", "unknown")
         if (report.productType !in productTypes) invalidModel("Unknown product type.")
-        if (input.catalogCategory != null && report.productType != input.catalogCategory) invalidModel("Report contradicts catalog product type.")
+        if (input.productTypeHint != null && report.productType != input.productTypeHint) invalidModel("Report contradicts the resolved product type.")
         if (report.confidence !in setOf("low", "medium", "high")) invalidModel("Unknown confidence.")
         if (report.routine.rinseOff !in setOf("yes", "no", "unknown")) invalidModel("Unknown rinseOff value.")
         if (report.summary.isBlank() || report.disclaimer.isBlank()) invalidModel("Required report text is blank.")
@@ -318,7 +373,7 @@ class LocalCosmeticsService(
     }
 
     private fun validateChatDecision(decision: ModelChatDecision) {
-        val topics = setOf("routine", "skin_fit", "key_ingredients", "cautions", "limitations", "unknown")
+        val topics = setOf("overview", "routine", "skin_fit", "key_ingredients", "cautions", "limitations", "unknown")
         if (decision.status !in setOf("answered", "needs_clarification")) invalidModel("Unknown chat status.")
         if (decision.topic !in topics) invalidModel("Unknown chat topic.")
         if (decision.status == "answered" && decision.topic == "unknown") {
@@ -331,6 +386,11 @@ class LocalCosmeticsService(
 
     private fun assembleChatAnswer(decision: ModelChatDecision, session: AnalysisSession): ChatAnswer {
         val answer = when (decision.topic) {
+            "overview" -> listOf(
+                session.report.summary,
+                session.report.keyIngredients.joinToString(" ") { "${it.ingredientId}: ${it.whyItMatters}" },
+                "Использование: ${session.report.routine.step}; ${session.report.routine.directions}",
+            ).filter(String::isNotBlank).joinToString(" ")
             "routine" -> listOf(
                 "Время: ${session.report.routine.timeOfDay.joinToString().ifBlank { "уточните по этикетке" }}.",
                 "Шаг: ${session.report.routine.step}.",
@@ -349,14 +409,35 @@ class LocalCosmeticsService(
             "limitations" -> session.report.limitations.joinToString(" ")
             else -> "В локальных фактах этого анализа нет данных для ответа. Уточните вопрос о рутине, типе кожи, ингредиентах или ограничениях."
         }
+        val sourceIds = if (decision.status != "answered") emptyList() else when (decision.topic) {
+            "overview", "skin_fit", "cautions" -> session.report.sourceIds.take(8)
+            "key_ingredients" -> session.report.keyIngredients.flatMap { it.sourceIds }.distinct().take(8)
+            "routine" -> session.report.routine.sourceIds.take(8)
+            else -> emptyList()
+        }
         return ChatAnswer(
             status = decision.status,
             answer = answer,
-            sourceIds = if (decision.status == "answered") session.report.sourceIds.take(8) else emptyList(),
+            sourceIds = sourceIds,
             limitations = if (decision.status == "needs_clarification") {
                 listOf("Сервис не дополняет локальные факты знаниями модели.")
             } else session.report.limitations.take(3),
         )
+    }
+
+    private fun groundChatDecision(decision: ModelChatDecision, message: String): ModelChatDecision {
+        if (decision.status == "answered" && decision.topic != "unknown") return decision
+        val text = message.lowercase()
+        val topic = when {
+            listOf("для чего", "зачем", "что делает", "расскажи о", "обзор").any(text::contains) -> "overview"
+            listOf("когда", "как использовать", "как применять", "нанос", "шаг", "смыва").any(text::contains) -> "routine"
+            listOf("подойд", "тип кожи", "моей коже", "чувствительн", "сухой коже", "жирной коже").any(text::contains) -> "skin_fit"
+            listOf("ингредиент", "состав", "актив").any(text::contains) -> "key_ingredients"
+            listOf("осторож", "риск", "раздраж", "аллерг", "опас").any(text::contains) -> "cautions"
+            listOf("огранич", "точность", "неизвест").any(text::contains) -> "limitations"
+            else -> null
+        }
+        return topic?.let { ModelChatDecision(status = "answered", topic = it) } ?: decision
     }
 
     private fun validateInci(value: String): String {
@@ -377,6 +458,14 @@ class LocalCosmeticsService(
             throw invalidInput("invalid_profile", "Профиль содержит слишком много или слишком длинные значения.")
         }
         (profile.allergies + profile.goals).forEach(::rejectInstructionText)
+    }
+
+    private fun validateProductTypeHint(value: String?): String? {
+        val normalized = value?.trim()?.takeIf(String::isNotBlank) ?: return null
+        if (normalized !in ProductTypeResolver.supportedHints) {
+            throw invalidInput("invalid_product_type", "Выберите тип продукта из предложенного списка.")
+        }
+        return normalized
     }
 
     private fun rejectInstructionText(value: String) {
@@ -444,6 +533,9 @@ private object ReportAssembler {
         "surfactant" to "поверхностно-активная функция",
         "foam_boosting" to "усиление пены",
         "foaming" to "пенообразование",
+        "chelating" to "связывание ионов в формуле",
+        "viscosity_controlling" to "регулирование вязкости формулы",
+        "film_forming" to "образование плёнки",
     )
 
     private val skinLabels = mapOf(
@@ -491,18 +583,30 @@ private object ReportAssembler {
         if (profile.allergies.isNotEmpty()) cautions += "Сверьте заявленные аллергии со всей этикеткой: локальный список карточек неполон."
         val limitations = buildList {
             add("INCI не раскрывает точные концентрации, pH и взаимодействие компонентов в готовой формуле.")
-            add("Вероятный тип продукта выбран локальной моделью; способ применения всегда сверяйте с этикеткой производителя.")
+            add(
+                when (input.productTypeSource) {
+                    "local_catalog" -> "Тип продукта взят из проверенной записи локального demo-каталога. Способ применения всё равно сверяйте с этикеткой."
+                    "user_hint" -> "Тип продукта определён по вашей подсказке; если подсказка неточна, исправьте её и повторите анализ."
+                    else -> "Вероятный тип продукта выбран локальной моделью; способ применения всегда сверяйте с этикеткой производителя."
+                },
+            )
             if (input.unknownIngredients.isNotEmpty()) {
                 add("Локальная база не распознала ${input.unknownIngredients.size} позиций; для них свойства не выводятся.")
             }
+            if (input.recognizedIngredientCount > cards.size) {
+                add("Для компактного контекста модели отобрано ${cards.size} приоритетных карточек из ${input.recognizedIngredientCount} распознанных; общий счётчик покрытия сохранён полностью.")
+            }
         }
-        val incompleteCoverage = input.unknownIngredients.isNotEmpty() || input.recognizedIngredientCount < input.parsedIngredientCount
+        val incompleteCoverage = input.unknownIngredients.isNotEmpty() ||
+            input.recognizedIngredientCount < input.parsedIngredientCount ||
+            input.evidenceIngredientCount < input.recognizedIngredientCount
         val confidence = if (incompleteCoverage && decision.confidence == "high") "medium" else decision.confidence
         return CosmeticsReport(
             status = decision.status,
             productType = decision.productType,
             summary = if (decision.status == "answered") {
-                "Вероятный тип — ${productLabels.getValue(decision.productType)}. " +
+                val typeLead = if (input.productTypeHint != null) "Тип" else "Вероятный тип"
+                "$typeLead — ${productLabels.getValue(decision.productType)}. " +
                     "Распознано ${input.recognizedIngredientCount} из ${input.parsedIngredientCount} позиций; текст собран сервером только из локальных карточек."
             } else {
                 "Локальная модель не смогла обоснованно определить карточку по переданным фактам."
@@ -522,7 +626,13 @@ private object ReportAssembler {
 
     private fun routine(productType: String): RoutineAdvice = when (productType) {
         "face_cleanser" -> RoutineAdvice(listOf("утро", "вечер"), "очищение", "Используйте и смывайте строго по этикетке.", "yes", emptyList())
-        "face_toner" -> RoutineAdvice(listOf("по этикетке"), "после очищения", "Проверьте на упаковке частоту и необходимость смывания.", "unknown", emptyList())
+        "face_toner" -> RoutineAdvice(
+            listOf("утро или вечер — по этикетке"),
+            "после очищения",
+            "Наносите способом и с частотой, указанными производителем; избегайте области вокруг глаз.",
+            "unknown",
+            emptyList(),
+        )
         "face_serum" -> RoutineAdvice(listOf("по этикетке"), "после очищения, до крема", "Наносите с частотой и количеством, указанными производителем.", "no", emptyList())
         "face_moisturizer" -> RoutineAdvice(listOf("утро", "вечер"), "после сыворотки или самостоятельно", "Используйте по инструкции производителя.", "no", emptyList())
         "face_sunscreen" -> RoutineAdvice(listOf("днём"), "финальный дневной шаг", "Ориентируйтесь на заявленные SPF, количество и обновление на этикетке; один INCI SPF не доказывает.", "no", emptyList())

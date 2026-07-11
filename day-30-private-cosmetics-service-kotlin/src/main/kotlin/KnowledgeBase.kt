@@ -7,6 +7,7 @@ import java.util.Locale
 class IngredientKnowledgeBase private constructor(
     val document: IngredientCardsDocument,
     val sourceDocument: SourcesDocument,
+    val correctionDocument: OcrCorrectionsDocument,
     val productDocument: ProductsDocument,
 ) {
     private val sourceById = sourceDocument.sources.associateBy { it.id }
@@ -18,6 +19,18 @@ class IngredientKnowledgeBase private constructor(
                 if (previous != null && previous.id != card.id) {
                     throw KnowledgeException("Ingredient alias '$alias' is used by both '${previous.id}' and '${card.id}'.")
                 }
+            }
+        }
+    }
+    private val canonicalToCard = document.ingredients.associateBy { normalizeLookup(it.inciName) }
+    private val ocrCorrectionToCard: Map<String, IngredientCard> = buildMap {
+        correctionDocument.corrections.forEach { correction ->
+            val card = canonicalToCard[normalizeLookup(correction.canonicalInci)]
+                ?: throw KnowledgeException("OCR correction target '${correction.canonicalInci}' has no ingredient card.")
+            val key = normalizeLookup(correction.ocr)
+            val previous = put(key, card)
+            if (previous != null && previous.id != card.id) {
+                throw KnowledgeException("OCR correction '${correction.ocr}' is ambiguous.")
             }
         }
     }
@@ -44,17 +57,24 @@ class IngredientKnowledgeBase private constructor(
         val seen = mutableSetOf<String>()
 
         parsed.ingredients.forEach { raw ->
-            val card = lookupIngredient(raw)
-            if (card == null) {
+            val match = lookupIngredient(raw)
+            if (match == null) {
                 unknown += raw
-            } else if (seen.add(card.id) && recognized.size < maxCards) {
-                recognized += RecognizedIngredient(rawName = raw, card = card)
+            } else if (seen.add(match.card.id)) {
+                recognized += RecognizedIngredient(rawName = raw, card = match.card, ocrCorrected = match.ocrCorrected)
             }
         }
-        val sources = recognized.flatMap { it.card.sourceIds }.distinct().map { sourceId ->
+        val evidenceIngredients = recognized.withIndex()
+            .sortedWith(compareByDescending<IndexedValue<RecognizedIngredient>> { evidencePriority(it.value.card) }.thenBy { it.index })
+            .take(maxCards)
+            .map { it.value }
+        val sources = evidenceIngredients.flatMap { it.card.sourceIds }.distinct().map { sourceId ->
             sourceById[sourceId] ?: throw KnowledgeException("Unknown source '$sourceId' referenced by an ingredient card.")
         }
-        return EvidencePack(parsed, recognized, unknown.distinct().take(40), sources)
+        val corrections = recognized.filter { it.ocrCorrected }.map {
+            IngredientCorrection(rawName = it.rawName, canonicalInci = it.card.inciName)
+        }
+        return EvidencePack(parsed, recognized, evidenceIngredients, unknown.distinct().take(40), sources, corrections)
     }
 
     fun findProductExact(name: String): CatalogProduct? = productByLookup[normalizeLookup(name)]
@@ -73,7 +93,7 @@ class IngredientKnowledgeBase private constructor(
 
     fun sources(ids: Collection<String>): List<KnowledgeSource> = ids.distinct().mapNotNull(sourceById::get)
 
-    private fun lookupIngredient(raw: String): IngredientCard? {
+    private fun lookupIngredient(raw: String): IngredientMatch? {
         val candidates = buildList {
             add(raw)
             add(raw.substringBefore('('))
@@ -81,11 +101,28 @@ class IngredientKnowledgeBase private constructor(
             raw.split('/').forEach(::add)
         }
         return candidates.asSequence().map(::normalizeLookup).mapNotNull(aliasToCard::get).firstOrNull()
+            ?.let { IngredientMatch(it, ocrCorrected = false) }
+            ?: candidates.asSequence().map(::normalizeLookup).mapNotNull(ocrCorrectionToCard::get).firstOrNull()
+                ?.let { IngredientMatch(it, ocrCorrected = true) }
     }
+
+    private fun evidencePriority(card: IngredientCard): Int = when {
+        card.id in setOf(
+            "niacinamide", "tranexamic-acid", "arbutin", "retinol", "ascorbic-acid",
+            "salicylic-acid", "glycolic-acid", "lactic-acid", "zinc-oxide", "titanium-dioxide",
+        ) -> 100
+        card.functions.any { it in setOf("uv_filter", "exfoliant", "keratolytic") } -> 90
+        card.functions.any { it in setOf("humectant", "skin_conditioning", "emollient", "skin_protecting") } -> 60
+        card.id == "aqua" -> 0
+        else -> 30
+    }
+
+    private data class IngredientMatch(val card: IngredientCard, val ocrCorrected: Boolean)
 
     private fun validate() {
         requireUnique(document.ingredients.map { it.id }, "ingredient ID")
         requireUnique(sourceDocument.sources.map { it.id }, "source ID")
+        requireUnique(correctionDocument.corrections.map { normalizeLookup(it.ocr) }, "OCR correction")
         requireUnique(productDocument.products.map { it.id }, "product ID")
         document.ingredients.forEach { card ->
             if (card.id.isBlank() || card.inciName.isBlank() || card.functions.isEmpty() || card.sourceIds.isEmpty()) {
@@ -111,8 +148,9 @@ class IngredientKnowledgeBase private constructor(
         fun load(config: AppConfig): IngredientKnowledgeBase {
             val ingredients = read(config.knowledgeFile, IngredientCardsDocument.serializer())
             val sources = read(config.sourcesFile, SourcesDocument.serializer())
+            val corrections = read(config.ocrCorrectionsFile, OcrCorrectionsDocument.serializer())
             val products = read(config.productCatalogFile, ProductsDocument.serializer())
-            return IngredientKnowledgeBase(ingredients, sources, products).also { it.validate() }
+            return IngredientKnowledgeBase(ingredients, sources, corrections, products).also { it.validate() }
         }
 
         private fun <T> read(path: Path, serializer: kotlinx.serialization.KSerializer<T>): T {
@@ -151,13 +189,22 @@ object InciParser {
                 message = "Состав содержит текст, похожий на инструкцию, а не на INCI. Проверьте распознавание этикетки.",
             )
         }
-        val cleaned = text.replace(Regex("(?i)^\\s*(ingredients?|ингредиенты|состав)\\s*:\\s*"), "")
+        val cleaned = text
+            .replace(Regex("(?i)^\\s*(ingredients?|ингредиенты|состав)\\s*:\\s*"), "")
+            .replace(
+                Regex("(?i)(Sodium\\s+Hyaluronate)[ \\t]*[\\n\\r]+[ \\t]*(Crossp(?:ol|al)ymer)"),
+                "$1 $2",
+            )
+            .replace(Regex("(?<=\\d),(?=\\d-[A-Za-z])"), NUMERIC_COMMA_SENTINEL)
         val parts = cleaned.split(Regex("[,;\\n\\r]+"))
+            .map { it.replace(NUMERIC_COMMA_SENTINEL, ",") }
             .map { it.trim().trim('.', '•', '-', '–') }
             .filter { it.isNotBlank() }
             .distinctBy(::normalizeLookup)
         return ParsedInci(rawText = text, ingredients = parts)
     }
+
+    private const val NUMERIC_COMMA_SENTINEL = "<INCI_NUMERIC_COMMA>"
 }
 
 fun normalizeLookup(value: String): String = value
@@ -166,3 +213,32 @@ fun normalizeLookup(value: String): String = value
     .replace(Regex("[^A-ZА-Я0-9]+"), " ")
     .trim()
     .replace(Regex("\\s+"), " ")
+
+object ProductTypeResolver {
+    val supportedHints: Set<String> = setOf(
+        "face_cleanser",
+        "face_toner",
+        "face_serum",
+        "face_moisturizer",
+        "face_sunscreen",
+        "other",
+    )
+
+    fun resolve(value: String?): String? {
+        val text = value?.lowercase(Locale.ROOT)?.trim().orEmpty()
+        if (text.isBlank()) return null
+        return when {
+            listOf("spf", "sunscreen", "sun screen", "sunblock", "солнцезащ", "санскрин").any(text::contains) ->
+                "face_sunscreen"
+            listOf("cleanser", "face wash", "cleansing gel", "умыван", "очищающ", "пенка", "гель для лица").any(text::contains) ->
+                "face_cleanser"
+            listOf("toner", "tonic", "тонер", "тоник", "тонер-пэд", "тонер пэд", "тонерн", "пэды").any(text::contains) ->
+                "face_toner"
+            listOf("serum", "ampoule", "сывор", "ампул").any(text::contains) ->
+                "face_serum"
+            listOf("moisturizer", "moisturiser", "face cream", "facial cream", "крем", "эмульсия").any(text::contains) ->
+                "face_moisturizer"
+            else -> null
+        }
+    }
+}

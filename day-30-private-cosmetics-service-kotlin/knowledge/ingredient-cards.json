@@ -224,6 +224,195 @@
       "cautions": ["Не следует автоматически приравнивать tocopherol ко всем производным vitamin E; индивидуальная реакция возможна."],
       "suitableFor": ["dry", "normal", "combination"],
       "sourceIds": ["eu-cosing", "aad-patch-test"]
+    },
+    {
+      "id": "dipropylene-glycol",
+      "inci": "DIPROPYLENE GLYCOL",
+      "aliases": [],
+      "functions": ["solvent"],
+      "cautions": ["Роль dipropylene glycol зависит от концентрации и остальных компонентов формулы."],
+      "suitableFor": [],
+      "sourceIds": ["eu-cosing", "eu-cosmetics-framework"]
+    },
+    {
+      "id": "butylene-glycol",
+      "inci": "BUTYLENE GLYCOL",
+      "aliases": [],
+      "functions": ["humectant", "skin_conditioning", "solvent"],
+      "cautions": ["Увлажняющее ощущение и переносимость определяются готовой формулой, а не одной позицией INCI."],
+      "suitableFor": ["dry", "dehydrated"],
+      "sourceIds": ["eu-cosing", "eu-cosmetics-framework"]
+    },
+    {
+      "id": "isopentyldiol",
+      "inci": "ISOPENTYLDIOL",
+      "aliases": [],
+      "functions": ["solvent"],
+      "cautions": ["Позиция в INCI не показывает концентрацию и не позволяет отдельно оценить переносимость."],
+      "suitableFor": [],
+      "sourceIds": ["eu-cosing", "eu-cosmetics-framework"]
+    },
+    {
+      "id": "propanediol",
+      "inci": "PROPANEDIOL",
+      "aliases": [],
+      "functions": ["solvent", "viscosity_controlling"],
+      "cautions": ["Вклад propanediol в текстуру и переносимость зависит от всей формулы."],
+      "suitableFor": [],
+      "sourceIds": ["eu-cosing", "eu-cosmetics-framework"]
+    },
+    {
+      "id": "hydroxyacetophenone",
+      "inci": "HYDROXYACETOPHENONE",
+      "aliases": [],
+      "functions": ["antioxidant", "skin_conditioning"],
+      "cautions": ["Функция ингредиента в базе не является гарантией эффекта или переносимости готового продукта."],
+      "suitableFor": [],
+      "sourceIds": ["eu-cosing", "cir-hydroxyacetophenone"]
+    },
+    {
+      "id": "caprylyl-glycol",
+      "inci": "CAPRYLYL GLYCOL",
+      "aliases": [],
+      "functions": ["emollient", "skin_conditioning"],
+      "cautions": ["Ощущение на коже и переносимость зависят от концентрации и сочетания компонентов."],
+      "suitableFor": [],
+      "sourceIds": ["eu-cosing", "eu-cosmetics-framework"]
+    },
+    {
+      "id": "tranexamic-acid",
+      "inci": "TRANEXAMIC ACID",
+      "aliases": [],
+      "functions": ["astringent", "skin_conditioning"],
+      "cautions": ["Наличие tranexamic acid в INCI не доказывает концентрацию или действие на пигментацию; вывод зависит от готовой формулы."],
+      "suitableFor": [],
+      "sourceIds": ["eu-cosing", "eu-cosmetics-framework"]
+    },
+    {
+      "id": "ethylhexylglycerin",
+      "inci": "ETHYLHEXYLGLYCERIN",
+      "aliases": [],
+      "functions": ["skin_conditioning"],
+      "cautions": ["Без концентрации и состава готового продукта нельзя отдельно оценить роль или переносимость ethylhexylglycerin."],
+      "suitableFor": [],
+      "sourceIds": ["eu-cosing", "cir-ethylhexylglycerin"]
+    },
+    {
+      "id": "xanthan-gum",
+      "inci": "XANTHAN GUM",
+      "aliases": [],
+      "functions": ["viscosity_controlling"],
+      "cautions": ["Эта карточка описывает техническую функцию в формуле, а не отдельный эффект для кожи."],
+      "suitableFor": [],
+      "sourceIds": ["eu-cosing", "eu-cosmetics-framework"]
+    },
+    {
+      "id": "citric-acid",
+      "inci": "CITRIC ACID",
+      "aliases": [],
+      "functions": ["buffering", "chelating"],
+      "cautions": ["Наличие citric acid не доказывает кислотное отшелушивание: роль зависит от концентрации и pH готового продукта."],
+      "suitableFor": [],
+      "sourceIds": ["eu-cosing", "eu-cosmetics-framework"]
+    },
+    {
+      "id": "hexanediol-1-2",
+      "inci": "1,2-HEXANEDIOL",
+      "aliases": [],
+      "functions": ["skin_conditioning", "solvent"],
+      "cautions": ["Позиция в INCI не показывает концентрацию и не позволяет отдельно оценить переносимость."],
+      "suitableFor": [],
+      "sourceIds": ["eu-cosing", "eu-cosmetics-framework"]
+    },
+    {
+      "id": "sodium-phytate",
+      "inci": "SODIUM PHYTATE",
+      "aliases": [],
+      "functions": ["chelating"],
+      "cautions": ["Эта карточка описывает техническую функцию в формуле, а не самостоятельный результат ухода."],
+      "suitableFor": [],
+      "sourceIds": ["eu-cosing", "eu-cosmetics-framework"]
+    },
+    {
+      "id": "arbutin",
+      "inci": "ARBUTIN",
+      "aliases": [],
+      "functions": ["antioxidant", "skin_conditioning"],
+      "cautions": ["Строка ARBUTIN не уточняет форму и концентрацию; нельзя автоматически переносить выводы для alpha- или beta-arbutin и обещать действие на пигментацию."],
+      "suitableFor": [],
+      "sourceIds": ["eu-cosing", "eu-sccs-arbutin-2023"]
+    },
+    {
+      "id": "dipotassium-glycyrrhizate",
+      "inci": "DIPOTASSIUM GLYCYRRHIZATE",
+      "aliases": [],
+      "functions": ["humectant", "skin_conditioning"],
+      "cautions": ["Функции ингредиента не гарантируют успокаивающий эффект или переносимость конкретного продукта."],
+      "suitableFor": ["dry", "dehydrated"],
+      "sourceIds": ["eu-cosing", "cir-dipotassium-glycyrrhizate"]
+    },
+    {
+      "id": "hydroxypropyltrimonium-hyaluronate",
+      "inci": "HYDROXYPROPYLTRIMONIUM HYALURONATE",
+      "aliases": [],
+      "functions": ["film_forming"],
+      "cautions": ["Не следует приравнивать эту форму ко всем hyaluronates; свойства зависят от структуры, концентрации и формулы."],
+      "suitableFor": [],
+      "sourceIds": ["eu-cosing", "cir-hyaluronates-2023"]
+    },
+    {
+      "id": "hydrolyzed-hyaluronic-acid",
+      "inci": "HYDROLYZED HYALURONIC ACID",
+      "aliases": [],
+      "functions": ["humectant", "skin_conditioning"],
+      "cautions": ["INCI не раскрывает молекулярную массу, концентрацию или величину увлажнения готового продукта."],
+      "suitableFor": ["dry", "dehydrated"],
+      "sourceIds": ["eu-cosing", "cir-hyaluronates-2023"]
+    },
+    {
+      "id": "sodium-acetylated-hyaluronate",
+      "inci": "SODIUM ACETYLATED HYALURONATE",
+      "aliases": [],
+      "functions": ["humectant"],
+      "cautions": ["Не следует приравнивать эту форму ко всем hyaluronates; свойства готового продукта зависят от формулы."],
+      "suitableFor": ["dry", "dehydrated"],
+      "sourceIds": ["eu-cosing", "cir-hyaluronates-2023"]
+    },
+    {
+      "id": "hyaluronic-acid",
+      "inci": "HYALURONIC ACID",
+      "aliases": [],
+      "functions": ["skin_conditioning"],
+      "cautions": ["INCI не раскрывает молекулярную массу, концентрацию, глубину проникновения или величину увлажнения."],
+      "suitableFor": ["dry", "dehydrated"],
+      "sourceIds": ["eu-cosing", "cir-hyaluronates-2023"]
+    },
+    {
+      "id": "sodium-hyaluronate-crosspolymer",
+      "inci": "SODIUM HYALURONATE CROSSPOLYMER",
+      "aliases": [],
+      "functions": ["humectant", "skin_conditioning"],
+      "cautions": ["Crosspolymer — отдельная форма; INCI не позволяет оценить концентрацию или величину увлажнения готового продукта."],
+      "suitableFor": ["dry", "dehydrated"],
+      "sourceIds": ["eu-cosing", "cir-hyaluronates-2023"]
+    },
+    {
+      "id": "hydrolyzed-sodium-hyaluronate",
+      "inci": "HYDROLYZED SODIUM HYALURONATE",
+      "aliases": [],
+      "functions": ["skin_conditioning"],
+      "cautions": ["Не следует приравнивать эту форму ко всем hyaluronates; свойства зависят от структуры, концентрации и формулы."],
+      "suitableFor": ["dry", "dehydrated"],
+      "sourceIds": ["eu-cosing", "cir-hyaluronates-2023"]
+    },
+    {
+      "id": "potassium-hyaluronate",
+      "inci": "POTASSIUM HYALURONATE",
+      "aliases": [],
+      "functions": ["skin_conditioning"],
+      "cautions": ["Не следует приравнивать эту соль ко всем hyaluronates; свойства готового продукта зависят от формулы."],
+      "suitableFor": ["dry", "dehydrated"],
+      "sourceIds": ["eu-cosing", "cir-hyaluronates-2023"]
     }
   ]
 }

@@ -65,6 +65,20 @@
       }
     },
     {
+      "id": "ocr-toner-pad-regression",
+      "type": "text",
+      "input": {
+        "mode": "text",
+        "value": "Water, Dipropylene Glycol, Butylene Glycol, Isopentyidiol, Niacinamide, Propaneaiol, Glycerin, Hydn Oxy ce ophe none, Caprylyl Glycol, Tranexamic Acid, Ethylhexyiglycerin, Xanthan Gum, Carica Papaya Papaya) Fruit Baract, Citric Acid, Prunus Mume Fruit Extract, Pyrus Malus (Apple) Fruit Extract, Vitis Vinifera Ge pe) Fru Extract, 1,2-Hexanediol, Sodium Phytate, Eriobotrya Japonica Leaf Extract, Sodium Hyaluronate, a en i veri is (Spearmint) Extract, Arbutin, Dipotassium Glycyrhizate, Hydroxypropyitimonium Hyaluronate, Focophersi, Hydrolyzed Hyaluronic Acid, Sodium Acetylated Hyaluronate, Hyaluronic Acid, Sodium Hyaluronate\nCrosspalymer, Hydrolyzed Sodium Hyaluronate, Potassium Hyaluronate",
+        "nameHint": "Тонер"
+      },
+      "expectations": {
+        "expectedProductType": "face_toner",
+        "expectedIngredientIds": ["aqua", "dipropylene-glycol", "butylene-glycol", "isopentyldiol", "niacinamide", "propanediol", "glycerin", "hydroxyacetophenone", "caprylyl-glycol", "tranexamic-acid", "ethylhexylglycerin", "xanthan-gum", "citric-acid", "hexanediol-1-2", "sodium-phytate", "sodium-hyaluronate", "arbutin", "dipotassium-glycyrrhizate", "hydroxypropyltrimonium-hyaluronate", "tocopherol", "hydrolyzed-hyaluronic-acid", "sodium-acetylated-hyaluronate", "hyaluronic-acid", "sodium-hyaluronate-crosspolymer", "hydrolyzed-sodium-hyaluronate", "potassium-hyaluronate"],
+        "expectedStatus": "partial"
+      }
+    },
+    {
       "id": "name-current-reformulation",
       "type": "name",
       "input": {

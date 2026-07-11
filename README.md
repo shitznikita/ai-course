@@ -15,7 +15,7 @@
 - День 27 принимает `.txt`/`.md` заметку через браузер, держит её только в памяти и показывает локальный структурированный анализ через Ollama.
 - День 28 использует локальные `nomic-embed-text` и `qwen3:14b`: Day 21 structured index → cosine retrieval → grounded ответ с sources/quotes; cloud нужен только для осознанного сравнения на том же контексте.
 - День 29 измеряет baseline/optimized Q4 и Q8 на одинаковом локальном RAG-контексте.
-- День 30 рассчитан на CPU VPS: Eliza Vision (опционально) / multi-pass Tesseract → подтверждённый INCI → exact retrieval → локальная `qwen3:4b` → server-side grounded report; Ollama и приложение остаются на loopback, а web-вход публикуется через Caddy HTTPS с access token.
+- День 30 рассчитан на CPU VPS: локальный multi-pass Tesseract → подтверждённый INCI → exact retrieval и allowlist OCR corrections → локальная `qwen3:4b` → server-side grounded report; Ollama и приложение остаются на loopback, а web-вход публикуется через Caddy HTTPS с access token.
 
 ## Структура
 
@@ -637,7 +637,7 @@ day-29-local-llm-optimization-kotlin/scripts/run-optimization.sh
 
 ## Запуск дня 30
 
-Day 30 превращает локальную LLM в приватный web/API-сервис для анализа косметики. Основной VPS-профиль — `qwen3:4b`, один inference одновременно, bounded queue, Bearer auth, rate/context limits и RAM-only chat. Фото может распознаваться внешним Eliza Vision только при явном включении; рекомендации и чат всегда остаются локальными.
+Day 30 превращает локальную LLM в приватный web/API-сервис для анализа косметики. Основной VPS-профиль — `qwen3:4b`, один inference одновременно, bounded queue, Bearer auth, rate/context limits и RAM-only chat. Фото распознаётся локальным Tesseract; внешние AI/OCR API не используются.
 
 Offline-проверки без Ollama:
 

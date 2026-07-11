@@ -9,6 +9,51 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
+object IngredientsSectionExtractor {
+    private val startMarker = Regex(
+        """^[ \t]*(?:ingredients?|ingred[il1]ents?|inci|состав(?:[ \t]*\(inci\))?)[ \t]*(?::|-)?[ \t]*""",
+        setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
+    )
+    private val stopMarker = Regex(
+        """^[ \t]*(?:directions?|how[ \t]+to[ \t]+use|cautions?|warnings?|storage|manufactured(?:[ \t]+(?:for|by))?|made[ \t]+in|lot(?:[ \t]+no\.?)?|expiration(?:[ \t]+date)?|способ[ \t]+применения|предупреждени[ея]|меры[ \t]+предосторожности|изготовитель)\b""",
+        setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
+    )
+    private val waterListStart = Regex(
+        """^[^\n]{0,40}?(\b(?:water|aqua)[ \t]*,)""",
+        setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
+    )
+
+    fun extract(raw: String): String {
+        val normalized = normalize(raw)
+        if (normalized.isBlank()) return normalized
+        val markerStart = startMarker.find(normalized)
+        val afterStart = if (markerStart != null) {
+            normalized.substring(markerStart.range.last + 1)
+        } else {
+            val waterStart = waterListStart.find(normalized)?.groups?.get(1)?.range?.first ?: return normalized
+            normalized.substring(waterStart)
+        }.trimStart('\n', ' ', '\t', ':', '-', ';')
+        val stop = stopMarker.find(afterStart)
+        val section = (stop?.let { afterStart.substring(0, it.range.first) } ?: afterStart)
+            .trim(' ', '\t', '\n', ',', ';', ':', '-')
+        return section.takeIf { it.length >= 3 } ?: normalized
+    }
+
+    fun containsMarker(raw: String): Boolean = startMarker.containsMatchIn(normalize(raw))
+
+    private fun normalize(raw: String): String = raw
+        .replace("\r\n", "\n")
+        .replace('\r', '\n')
+        .replace('\u00A0', ' ')
+        .replace('，', ',')
+        .replace('；', ';')
+        .lineSequence()
+        .map { it.replace(Regex("[ \\t]+"), " ").trim() }
+        .filter(String::isNotBlank)
+        .joinToString("\n")
+        .trim()
+}
+
 data class TesseractInput(
     val name: String,
     val bytes: ByteArray,
@@ -21,6 +66,7 @@ object OcrImagePreprocessor {
     private const val MAX_UPSCALE = 3.0
 
     fun createInputs(photo: UploadedPhoto, configuredLanguages: String): List<TesseractInput> {
+        configureMemoryOnlyImageIo()
         val raw = TesseractInput("raw", photo.bytes, configuredLanguages)
         val source = runCatching { ImageIO.read(ByteArrayInputStream(photo.bytes)) }.getOrNull() ?: return listOf(raw)
         val englishPreferred = configuredLanguages

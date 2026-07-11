@@ -18,18 +18,12 @@ data class AppConfig(
     val maxOutputTokens: Int,
     val knowledgeFile: Path,
     val sourcesFile: Path,
+    val ocrCorrectionsFile: Path,
     val productCatalogFile: Path,
     val maxKnowledgeCards: Int,
     val ocrCommand: String,
     val ocrLanguages: String,
     val ocrTimeout: Duration,
-    val elizaVisionEnabled: Boolean,
-    val elizaVisionApiUrl: URI,
-    val elizaVisionAuthScheme: String,
-    val elizaVisionApiKey: SecretValue?,
-    val elizaVisionModel: String,
-    val elizaVisionRequestTimeout: Duration,
-    val elizaVisionMaxCompletionTokens: Int,
     val maxPhotoBytes: Int,
     val maxImagePixels: Long,
     val maxInciChars: Int,
@@ -68,22 +62,6 @@ data class AppConfig(
                 .trim().trimEnd('/')
             validateLoopbackBaseUrl(ollamaBaseUrl)
 
-            val elizaVisionEnabled = values.boolean("ELIZA_VISION_ENABLED", false)
-            val elizaVisionApiUrl = validateElizaVisionUrl(
-                values.optional("ELIZA_VISION_API_URL")
-                    ?: "https://api.eliza.yandex.net/openrouter/v1/chat/completions",
-            )
-            val elizaVisionAuthScheme = values.optional("ELIZA_VISION_AUTH_SCHEME") ?: "OAuth"
-            if (elizaVisionAuthScheme != "OAuth") {
-                throw ConfigurationException("ELIZA_VISION_AUTH_SCHEME must be OAuth.")
-            }
-            val elizaVisionApiKey = values.optional("ELIZA_VISION_API_KEY")?.let(SecretValue::of)
-            if (elizaVisionEnabled) validateElizaVisionKey(elizaVisionApiKey)
-            val elizaVisionModel = values.optional("ELIZA_VISION_MODEL") ?: "gpt-5-mini"
-            if (!elizaVisionModel.matches(Regex("[A-Za-z0-9._:/-]{1,120}"))) {
-                throw ConfigurationException("ELIZA_VISION_MODEL contains unsupported characters.")
-            }
-
             val contextLength = values.int("OLLAMA_CONTEXT_LENGTH", 8192, 512..32768)
             val maxOutputTokens = values.int("OLLAMA_MAX_OUTPUT_TOKENS", 192, 64..2048)
             val maxContextTokens = values.int("MAX_CONTEXT_TOKENS", 8192, 512..32768)
@@ -108,24 +86,12 @@ data class AppConfig(
                 maxOutputTokens = maxOutputTokens,
                 knowledgeFile = Path(values.optional("KNOWLEDGE_FILE") ?: "knowledge/ingredient-cards.json").normalize(),
                 sourcesFile = Path(values.optional("SOURCES_FILE") ?: "knowledge/sources.json").normalize(),
+                ocrCorrectionsFile = Path(values.optional("OCR_CORRECTIONS_FILE") ?: "knowledge/ocr-corrections.json").normalize(),
                 productCatalogFile = Path(values.optional("PRODUCT_CATALOG_FILE") ?: "catalog/products.json").normalize(),
                 maxKnowledgeCards = values.int("MAX_KNOWLEDGE_CARDS", 12, 1..40),
                 ocrCommand = values.optional("OCR_COMMAND") ?: "tesseract",
                 ocrLanguages = values.optional("OCR_LANGUAGES") ?: "eng+rus",
                 ocrTimeout = Duration.ofSeconds(values.long("OCR_TIMEOUT_SECONDS", 60, 5L..300L)),
-                elizaVisionEnabled = elizaVisionEnabled,
-                elizaVisionApiUrl = elizaVisionApiUrl,
-                elizaVisionAuthScheme = elizaVisionAuthScheme,
-                elizaVisionApiKey = elizaVisionApiKey,
-                elizaVisionModel = elizaVisionModel,
-                elizaVisionRequestTimeout = Duration.ofSeconds(
-                    values.long("ELIZA_VISION_TIMEOUT_SECONDS", 90, 10L..300L),
-                ),
-                elizaVisionMaxCompletionTokens = values.int(
-                    "ELIZA_VISION_MAX_COMPLETION_TOKENS",
-                    2_000,
-                    512..4_096,
-                ),
                 maxPhotoBytes = values.int("MAX_PHOTO_BYTES", 5_242_880, 65_536..20_971_520),
                 maxImagePixels = values.long("MAX_IMAGE_PIXELS", 20_000_000, 1_000_000L..100_000_000L),
                 maxInciChars = values.int("MAX_INCI_CHARS", 12_000, 100..100_000),
@@ -149,35 +115,6 @@ data class AppConfig(
                         "APP_ALLOW_INSECURE_NO_AUTH=true for loopback-only local development.",
                 )
             }
-        }
-
-        private fun validateElizaVisionKey(key: SecretValue?) {
-            val value = key?.reveal().orEmpty()
-            if (value.length < 24 || value.lowercase().let { "replace" in it || "change-me" in it }) {
-                throw ConfigurationException(
-                    "ELIZA_VISION_API_KEY must contain a real OAuth token when ELIZA_VISION_ENABLED=true.",
-                )
-            }
-        }
-
-        private fun validateElizaVisionUrl(value: String): URI {
-            val uri = try {
-                URI.create(value.trim())
-            } catch (_: IllegalArgumentException) {
-                throw ConfigurationException("ELIZA_VISION_API_URL is not a valid URL.")
-            }
-            if (
-                uri.scheme?.lowercase() != "https" ||
-                uri.host?.lowercase() != "api.eliza.yandex.net" ||
-                uri.port !in setOf(-1, 443) ||
-                uri.path != "/openrouter/v1/chat/completions" ||
-                uri.userInfo != null || uri.query != null || uri.fragment != null
-            ) {
-                throw ConfigurationException(
-                    "ELIZA_VISION_API_URL must be the HTTPS Eliza OpenRouter chat-completions endpoint.",
-                )
-            }
-            return uri
         }
 
         private fun validateLoopbackHost(value: String) {
@@ -241,15 +178,5 @@ data class AppConfig(
                 }
             }.toMap()
         }
-    }
-}
-
-class SecretValue private constructor(private val value: String) {
-    fun reveal(): String = value
-
-    override fun toString(): String = "<redacted>"
-
-    companion object {
-        fun of(value: String): SecretValue = SecretValue(value)
     }
 }

@@ -12,7 +12,8 @@ object PromptBuilder {
 Не создавай пользовательский текст, медицинские выводы, URL или новые факты.
 Верни только решение по enum и ID: status, productType, keyIngredientIds, confidence.
 keyIngredientIds могут содержать только ingredientId из FACTS.
-Если данных недостаточно, выбери status=needs_clarification.
+Переданные FACTS уже содержат хотя бы одну подтверждённую карточку: верни status=answered и выбери минимум один ingredientId.
+Неизвестные позиции снижают confidence, но не отменяют известные факты.
 Ответ должен строго соответствовать JSON Schema.
 """
 
@@ -32,7 +33,7 @@ keyIngredientIds могут содержать только ingredientId из FA
         val facts = buildJsonObject {
             put("inputType", JsonPrimitive(input.type))
             input.productName?.let { put("productName", JsonPrimitive(it)) }
-            input.catalogCategory?.let { put("catalogCategoryHint", JsonPrimitive(it)) }
+            input.productTypeHint?.let { put("productTypeHint", JsonPrimitive(it)) }
             put("parsedIngredientCount", JsonPrimitive(input.parsedIngredientCount))
             put("unknownIngredientCount", JsonPrimitive(input.unknownIngredients.size))
             put("profile", AppJson.strict.parseToJsonElement(AppJson.strict.encodeToString(profile)))
@@ -54,6 +55,7 @@ ${AppJson.strict.encodeToString(facts)}
 
 Правила:
 - productType выбери из допустимого enum;
+- если передан productTypeHint, используй именно его;
 - keyIngredientIds содержат не более 6 наиболее релевантных переданных ingredientId;
 - не добавляй описания, советы, claims или поля вне schema;
 - confidence=high допустим только при ясном типе продукта и полном покрытии состава.
@@ -65,7 +67,7 @@ ${AppJson.strict.encodeToString(facts)}
         val facts = buildJsonObject {
             put("productType", JsonPrimitive(session.report.productType))
             put("availableTopics", buildJsonArray {
-                listOf("routine", "skin_fit", "key_ingredients", "cautions", "limitations").forEach { add(JsonPrimitive(it)) }
+                listOf("overview", "routine", "skin_fit", "key_ingredients", "cautions", "limitations").forEach { add(JsonPrimitive(it)) }
             })
             put("recentMessages", buildJsonArray {
                 session.history.takeLast(4).forEach { stored ->
@@ -98,20 +100,25 @@ ${AppJson.strict.encodeToString(facts)}
         }
     }
 
-    fun reportSchema(): JsonObject = objectSchema(
-        properties = buildJsonObject {
-            put("status", enumSchema("answered", "needs_clarification"))
-            put("productType", enumSchema("face_cleanser", "face_toner", "face_serum", "face_moisturizer", "face_sunscreen", "other", "unknown"))
-            put("keyIngredientIds", stringArraySchema(6, 80))
-            put("confidence", enumSchema("low", "medium", "high"))
-        },
-        required = listOf("status", "productType", "keyIngredientIds", "confidence"),
-    )
+    fun reportSchema(input: AnalysisInputSummary, cards: List<IngredientCard>): JsonObject {
+        val productTypes = input.productTypeHint?.let(::listOf) ?: listOf(
+            "face_cleanser", "face_toner", "face_serum", "face_moisturizer", "face_sunscreen", "other", "unknown",
+        )
+        return objectSchema(
+            properties = buildJsonObject {
+                put("status", enumSchema("answered"))
+                put("productType", enumSchema(*productTypes.toTypedArray()))
+                put("keyIngredientIds", enumArraySchema(cards.map { it.id }, minItems = 1, maxItems = 6))
+                put("confidence", enumSchema("low", "medium", "high"))
+            },
+            required = listOf("status", "productType", "keyIngredientIds", "confidence"),
+        )
+    }
 
     fun chatSchema(): JsonObject = objectSchema(
         properties = buildJsonObject {
             put("status", enumSchema("answered", "needs_clarification"))
-            put("topic", enumSchema("routine", "skin_fit", "key_ingredients", "cautions", "limitations", "unknown"))
+            put("topic", enumSchema("overview", "routine", "skin_fit", "key_ingredients", "cautions", "limitations", "unknown"))
         },
         required = listOf("status", "topic"),
     )
@@ -137,5 +144,13 @@ ${AppJson.strict.encodeToString(facts)}
         put("type", JsonPrimitive("array"))
         put("maxItems", JsonPrimitive(maxItems))
         put("items", stringSchema(maxLength))
+    }
+
+    private fun enumArraySchema(values: List<String>, minItems: Int, maxItems: Int): JsonObject = buildJsonObject {
+        put("type", JsonPrimitive("array"))
+        put("minItems", JsonPrimitive(minItems))
+        put("maxItems", JsonPrimitive(maxItems))
+        put("uniqueItems", JsonPrimitive(true))
+        put("items", enumSchema(*values.toTypedArray()))
     }
 }

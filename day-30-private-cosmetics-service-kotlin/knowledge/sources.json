@@ -97,6 +97,46 @@
       "type": "scientific_opinion",
       "url": "https://health.ec.europa.eu/latest-updates/sccs-final-opinion-phenoxyethanol-2016-10-14_en",
       "notes": "Научное заключение SCCS о phenoxyethanol как консерванте; применимость вывода зависит от концентрации и условий использования."
+    },
+    {
+      "id": "cir-hyaluronates-2023",
+      "title": "Safety Assessment of Hyaluronates as Used in Cosmetics",
+      "organization": "Cosmetic Ingredient Review",
+      "type": "scientific_safety_assessment",
+      "url": "https://www.cir-safety.org/supplementaldoc/safety-assessment-hyaluronates-used-cosmetics-1",
+      "notes": "Оценка группы hyaluronates. Карточки используют её только как источник контекста; INCI не раскрывает концентрацию и свойства готовой формулы."
+    },
+    {
+      "id": "cir-hydroxyacetophenone",
+      "title": "Safety Assessment of Hydroxyacetophenone as Used in Cosmetics",
+      "organization": "Cosmetic Ingredient Review",
+      "type": "scientific_safety_assessment",
+      "url": "https://www.cir-safety.org/supplementaldoc/safety-assessment-hydroxyacetophenone-used-cosmetics-0",
+      "notes": "Материал CIR по hydroxyacetophenone; не является обещанием переносимости конкретного продукта."
+    },
+    {
+      "id": "cir-ethylhexylglycerin",
+      "title": "Ethylhexylglycerin",
+      "organization": "Cosmetic Ingredient Review",
+      "type": "ingredient_review",
+      "url": "https://www.cir-safety.org/ingredient/ethylhexylglycerin",
+      "notes": "Страница материалов CIR по ethylhexylglycerin; итоговая оценка всегда относится к условиям использования, а не к одному месту в INCI."
+    },
+    {
+      "id": "cir-dipotassium-glycyrrhizate",
+      "title": "Dipotassium Glycyrrhizate",
+      "organization": "Cosmetic Ingredient Review",
+      "type": "ingredient_review",
+      "url": "https://www.cir-safety.org/ingredient/dipotassium-glycyrrhizate",
+      "notes": "Страница материалов CIR по dipotassium glycyrrhizate; свойства готового продукта из неё не выводятся автоматически."
+    },
+    {
+      "id": "eu-sccs-arbutin-2023",
+      "title": "Safety of alpha-arbutin and beta-arbutin in cosmetic products",
+      "organization": "European Commission, Scientific Committee on Consumer Safety",
+      "type": "scientific_opinion",
+      "url": "https://health.ec.europa.eu/publications/safety-alpha-arbutin-and-beta-arbutin-cosmetic-products_en",
+      "notes": "Заключение относится к alpha- и beta-arbutin и заданным условиям применения; одна строка ARBUTIN на этикетке не позволяет переносить эти выводы на готовый продукт."
     }
   ]
 }

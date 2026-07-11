@@ -8,7 +8,6 @@ interface OcrEngine {
     suspend fun diagnose(): Boolean
     suspend fun recognize(photo: UploadedPhoto): OcrResult
     fun currentProvider(): String = "local_tesseract"
-    fun externalProcessingAvailable(): Boolean = false
 }
 
 class TesseractOcrEngine(private val config: AppConfig) : OcrEngine {

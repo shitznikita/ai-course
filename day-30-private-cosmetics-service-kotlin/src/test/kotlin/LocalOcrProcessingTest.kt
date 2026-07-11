@@ -6,10 +6,32 @@ import javax.imageio.ImageIO
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class LocalOcrProcessingTest {
+    @Test
+    fun `extracts only normalized ingredients section`() {
+        val raw = """
+            BRIGHTENING TONER PAD
+            Ingredients: Water，  Glycerin；
+              Niacinamide,  Panthenol
+            Directions: wipe over clean skin
+            Cautions: avoid contact with eyes
+        """.trimIndent().replace("  Glycerin", "\u00A0 Glycerin")
+
+        assertEquals(
+            "Water, Glycerin;\nNiacinamide, Panthenol",
+            IngredientsSectionExtractor.extract(raw),
+        )
+        assertEquals("Water, Glycerin", IngredientsSectionExtractor.extract("  Water,   Glycerin  "))
+        assertEquals(
+            "Water, Glycerin, Niacinamide",
+            IngredientsSectionExtractor.extract("OCR noise f dients Water, Glycerin, Niacinamide"),
+        )
+    }
+
     @Test
     fun `preprocessor creates bounded deterministic variants and preserves raw input`() {
         val image = BufferedImage(1_600, 1_000, BufferedImage.TYPE_INT_RGB)
@@ -33,6 +55,7 @@ class LocalOcrProcessingTest {
         val second = OcrImagePreprocessor.createInputs(photo, "eng+rus")
 
         assertEquals(listOf("ingredients-band-inverted", "raw"), first.map { it.name })
+        assertFalse(ImageIO.getUseCache(), "ImageIO disk cache must stay disabled for uploaded photos")
         assertContentEquals(bytes, first.last().bytes)
         assertEquals("eng", first.single { it.name == "ingredients-band-inverted" }.languages)
         first.filter { it.name != "raw" }.forEach { input ->

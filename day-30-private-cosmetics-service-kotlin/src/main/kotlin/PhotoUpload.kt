@@ -11,6 +11,7 @@ import java.io.ByteArrayInputStream
 import javax.imageio.ImageIO
 
 suspend fun ApplicationCall.readUploadedPhoto(config: AppConfig): UploadedPhoto {
+    configureMemoryOnlyImageIo()
     if (!request.contentType().match(ContentType.MultiPart.FormData)) {
         throw ApiProblem(HttpStatusCode.BadRequest, "multipart_required", "Отправьте JPEG или PNG как multipart/form-data в поле 'photo'.")
     }
@@ -47,6 +48,10 @@ suspend fun ApplicationCall.readUploadedPhoto(config: AppConfig): UploadedPhoto 
         }
     }
     return result ?: throw ApiProblem(HttpStatusCode.BadRequest, "photo_missing", "Файл в поле 'photo' не найден.")
+}
+
+fun configureMemoryOnlyImageIo() {
+    ImageIO.setUseCache(false)
 }
 
 private fun safePhotoFileName(original: String?): String {

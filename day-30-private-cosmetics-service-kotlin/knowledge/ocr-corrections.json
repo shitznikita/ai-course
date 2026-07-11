@@ -1,0 +1,38 @@
+{
+  "version": "1.0",
+  "updatedAt": "2026-07-11",
+  "corrections": [
+    {
+      "ocr": "Isopentyidiol",
+      "canonicalInci": "ISOPENTYLDIOL"
+    },
+    {
+      "ocr": "Propaneaiol",
+      "canonicalInci": "PROPANEDIOL"
+    },
+    {
+      "ocr": "Hydn Oxy ce ophe none",
+      "canonicalInci": "HYDROXYACETOPHENONE"
+    },
+    {
+      "ocr": "Ethylhexyiglycerin",
+      "canonicalInci": "ETHYLHEXYLGLYCERIN"
+    },
+    {
+      "ocr": "Dipotassium Glycyrhizate",
+      "canonicalInci": "DIPOTASSIUM GLYCYRRHIZATE"
+    },
+    {
+      "ocr": "Hydroxypropyitimonium Hyaluronate",
+      "canonicalInci": "HYDROXYPROPYLTRIMONIUM HYALURONATE"
+    },
+    {
+      "ocr": "Focophersi",
+      "canonicalInci": "TOCOPHEROL"
+    },
+    {
+      "ocr": "Sodium Hyaluronate Crosspalymer",
+      "canonicalInci": "SODIUM HYALURONATE CROSSPOLYMER"
+    }
+  ]
+}
