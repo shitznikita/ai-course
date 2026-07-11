@@ -49,15 +49,17 @@
 ## Приватность и границы сети
 
 ```text
-Browser -> SSH tunnel или Caddy HTTPS -> Ktor 127.0.0.1:8787
-                                      -> Ollama 127.0.0.1:11434
+Browser -> Caddy HTTPS :443 -> Ktor 127.0.0.1:8787
+                              -> Ollama 127.0.0.1:11434
 ```
 
 - `APP_HOST` и `OLLAMA_BASE_URL` принимают только loopback;
 - raw Ollama `11434` никогда не публикуется — локальный Ollama API не имеет своей аутентификации;
 - приватные API требуют `Authorization: Bearer <APP_API_TOKEN>`;
 - CORS не включён, UI и API работают same-origin;
-- token хранится браузером только в `sessionStorage`;
+- постоянный access token вводится один раз, проверяется через `/api/health` и хранится в `localStorage` этого HTTPS-origin до нажатия «Выйти»;
+- token передаётся только в `Authorization`, не рендерится вне password input и не попадает в URL, request body или логи; после успешной проверки или `401` input очищается;
+- boot/login/app views не показывают приватный интерфейс до успешной проверки token; общий `401` очищает локальный доступ;
 - фото передаётся Tesseract через stdin и не создаёт временный файл;
 - INCI, фото и чат не попадают в application/access logs;
 - сессии существуют только в RAM, имеют TTL и удаляются через API;
@@ -66,6 +68,8 @@ Browser -> SSH tunnel или Caddy HTTPS -> Ktor 127.0.0.1:8787
 - `/api/health/live` — публичный дешёвый liveness для proxy; dependency readiness в защищённом `/api/health` single-flight и кешируется на 10 секунд;
 
 VPS остаётся инфраструктурой хостинг-провайдера, поэтому «приватный» здесь означает отсутствие стороннего LLM API и закрытый сетевой контур приложения, а не абсолютный физический контроль над сервером.
+
+`localStorage` выбран для удобного постоянного входа и доступен только JavaScript того же origin. Поэтому страница не подключает сторонние scripts, сохраняет строгий CSP и должна открываться только по HTTPS. На чужом устройстве нужно нажать «Выйти».
 
 ## Ограничения по умолчанию
 
@@ -239,13 +243,52 @@ Systemd assets:
 - включают systemd hardening;
 - используют versioned releases и rollback при неуспешном health-check.
 
-Приватный доступ с компьютера:
+### Постоянный публичный HTTPS
+
+Hostname `papaya-hiddenite24599.my-vm.work` уже имеет A и AAAA этого VPS. Отдельный скрипт явно устанавливает официальный stable Caddy, рендерит и валидирует конфиг, открывает только TCP 80/443 и ждёт публичный сертификат:
+
+```bash
+sudo ./scripts/enable-public-https.sh \
+  --hostname papaya-hiddenite24599.my-vm.work \
+  --install-caddy \
+  --configure-ufw
+
+./scripts/diagnose-public-https.sh \
+  --hostname papaya-hiddenite24599.my-vm.work
+```
+
+С другого компьютера, а не с самого VPS, отдельно проверяются реальная внешняя сеть и сертификат по IPv4/IPv6:
+
+```bash
+./scripts/check-public-url.sh \
+  --hostname papaya-hiddenite24599.my-vm.work
+```
+
+Постоянный адрес: `https://papaya-hiddenite24599.my-vm.work`. Caddy автоматически получает/продлевает сертификат и перенаправляет HTTP на HTTPS. HTTP/3 отключён, поэтому наружу не открывается UDP 443. Access log не включён. Приложение и Ollama остаются loopback-only.
+
+`APP_API_TOKEN` создаётся один раз в root-owned `/etc/cosmetics-ai/cosmetics-ai.env`, не меняется при обычных deploy и используется как постоянный код входа. Пользователь вводит его один раз в web-форме; браузер запоминает код до logout. Смена server token отзывает доступ у всех ранее авторизованных устройств.
+
+Для осознанной ротации скрипт читает новое значение скрыто из stdin, атомарно меняет env, проверяет readiness и автоматически возвращает старое значение при ошибке:
+
+```bash
+sudo ./scripts/set-access-token.sh
+```
+
+Token нельзя передавать аргументом команды, коммитить или показывать в видео.
+
+Конфигурация следует официальным инструкциям Caddy:
+
+- [Install Caddy on Debian/Ubuntu](https://caddyserver.com/docs/install#debian-ubuntu-raspbian)
+- [Automatic HTTPS](https://caddyserver.com/docs/automatic-https)
+- [Reverse proxy](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)
+
+### SSH tunnel как закрытый fallback
 
 ```bash
 ssh -L 8787:127.0.0.1:8787 deploy@SERVER_IP
 ```
 
-После этого браузер открывает обычный `http://127.0.0.1:8787`, но трафик идёт внутри SSH. Optional публичный HTTPS-конфиг лежит в `deploy/Caddyfile.example`; Ollama всё равно остаётся закрытым.
+После этого браузер открывает `http://127.0.0.1:8787`, но трафик идёт внутри SSH. Это резервный путь для диагностики, если публичный HTTPS временно недоступен.
 
 ## Smoke, несколько запросов и лимиты
 
@@ -267,15 +310,16 @@ ssh -L 8787:127.0.0.1:8787 deploy@SERVER_IP
 
 ## Сценарий видео
 
-1. Показать `ollama list`, закрытые listeners в `diagnose.sh` и модель Q4.
-2. Открыть web через SSH tunnel; health показывает model + OCR ready.
-3. Загрузить тестовую этикетку, проверить OCR-текст, затем запустить анализ.
-4. Показать report, source links, limitations и model latency.
-5. Спросить в чате, когда применять продукт.
-6. Ввести неизвестное название и показать, что состав не выдумывается.
-7. Запустить четыре запроса с concurrency 2.
-8. Показать `429 + Retry-After` и отклонение слишком длинного INCI.
-9. Выполнить `ollama ps` и подтвердить отсутствие cloud endpoint.
+1. Показать постоянный HTTPS URL и экран входа, не показывая сам access token.
+2. Ввести token, обновить страницу и показать автоматический повторный вход из `localStorage`.
+3. Показать `diagnose.sh`/`diagnose-public-https.sh`: Caddy снаружи, Ktor и Ollama только на loopback.
+4. Загрузить тестовую этикетку, проверить OCR-текст, затем запустить анализ.
+5. Показать report, source links, limitations и model latency.
+6. Спросить в чате, когда применять продукт.
+7. Ввести неизвестное название и показать, что состав не выдумывается.
+8. Запустить четыре запроса с concurrency 2 и показать `429 + Retry-After`.
+9. Нажать «Выйти», показать возврат на login и отсутствие token в URL.
+10. Выполнить `ollama ps` и подтвердить отсутствие cloud endpoint.
 
 Не показывать в видео `/etc/cosmetics-ai/cosmetics-ai.env`, token, приватные фотографии или SSH-ключи.
 
@@ -284,7 +328,7 @@ ssh -L 8787:127.0.0.1:8787 deploy@SERVER_IP
 - локальная LLM развёртывается на VPS через Ollama;
 - есть документированный HTTP API и web UI;
 - чат хранит ограниченную историю в RAM;
-- доступ по сети проверяется через SSH tunnel или optional HTTPS;
+- доступ по сети постоянно работает через Caddy HTTPS, а SSH tunnel остаётся fallback;
 - несколько запросов проходят bounded queue без неконтролируемого роста RAM;
 - rate limit, max body/context/output и session TTL реализованы явно;
 - raw Ollama не публикуется;

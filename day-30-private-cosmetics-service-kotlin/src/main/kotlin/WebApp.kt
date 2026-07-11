@@ -56,10 +56,17 @@ fun Application.cosmeticsWebModule(
         call.response.headers.append(
             "Content-Security-Policy",
             "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; " +
-                "connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+                "connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
         )
         if (call.request.local.uri.startsWith("/api/")) {
             call.response.headers.append(HttpHeaders.CacheControl, "no-store")
+        } else if (
+            call.request.local.uri == "/" ||
+            call.request.local.uri.endsWith(".html") ||
+            call.request.local.uri.endsWith(".js") ||
+            call.request.local.uri.endsWith(".css")
+        ) {
+            call.response.headers.append(HttpHeaders.CacheControl, "no-cache")
         }
     }
 

@@ -11,9 +11,18 @@
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 * { box-sizing: border-box; }
-body { margin: 0; color: var(--ink); background: radial-gradient(circle at top left, #edf8ef, #f7f3eb 45%, #eef3f1); }
+body { min-height: 100vh; margin: 0; color: var(--ink); background: radial-gradient(circle at top left, #edf8ef, #f7f3eb 45%, #eef3f1); }
+[hidden] { display: none !important; }
+.access-view { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+.access-card { width: min(520px, 100%); padding: 34px; border: 1px solid rgba(68, 91, 76, .16); border-radius: 26px; background: rgba(255, 255, 255, .94); box-shadow: 0 24px 80px rgba(32, 52, 39, .12); }
+.access-card.compact { text-align: center; }
+.access-card h1 { font-size: clamp(2.5rem, 10vw, 4.8rem); }
+.login-form { display: grid; gap: 10px; margin-top: 28px; }
+.login-form button { width: 100%; }
+.access-note { margin: 20px 0 0; color: var(--muted); font-size: .84rem; line-height: 1.5; }
 .shell { width: min(1080px, calc(100% - 32px)); margin: 0 auto; padding: 40px 0 72px; }
 .hero { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; margin-bottom: 22px; }
+.hero-controls { display: grid; justify-items: end; gap: 10px; }
 .eyebrow { color: var(--green); font-size: .75rem; font-weight: 800; letter-spacing: .16em; }
 h1 { margin: 6px 0 10px; font-size: clamp(2.1rem, 7vw, 4.8rem); line-height: .98; letter-spacing: -.05em; }
 h2 { margin-top: 0; font-size: 1.25rem; }
@@ -37,7 +46,10 @@ input:focus, select:focus, textarea:focus { outline: 3px solid rgba(54, 154, 101
 .composition { display: grid; gap: 14px; margin-top: 18px; }
 button { width: fit-content; margin-top: 12px; padding: 11px 16px; border: 0; border-radius: 11px; color: white; background: var(--green); cursor: pointer; font-weight: 800; }
 button:hover { background: var(--green-dark); }
+button:disabled { cursor: wait; opacity: .65; }
 button.primary { padding-inline: 22px; }
+button.secondary { margin: 0; border: 1px solid #bdd0c2; color: var(--green-dark); background: rgba(255, 255, 255, .88); }
+button.secondary:hover { background: var(--soft); }
 .status { min-height: 24px; margin-bottom: 0; color: var(--green-dark); }
 .status.error { color: var(--warn); }
 .hidden { display: none; }
@@ -59,8 +71,11 @@ a { color: var(--green-dark); }
 @media (max-width: 720px) {
   .shell { width: min(100% - 20px, 1080px); padding-top: 24px; }
   .hero { display: block; }
-  .health { display: inline-block; margin-top: 8px; }
+  .hero-controls { justify-items: start; margin-top: 12px; }
+  .health { display: inline-block; }
   .grid.two, .input-grid { grid-template-columns: 1fr; }
   .panel { padding: 18px; border-radius: 17px; }
+  .access-view { padding: 14px; }
+  .access-card { padding: 24px 20px; border-radius: 20px; }
   .chat-form { display: grid; }
 }

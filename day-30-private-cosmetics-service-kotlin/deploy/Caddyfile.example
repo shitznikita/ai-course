@@ -1,6 +1,21 @@
-# Optional public HTTPS entry point. Replace the hostname only after its A/AAAA
-# records point to this VPS. Keep the application and Ollama on loopback.
-cosmetics.example.com {
+# Public HTTPS entry point rendered by scripts/enable-public-https.sh only after
+# every published A/AAAA address points to this VPS. The app and Ollama remain
+# loopback-only; HTTP/3 is disabled so UDP 443 does not need to be exposed.
+{
+	servers {
+		protocols h1 h2
+		max_header_size 32KB
+
+		timeouts {
+			read_header 10s
+			read_body 120s
+			write 360s
+			idle 2m
+		}
+	}
+}
+
+__PUBLIC_HOSTNAME__ {
 	encode zstd gzip
 
 	request_body {
@@ -17,6 +32,7 @@ cosmetics.example.com {
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
 		Referrer-Policy "no-referrer"
 		-Server
 	}

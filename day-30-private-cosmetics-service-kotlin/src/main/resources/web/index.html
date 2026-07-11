@@ -8,14 +8,52 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <main class="shell">
+  <section id="boot-view" class="access-view" aria-live="polite">
+    <div class="access-card compact">
+      <p class="eyebrow">DAY 30 · LOCAL LLM SERVICE</p>
+      <h1>Private Cosmetics AI</h1>
+      <p class="lead">Проверяем сохранённый доступ…</p>
+    </div>
+  </section>
+
+  <section id="login-view" class="access-view" hidden>
+    <div class="access-card">
+      <p class="eyebrow">DAY 30 · LOCAL LLM SERVICE</p>
+      <h1>Private Cosmetics AI</h1>
+      <p class="lead">Фото этикетки, INCI или название — с локальной моделью на приватном VPS.</p>
+      <form id="login-form" class="login-form" method="post" novalidate>
+        <label for="login-token">Постоянный код доступа</label>
+        <input
+          id="login-token"
+          type="password"
+          autocomplete="off"
+          autocapitalize="none"
+          spellcheck="false"
+          minlength="24"
+          placeholder="Введите код один раз на этом устройстве"
+          required
+        >
+        <button id="login-submit" type="submit">Войти</button>
+        <p id="login-error" class="status" role="alert" aria-live="polite"></p>
+      </form>
+      <p class="access-note">
+        После успешной проверки код сохраняется только в этом браузере. Его не нужно получать заново
+        при каждом открытии сайта; кнопка «Выйти» удалит сохранённый доступ с устройства.
+      </p>
+    </div>
+  </section>
+
+  <main id="app-view" class="shell" hidden>
     <header class="hero">
       <div>
         <p class="eyebrow">DAY 30 · LOCAL LLM SERVICE</p>
         <h1>Private Cosmetics AI</h1>
         <p class="lead">Фото этикетки, INCI или название из локального каталога — без облачной LLM.</p>
       </div>
-      <div id="health" class="health">Проверяем сервис…</div>
+      <div class="hero-controls">
+        <div id="health" class="health">Проверяем сервис…</div>
+        <button id="logout-button" class="secondary" type="button">Выйти</button>
+      </div>
     </header>
 
     <section class="panel privacy">
@@ -24,12 +62,8 @@
     </section>
 
     <section class="panel">
-      <h2>Доступ и профиль</h2>
+      <h2>Профиль кожи</h2>
       <div class="grid two">
-        <label>API token
-          <input id="token" type="password" autocomplete="off" placeholder="Bearer token">
-          <small>Хранится только в sessionStorage текущей вкладки.</small>
-        </label>
         <label>Тип кожи
           <select id="skin-type">
             <option value="unknown">Не указан</option>

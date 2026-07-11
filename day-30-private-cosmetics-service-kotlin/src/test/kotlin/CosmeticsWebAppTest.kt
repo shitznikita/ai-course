@@ -16,6 +16,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class CosmeticsWebAppTest {
@@ -27,15 +28,26 @@ class CosmeticsWebAppTest {
         application { cosmeticsWebModule(config, FakeUseCases()) }
 
         val page = client.get("/")
+        val script = client.get("/app.js")
         val live = client.get("/api/health/live")
         val health = client.get("/api/health")
 
         assertEquals(HttpStatusCode.OK, page.status)
-        assertTrue(page.bodyAsText().contains("Private Cosmetics AI"))
+        val pageText = page.bodyAsText()
+        val scriptText = script.bodyAsText()
+        assertTrue(pageText.contains("Private Cosmetics AI"))
+        assertTrue(pageText.contains("id=\"login-view\""))
+        assertTrue(pageText.contains("id=\"app-view\" class=\"shell\" hidden"))
+        assertFalse(pageText.contains("id=\"token\""))
+        assertTrue(scriptText.contains("localStorage.setItem(TOKEN_STORAGE_KEY, token)"))
+        assertTrue(scriptText.contains("headers.set(\"Authorization\", `Bearer ${'$'}{token}`)"))
+        assertFalse(scriptText.contains("window.location.search"))
+        assertFalse(scriptText.contains("window.location.hash"))
         assertEquals(HttpStatusCode.OK, live.status)
         assertEquals("alive", AppJson.strict.decodeFromString<LivenessResponse>(live.bodyAsText()).status)
         assertEquals(HttpStatusCode.Unauthorized, health.status)
         assertTrue(health.headers["Content-Security-Policy"]?.contains("frame-ancestors 'none'") == true)
+        assertTrue(health.headers["Content-Security-Policy"]?.contains("form-action 'self'") == true)
     }
 
     @Test
