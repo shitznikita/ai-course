@@ -48,6 +48,7 @@ data class IngredientCard(
     val functions: List<String>,
     val cautions: List<String> = emptyList(),
     val suitableFor: List<String> = emptyList(),
+    val presentationRole: String = "auto",
     val sourceIds: List<String>,
 )
 
@@ -135,6 +136,7 @@ data class AnalysisInputSummary(
     val inciText: String,
     val parsedIngredientCount: Int,
     val recognizedIngredientCount: Int,
+    val matchedFragmentCount: Int = recognizedIngredientCount,
     val evidenceIngredientCount: Int = recognizedIngredientCount,
     val unknownIngredients: List<String>,
     val ingredientCorrections: List<IngredientCorrection> = emptyList(),
@@ -156,6 +158,12 @@ data class RoutineAdvice(
 )
 
 @Serializable
+data class GroundedClaim(
+    val text: String,
+    val sourceIds: List<String> = emptyList(),
+)
+
+@Serializable
 data class IngredientInsight(
     val ingredientId: String,
     val whyItMatters: String,
@@ -167,10 +175,12 @@ data class CosmeticsReport(
     val status: String,
     val productType: String,
     val summary: String,
-    val suitableSkinTypes: List<String>,
+    val summarySourceIds: List<String> = emptyList(),
+    val highlights: List<GroundedClaim>,
+    val skinFit: List<GroundedClaim>,
     val routine: RoutineAdvice,
     val keyIngredients: List<IngredientInsight>,
-    val cautions: List<String>,
+    val cautions: List<GroundedClaim>,
     val limitations: List<String>,
     val confidence: String,
     val sourceIds: List<String>,
@@ -191,6 +201,8 @@ data class EvidenceSource(
     val title: String,
     val organization: String,
     val url: String,
+    val type: String = "reference",
+    val notes: String = "",
 )
 
 @Serializable
@@ -209,6 +221,7 @@ data class AnalyzeResponse(
     val report: CosmeticsReport,
     val sources: List<EvidenceSource>,
     val model: ModelMetrics? = null,
+    val apiVersion: String = "2",
 )
 
 @Serializable
@@ -245,6 +258,7 @@ data class ChatResponse(
     val reply: ChatAnswer,
     val sources: List<EvidenceSource>,
     val model: ModelMetrics,
+    val apiVersion: String = "2",
 )
 
 @Serializable
@@ -291,6 +305,7 @@ data class EvidencePack(
     val parsed: ParsedInci,
     val recognized: List<RecognizedIngredient>,
     val evidenceIngredients: List<RecognizedIngredient>,
+    val matchedFragmentCount: Int,
     val unknown: List<String>,
     val sources: List<KnowledgeSource>,
     val corrections: List<IngredientCorrection> = emptyList(),

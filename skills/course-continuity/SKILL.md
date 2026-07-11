@@ -13,7 +13,7 @@ Use this skill as the durable memory for the AI course repo. Keep future work co
 - Day 30 is `day-30-private-cosmetics-service-kotlin` on branch `codex/day-30-private-cosmetics-service`.
 - Day 30 deploys `qwen3:4b` through loopback Ollama on a CPU VPS. Ktor remains on loopback and is published through Caddy automatic HTTPS; the permanent access token is verified by the API and stored only in the authorized browser's `localStorage` until logout.
 - Photo input uses local Tesseract OCR followed by user confirmation; the LLM receives text only.
-- Quality comes from exact INCI retrieval, local EC/FDA/AAD/SCCS cards, strict enum/ID model decisions, server-side allowlist report assembly, unknown gates and bounded RAM chat rather than fine-tuning.
+- Quality comes from exact INCI retrieval, a `<50%` pre-LLM coverage gate, 63 curated local cards, claim-level primary/official sources, deterministic allergy/regulatory checks, strict enum/ID model decisions, server-side product-level report assembly and bounded RAM chat rather than fine-tuning. Technical ingredients no longer backfill «key ingredients», and ingredient `suitableFor` tags are not unioned into a product verdict.
 - Raw Ollama port `11434`, VPS API tokens, SSH private keys, uploaded photos and chat history must never be committed or publicly exposed.
 - Best offline checks:
 

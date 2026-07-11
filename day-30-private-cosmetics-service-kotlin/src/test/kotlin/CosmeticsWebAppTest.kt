@@ -14,6 +14,9 @@ import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -89,9 +92,15 @@ class CosmeticsWebAppTest {
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
-        val body = AppJson.strict.decodeFromString<AnalyzeResponse>(response.bodyAsText())
+        val rawBody = response.bodyAsText()
+        val body = AppJson.strict.decodeFromString<AnalyzeResponse>(rawBody)
         assertEquals("session-test", body.sessionId)
         assertEquals("AQUA, GLYCERIN", fake.lastText?.inciText)
+        val wire = AppJson.strict.parseToJsonElement(rawBody).jsonObject
+        assertEquals("2", wire.getValue("apiVersion").jsonPrimitive.content)
+        val report = wire.getValue("report").jsonObject
+        assertTrue(report.getValue("highlights").jsonArray.first().jsonObject.containsKey("sourceIds"))
+        assertTrue(report.getValue("cautions").jsonArray.isEmpty())
     }
 
     @Test
@@ -200,17 +209,18 @@ private class FakeUseCases : CosmeticsUseCases {
         sessionId = "session-test",
         input = AnalysisInputSummary("text", name, inciText = inci, parsedIngredientCount = 2, recognizedIngredientCount = 2, unknownIngredients = emptyList()),
         report = CosmeticsReport(
-            "answered",
-            "face_serum",
-            "Grounded demo report",
-            listOf("dry"),
-            RoutineAdvice(listOf("evening"), "serum", "Follow label", "no", listOf("eu-cosing")),
-            listOf(IngredientInsight("glycerin", "humectant", listOf("eu-cosing"))),
-            emptyList(),
-            listOf("Concentration unknown"),
-            "medium",
-            listOf("eu-cosing"),
-            "Not medical advice",
+            status = "answered",
+            productType = "face_serum",
+            summary = "Grounded demo report",
+            highlights = listOf(GroundedClaim("Hydration signal", listOf("eu-cosing"))),
+            skinFit = listOf(GroundedClaim("Dry-skin signal", listOf("eu-cosing"))),
+            routine = RoutineAdvice(listOf("evening"), "serum", "Follow label", "no", emptyList()),
+            keyIngredients = listOf(IngredientInsight("glycerin", "humectant", listOf("eu-cosing"))),
+            cautions = emptyList(),
+            limitations = listOf("Concentration unknown"),
+            confidence = "medium",
+            sourceIds = listOf("eu-cosing"),
+            disclaimer = "Not medical advice",
         ),
         sources = listOf(EvidenceSource("eu-cosing", "CosIng", "European Commission", "https://example.test")),
         model = ModelMetrics("qwen3:4b", 10),

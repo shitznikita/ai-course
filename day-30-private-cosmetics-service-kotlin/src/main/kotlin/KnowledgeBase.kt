@@ -55,26 +55,40 @@ class IngredientKnowledgeBase private constructor(
         val recognized = mutableListOf<RecognizedIngredient>()
         val unknown = mutableListOf<String>()
         val seen = mutableSetOf<String>()
+        var matchedFragmentCount = 0
 
         parsed.ingredients.forEach { raw ->
-            val match = lookupIngredient(raw)
-            if (match == null) {
+            val matches = lookupIngredients(raw)
+            if (matches.isEmpty()) {
                 unknown += raw
-            } else if (seen.add(match.card.id)) {
-                recognized += RecognizedIngredient(rawName = raw, card = match.card, ocrCorrected = match.ocrCorrected)
+            } else {
+                matchedFragmentCount += 1
+                matches.forEach { match ->
+                    if (seen.add(match.card.id)) {
+                        recognized += RecognizedIngredient(rawName = raw, card = match.card, ocrCorrected = match.ocrCorrected)
+                    }
+                }
             }
         }
         val evidenceIngredients = recognized.withIndex()
             .sortedWith(compareByDescending<IndexedValue<RecognizedIngredient>> { evidencePriority(it.value.card) }.thenBy { it.index })
             .take(maxCards)
             .map { it.value }
-        val sources = evidenceIngredients.flatMap { it.card.sourceIds }.distinct().map { sourceId ->
+        val sources = (recognized.flatMap { it.card.sourceIds } + METHODOLOGY_SOURCE_IDS).distinct().map { sourceId ->
             sourceById[sourceId] ?: throw KnowledgeException("Unknown source '$sourceId' referenced by an ingredient card.")
         }
         val corrections = recognized.filter { it.ocrCorrected }.map {
             IngredientCorrection(rawName = it.rawName, canonicalInci = it.card.inciName)
         }
-        return EvidencePack(parsed, recognized, evidenceIngredients, unknown.distinct().take(40), sources, corrections)
+        return EvidencePack(
+            parsed = parsed,
+            recognized = recognized,
+            evidenceIngredients = evidenceIngredients,
+            matchedFragmentCount = matchedFragmentCount,
+            unknown = unknown.distinct().take(40),
+            sources = sources,
+            corrections = corrections,
+        )
     }
 
     fun findProductExact(name: String): CatalogProduct? = productByLookup[normalizeLookup(name)]
@@ -87,31 +101,39 @@ class IngredientKnowledgeBase private constructor(
         .filter { asOf.isNullOrBlank() || it.effectiveFrom <= asOf }
         .maxByOrNull { it.effectiveFrom }
 
-    fun evidenceSources(ids: Collection<String>): List<EvidenceSource> = ids.distinct().mapNotNull { sourceById[it] }.map {
-        EvidenceSource(it.id, it.title, it.organization, it.url)
+    fun evidenceSources(ids: Collection<String>): List<EvidenceSource> = ids.distinct().map { id ->
+        sourceById[id] ?: throw KnowledgeException("Unknown evidence source '$id'.")
+    }.map {
+        EvidenceSource(it.id, it.title, it.organization, it.url, it.type, it.notes)
     }
 
     fun sources(ids: Collection<String>): List<KnowledgeSource> = ids.distinct().mapNotNull(sourceById::get)
 
-    private fun lookupIngredient(raw: String): IngredientMatch? {
+    private fun lookupIngredients(raw: String): List<IngredientMatch> {
         val candidates = buildList {
             add(raw)
             add(raw.substringBefore('('))
             if ('(' in raw && ')' in raw) add(raw.substringAfter('(').substringBefore(')'))
             raw.split('/').forEach(::add)
         }
-        return candidates.asSequence().map(::normalizeLookup).mapNotNull(aliasToCard::get).firstOrNull()
-            ?.let { IngredientMatch(it, ocrCorrected = false) }
-            ?: candidates.asSequence().map(::normalizeLookup).mapNotNull(ocrCorrectionToCard::get).firstOrNull()
-                ?.let { IngredientMatch(it, ocrCorrected = true) }
+        candidates.asSequence().map(::normalizeLookup).mapNotNull(aliasToCard::get).firstOrNull()?.let {
+            return listOf(IngredientMatch(it, ocrCorrected = false))
+        }
+        candidates.asSequence().map(::normalizeLookup).mapNotNull(ocrCorrectionToCard::get).firstOrNull()?.let {
+            return listOf(IngredientMatch(it, ocrCorrected = true))
+        }
+        return emptyList()
     }
 
     private fun evidencePriority(card: IngredientCard): Int = when {
+        card.id == "butylphenyl-methylpropional" -> 130
+        card.id == "parfum" -> 120
         card.id in setOf(
             "niacinamide", "tranexamic-acid", "arbutin", "retinol", "ascorbic-acid",
             "salicylic-acid", "glycolic-acid", "lactic-acid", "zinc-oxide", "titanium-dioxide",
         ) -> 100
         card.functions.any { it in setOf("uv_filter", "exfoliant", "keratolytic") } -> 90
+        card.functions.contains("perfuming") -> 80
         card.functions.any { it in setOf("humectant", "skin_conditioning", "emollient", "skin_protecting") } -> 60
         card.id == "aqua" -> 0
         else -> 30
@@ -124,9 +146,15 @@ class IngredientKnowledgeBase private constructor(
         requireUnique(sourceDocument.sources.map { it.id }, "source ID")
         requireUnique(correctionDocument.corrections.map { normalizeLookup(it.ocr) }, "OCR correction")
         requireUnique(productDocument.products.map { it.id }, "product ID")
+        METHODOLOGY_SOURCE_IDS.forEach { id ->
+            if (id !in sourceById) throw KnowledgeException("Required methodology source '$id' is missing.")
+        }
         document.ingredients.forEach { card ->
             if (card.id.isBlank() || card.inciName.isBlank() || card.functions.isEmpty() || card.sourceIds.isEmpty()) {
                 throw KnowledgeException("Ingredient card '${card.id}' is incomplete.")
+            }
+            if (card.presentationRole !in setOf("auto", "benefit", "technical", "caution")) {
+                throw KnowledgeException("Ingredient '${card.id}' has unknown presentationRole '${card.presentationRole}'.")
             }
             card.sourceIds.forEach { id ->
                 if (id !in sourceById) throw KnowledgeException("Ingredient '${card.id}' references missing source '$id'.")
@@ -145,6 +173,8 @@ class IngredientKnowledgeBase private constructor(
     }
 
     companion object {
+        private val METHODOLOGY_SOURCE_IDS = listOf("eu-cosmetic-claims-655")
+
         fun load(config: AppConfig): IngredientKnowledgeBase {
             val ingredients = read(config.knowledgeFile, IngredientCardsDocument.serializer())
             val sources = read(config.sourcesFile, SourcesDocument.serializer())
@@ -189,14 +219,23 @@ object InciParser {
                 message = "Состав содержит текст, похожий на инструкцию, а не на INCI. Проверьте распознавание этикетки.",
             )
         }
-        val cleaned = text
-            .replace(Regex("(?i)^\\s*(ingredients?|ингредиенты|состав)\\s*:\\s*"), "")
+        val withoutHeader = text
+            .replace(Regex("^\\s*[^,:]{1,80}:\\s*"), "")
+            .replace(Regex("-\\s*[\\n\\r]+\\s*"), "-")
+        val commaSeparatedLayout = withoutHeader.any { it == ',' || it == ';' }
+        val layoutNormalized = if (commaSeparatedLayout) {
+            withoutHeader.replace(Regex("[\\n\\r]+"), " ")
+        } else {
+            withoutHeader
+        }
+        val cleaned = layoutNormalized
             .replace(
-                Regex("(?i)(Sodium\\s+Hyaluronate)[ \\t]*[\\n\\r]+[ \\t]*(Crossp(?:ol|al)ymer)"),
+                Regex("(?i)(Sodium\\s+Hyaluronate)[ \\t]+(Crossp(?:ol|al)ymer)"),
                 "$1 $2",
             )
             .replace(Regex("(?<=\\d),(?=\\d-[A-Za-z])"), NUMERIC_COMMA_SENTINEL)
-        val parts = cleaned.split(Regex("[,;\\n\\r]+"))
+        val delimiter = if (commaSeparatedLayout) Regex("[,;]+") else Regex("[\\n\\r]+")
+        val parts = cleaned.split(delimiter)
             .map { it.replace(NUMERIC_COMMA_SENTINEL, ",") }
             .map { it.trim().trim('.', '•', '-', '–') }
             .filter { it.isNotBlank() }

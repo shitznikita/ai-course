@@ -48,16 +48,16 @@ const productTypeInitials = {
   unknown: "?",
 };
 const productTypeSourceLabels = {
-  catalog: "по локальному каталогу",
-  local_catalog: "по локальному каталогу",
-  catalog_category: "по локальному каталогу",
-  product_type_hint: "по выбранному типу",
-  user_hint: "по выбранному типу",
-  explicit_hint: "по выбранному типу",
-  deterministic_hint: "по выбранному типу",
-  name_hint: "по названию",
-  model: "по локальной модели",
-  local_model: "по локальной модели",
+  catalog: "взят из локального каталога",
+  local_catalog: "взят из локального каталога",
+  catalog_category: "взят из локального каталога",
+  product_type_hint: "выбран вами",
+  user_hint: "выбран вами",
+  explicit_hint: "выбран вами",
+  deterministic_hint: "выбран вами",
+  name_hint: "определён по названию",
+  model: "определён локальной моделью",
+  local_model: "определён локальной моделью",
   unknown: "не определён",
 };
 const statusLabels = { answered: "Анализ готов", needs_clarification: "Нужно уточнение" };
@@ -282,7 +282,7 @@ byId("photo-form").addEventListener("submit", async (event) => {
     const uncertain = result.uncertainFragments?.length
       ? ` Неразборчивые фрагменты: ${result.uncertainFragments.join(", ")}.`
       : "";
-    byId("ocr-note").textContent = `Локальный Tesseract · качество: ${result.quality}.${uncertain} Проверьте состав перед анализом.`;
+    byId("ocr-note").textContent = `Локальный Tesseract · предварительная оценка: ${result.quality}.${uncertain} Проверьте состав перед анализом.`;
     setStatus("Состав распознан. Выберите тип средства, исправьте явные ошибки и запустите анализ.");
     byId("product-type-hint").focus();
   } catch (error) {
@@ -326,7 +326,10 @@ async function analyze(path, payload, submit) {
     activeWorkspaceId = workspace.id;
     renderWorkspaceList();
     renderActiveWorkspace();
-    setStatus(result.sessionId ? "Анализ готов. Чат по продукту открыт справа." : "Отчёт готов, но для чата нужно больше распознанных данных.");
+    const partial = isPartialAnalysis(result.report, result.input);
+    setStatus(result.sessionId
+      ? partial ? "Частичный разбор готов. Чат будет отвечать только по подтверждённой части." : "Анализ готов. Чат по продукту открыт справа."
+      : "Отчёт готов, но для чата нужно больше распознанных данных.");
     if (window.matchMedia("(max-width: 900px)").matches) {
       window.setTimeout(() => byId("result-panel").scrollIntoView({ behavior: "smooth", block: "start" }), 0);
     }
@@ -341,7 +344,8 @@ function createWorkspace(analysis) {
   workspaceSequence += 1;
   const productType = analysis.report?.productType || "unknown";
   const suppliedName = analysis.input?.productName?.trim();
-  const title = suppliedName || (productType !== "unknown" ? productTypeLabels[productType] : null) || `Продукт ${workspaceSequence}`;
+  const fallbackTitle = productType !== "unknown" ? `${productTypeLabels[productType]} #${workspaceSequence}` : `Продукт ${workspaceSequence}`;
+  const title = suppliedName || fallbackTitle;
   const id = globalThis.crypto?.randomUUID?.() || `workspace-${Date.now()}-${workspaceSequence}`;
   return {
     id,
@@ -380,14 +384,52 @@ function normalizedValues(values) {
   return Array.isArray(values) ? values.filter((value) => value !== null && value !== undefined && String(value).trim()) : [];
 }
 
-function listBlock(title, values, className = "") {
-  const block = element("section", null, `report-block${className ? ` ${className}` : ""}`);
-  block.append(element("h3", title));
-  const list = element("ul");
-  const items = normalizedValues(values);
-  (items.length ? items : ["Нет данных"]).forEach((value) => list.append(element("li", String(value))));
-  block.append(list);
-  return block;
+function uniqueStrings(values) {
+  return [...new Set(normalizedValues(values).map((value) => String(value).trim()).filter(Boolean))];
+}
+
+function normalizeGroundedClaims(values) {
+  return normalizedValues(values).map((value) => {
+    if (typeof value === "string") return { text: value, sourceIds: [] };
+    return {
+      text: String(value?.text || "").trim(),
+      sourceIds: uniqueStrings(value?.sourceIds),
+    };
+  }).filter((claim) => claim.text);
+}
+
+function analysisCoverage(input = {}) {
+  const parsed = Math.max(0, Number(input.parsedIngredientCount) || 0);
+  const recognizedIngredients = Math.max(0, Number(input.recognizedIngredientCount) || 0);
+  const recognized = Math.min(parsed || Number.MAX_SAFE_INTEGER, Math.max(0, Number(input.matchedFragmentCount ?? recognizedIngredients) || 0));
+  return {
+    parsed,
+    recognized,
+    recognizedIngredients,
+    percent: parsed > 0 ? Math.round((recognized / parsed) * 100) : 0,
+    unknown: normalizedValues(input.unknownIngredients).length,
+  };
+}
+
+function isPartialAnalysis(report = {}, input = {}) {
+  const coverage = analysisCoverage(input);
+  return report.status === "needs_clarification" || coverage.recognized < coverage.parsed;
+}
+
+function createSourceRegistry(sources) {
+  const entries = [];
+  const seen = new Set();
+  normalizedValues(sources).forEach((source) => {
+    const id = String(source?.id || "").trim();
+    if (!id || seen.has(id)) return;
+    seen.add(id);
+    entries.push(source);
+  });
+  return {
+    entries,
+    byId: new Map(entries.map((source) => [String(source.id), source])),
+    numberById: new Map(entries.map((source, index) => [String(source.id), index + 1])),
+  };
 }
 
 function ingredientLabel(id) {
@@ -398,6 +440,25 @@ function ingredientLabel(id) {
 function typeSourceLabel(source) {
   if (!source) return null;
   return productTypeSourceLabels[source] || String(source).replace(/_/g, " ");
+}
+
+function sourceTypeLabel(type) {
+  if (!type) return "";
+  const labels = {
+    clinical_study: "Клиническое исследование",
+    consumer_guidance: "Рекомендации для потребителей",
+    dermatology_guidance: "Дерматологические рекомендации",
+    ingredient_review: "Обзор ингредиента",
+    regulation: "Нормативный документ",
+    regulatory_database: "Регуляторная база",
+    regulatory_guidance: "Регуляторное руководство",
+    regulatory_overview: "Обзор регулирования",
+    professional_guidance: "Профессиональная рекомендация",
+    scientific_opinion: "Научное заключение",
+    scientific_safety_assessment: "Научная оценка безопасности",
+    safety_opinion: "Заключение по безопасности",
+  };
+  return labels[type] || String(type).replace(/_/g, " ");
 }
 
 function correctionValues(value) {
@@ -418,66 +479,264 @@ function correctionLabel(correction) {
   return Object.values(correction).filter((item) => ["string", "number"].includes(typeof item)).join(" → ");
 }
 
-function appendMetaCard(root, label, value) {
-  const card = element("div", null, "meta-card");
-  card.append(element("span", label), element("strong", value));
-  root.append(card);
+function renderClaimCitations(sourceIds, registry) {
+  const sources = uniqueStrings(sourceIds).map((id) => registry.byId.get(id)).filter(Boolean);
+  if (!sources.length) return null;
+  const refs = element("span", null, "claim-citations");
+  refs.setAttribute("aria-label", "Источники утверждения");
+  sources.forEach((source) => {
+    const number = registry.numberById.get(String(source.id));
+    const link = safeLink(source, String(number));
+    link.classList.add("claim-citation");
+    link.title = `${source.organization}: ${source.title}`;
+    link.setAttribute("aria-label", `Источник ${number}: ${source.organization}, ${source.title}`);
+    refs.append(link);
+  });
+  return refs;
+}
+
+function appendClaim(container, claim, registry) {
+  container.append(element("span", claim.text, "claim-copy"));
+  const citations = renderClaimCitations(claim.sourceIds, registry);
+  if (citations) container.append(citations);
+}
+
+function renderGroundedList(title, claims, registry, options = {}) {
+  const section = element("section", null, `report-section ${options.className || ""}`.trim());
+  section.append(element("h3", title));
+  if (options.description) section.append(element("p", options.description, "section-description"));
+  const list = element("ul", null, "claim-list");
+  if (claims.length) {
+    claims.forEach((claim) => {
+      const item = element("li");
+      appendClaim(item, claim, registry);
+      list.append(item);
+    });
+  } else {
+    list.append(element("li", options.emptyText || "Недостаточно подтверждённых данных.", "empty-claim"));
+  }
+  section.append(list);
+  return section;
+}
+
+function compactIngredientInsight(text) {
+  return String(text || "")
+    .replace(/^Функции в локальной карточке:\s*/i, "")
+    .replace(/\.\s*Роль зависит от концентрации и всей формулы\.?$/i, ".")
+    .trim();
+}
+
+function renderIngredientSection(items, registry) {
+  const section = element("section", null, "report-section ingredient-section");
+  section.append(element("h3", "Что подтверждено по ингредиентам"));
+  const grid = element("div", null, "ingredient-grid");
+  if (!items.length) {
+    grid.append(element("p", "В подтверждённой части нет выбранных ключевых ингредиентов.", "empty-claim"));
+  } else {
+    items.forEach((item) => {
+      const card = element("article", null, "ingredient-card");
+      card.append(element("h4", ingredientLabel(item.ingredientId)));
+      const claim = element("p", null, "ingredient-claim");
+      appendClaim(claim, {
+        text: compactIngredientInsight(item.whyItMatters),
+        sourceIds: uniqueStrings(item.sourceIds),
+      }, registry);
+      card.append(claim);
+      grid.append(card);
+    });
+  }
+  section.append(grid);
+  if (items.length) section.append(element("p", "Фактическая роль ингредиента зависит от концентрации и всей формулы.", "scope-note"));
+  return section;
+}
+
+function renderRoutineSection(routine, registry, productTypeSource) {
+  const section = element("section", null, "report-section routine-section");
+  const heading = element("div", null, "section-title-row");
+  heading.append(element("h3", "Как использовать"));
+  if (!normalizedValues(routine.sourceIds).length) {
+    const label = productTypeSource === "user_hint" ? "По выбранному типу" : "Базовая схема по типу";
+    heading.append(element("span", label, "evidence-tag"));
+  }
+  section.append(heading);
+  const facts = element("dl", null, "routine-facts");
+  [
+    ["Время", normalizedValues(routine.timeOfDay).join(", ") || "уточните по этикетке"],
+    ["Шаг", routine.step || "не определён"],
+    ["Смывать", rinseLabels[routine.rinseOff] || routine.rinseOff || "уточнить"],
+  ].forEach(([term, value]) => {
+    facts.append(element("dt", term), element("dd", value));
+  });
+  section.append(facts, element("p", routine.directions || "Сверьте способ применения с упаковкой.", "routine-directions"));
+  const citations = renderClaimCitations(routine.sourceIds, registry);
+  if (citations) {
+    const footer = element("div", null, "section-evidence");
+    footer.append(element("span", "Основание:"), citations);
+    section.append(footer);
+  }
+  return section;
+}
+
+function renderHighlights(claims, registry) {
+  if (!claims.length) return null;
+  const section = element("section", null, "report-highlights");
+  section.append(element("h3", "Главное о продукте"));
+  const list = element("div", null, "highlight-list");
+  claims.forEach((claim) => {
+    const item = element("div", null, "highlight-item");
+    appendClaim(item, claim, registry);
+    list.append(item);
+  });
+  section.append(list);
+  return section;
+}
+
+function restoreAnalysisInput(input, report) {
+  byId("inci").value = input.inciText || "";
+  byId("name-hint").value = input.productName || "";
+  const allowedType = Object.prototype.hasOwnProperty.call(productTypeLabels, input.productTypeHint || "") ? input.productTypeHint : report.productType;
+  byId("product-type-hint").value = allowedType === "unknown" ? "" : allowedType;
+  setInputTab("inci");
+  byId("analyze-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+  window.setTimeout(() => byId("inci").focus(), 0);
+}
+
+function renderCoverageAlert(report, input) {
+  const coverage = analysisCoverage(input);
+  const coveragePartial = coverage.recognized < coverage.parsed;
+  const section = element("section", null, `coverage-alert ${coveragePartial ? "partial" : "complete"}`);
+  const icon = element("span", coveragePartial ? "!" : "✓", "coverage-icon");
+  icon.setAttribute("aria-hidden", "true");
+  const body = element("div", null, "coverage-body");
+  body.append(element("h3", coveragePartial ? "Разбор покрывает только часть состава" : "Покрытие состава достаточное"));
+  const detail = coverage.parsed
+    ? `Сопоставлено ${coverage.recognized} из ${coverage.parsed} фрагментов (${coverage.percent}%); найдено ${coverage.recognizedIngredients} карточек INCI.${coverage.unknown ? ` Ещё ${coverage.unknown} нужно проверить.` : ""}`
+    : "Состав не удалось уверенно разделить на ингредиенты.";
+  body.append(element("p", detail));
+  const progress = element("progress", null, "coverage-progress");
+  progress.max = Math.max(coverage.parsed, 1);
+  progress.value = coverage.recognized;
+  progress.setAttribute("aria-label", `Сопоставлено ${coverage.recognized} из ${coverage.parsed} фрагментов состава`);
+  body.append(progress);
+  if (coveragePartial || coverage.unknown || report.status === "needs_clarification") {
+    const edit = element("button", "Проверить и исправить INCI", "text-button");
+    edit.type = "button";
+    edit.addEventListener("click", () => restoreAnalysisInput(input, report));
+    body.append(edit);
+  }
+  section.append(icon, body);
+  return section;
+}
+
+function renderTechnicalDetails(report, input) {
+  const corrections = correctionValues(input.ingredientCorrections).map(correctionLabel).filter(Boolean);
+  const unknown = uniqueStrings(input.unknownIngredients);
+  const limitations = uniqueStrings(report.limitations);
+  const details = element("details", null, "technical-details");
+  const summary = element("summary");
+  summary.append(element("strong", "Технические детали"));
+  const total = corrections.length + unknown.length + limitations.length;
+  if (total) summary.append(element("span", `${total} позиций`));
+  details.append(summary);
+  const content = element("div", null, "technical-content");
+
+  if (corrections.length) {
+    const group = element("section", null, "technical-group");
+    group.append(element("h4", "Автоматические исправления OCR"));
+    const list = element("ul");
+    corrections.forEach((value) => list.append(element("li", value)));
+    group.append(list);
+    content.append(group);
+  }
+  if (unknown.length) {
+    const group = element("section", null, "technical-group");
+    group.append(element("h4", `Не распознано на этикетке · ${unknown.length}`));
+    group.append(element("p", "Эти фрагменты не использовались для выводов. Сверьте их с упаковкой."));
+    const list = element("ul", null, "technical-scroll");
+    unknown.forEach((value) => list.append(element("li", value)));
+    group.append(list);
+    content.append(group);
+  }
+  if (limitations.length) {
+    const group = element("section", null, "technical-group");
+    group.append(element("h4", "Ограничения анализа"));
+    const list = element("ul");
+    limitations.forEach((value) => list.append(element("li", value)));
+    group.append(list);
+    content.append(group);
+  }
+  const recognized = Number(input.recognizedIngredientCount) || 0;
+  const evidence = Number(input.evidenceIngredientCount ?? recognized) || 0;
+  if (evidence < recognized) {
+    content.append(element("p", `Локальной модели передано ${evidence} приоритетных карточек из ${recognized}; детерминированные проверки используют все распознанные карточки.`, "technical-note"));
+  }
+  if (!content.childNodes.length) content.append(element("p", "Дополнительных технических замечаний нет.", "technical-note"));
+  details.append(content);
+  return details;
 }
 
 function renderReport(data) {
   const report = data.report;
   const input = data.input || {};
+  const registry = createSourceRegistry(data.sources || []);
+  const partial = isPartialAnalysis(report, input);
+  const highlights = normalizeGroundedClaims(report.highlights);
+  const skinFit = normalizeGroundedClaims(report.skinFit ?? report.suitableSkinTypes);
+  const cautions = normalizeGroundedClaims(report.cautions);
+  const keyIngredients = normalizedValues(report.keyIngredients);
   const root = byId("result");
   root.replaceChildren();
 
-  const heading = element("div", null, "report-heading");
-  heading.append(element("span", statusLabels[report.status] || report.status, "badge"));
-  heading.append(element("span", confidenceLabels[report.confidence] || report.confidence, "badge muted"));
+  const heading = element("div", null, "report-verdict");
+  const badges = element("div", null, "report-badges");
+  const status = report.status === "needs_clarification" ? "Нужно уточнение" : partial ? "Частичный разбор" : (statusLabels[report.status] || report.status);
+  badges.append(element("span", status, `badge status-badge ${partial ? "partial" : "complete"}`));
+  badges.append(element("span", confidenceLabels[report.confidence] || report.confidence, `badge confidence-badge confidence-${report.confidence || "unknown"}`));
+  heading.append(badges);
   heading.append(element("h3", productTypeLabels[report.productType] || report.productType));
-  root.append(heading, element("p", report.summary, "summary"));
-
-  const meta = element("div", null, "analysis-meta");
-  appendMetaCard(meta, "Распознано", `${input.recognizedIngredientCount ?? 0} из ${input.parsedIngredientCount ?? 0}`);
-  if ((input.evidenceIngredientCount ?? input.recognizedIngredientCount ?? 0) < (input.recognizedIngredientCount ?? 0)) {
-    appendMetaCard(meta, "В отчёте", `${input.evidenceIngredientCount} приоритетных карточек`);
-  }
-  appendMetaCard(meta, "Неизвестных позиций", String(input.unknownIngredients?.length ?? 0));
   const source = typeSourceLabel(input.productTypeSource);
-  if (source) appendMetaCard(meta, "Тип определён", source);
-  root.append(meta);
-
-  const corrections = correctionValues(input.ingredientCorrections).map(correctionLabel).filter(Boolean);
-  if (corrections.length) {
-    const correctionCard = element("section", null, "corrections-card");
-    correctionCard.append(element("h3", "Исправления OCR"));
-    const list = element("ul");
-    corrections.forEach((value) => list.append(element("li", value)));
-    correctionCard.append(list);
-    root.append(correctionCard);
+  if (source) heading.append(element("p", `Тип продукта: ${source}.`, "type-provenance"));
+  if (report.summary) {
+    const summary = element("p", null, "summary");
+    appendClaim(summary, { text: report.summary, sourceIds: uniqueStrings(report.summarySourceIds) }, registry);
+    heading.append(summary);
   }
+  root.append(heading, renderCoverageAlert(report, input));
 
   const routine = report.routine || { timeOfDay: [], step: "не определён", directions: "Сверьте способ применения с этикеткой.", rinseOff: "unknown" };
-  const grid = element("div", null, "report-grid");
-  grid.append(listBlock("Может подойти", report.suitableSkinTypes));
-  grid.append(listBlock("Ключевые ингредиенты", normalizedValues(report.keyIngredients).map((item) => `${ingredientLabel(item.ingredientId)} — ${item.whyItMatters}`)));
-  grid.append(listBlock("Как использовать", [
-    `Время: ${normalizedValues(routine.timeOfDay).join(", ") || "не определено"}`,
-    `Шаг: ${routine.step || "не определён"}`,
-    routine.directions,
-    `Смывать: ${rinseLabels[routine.rinseOff] || routine.rinseOff}`,
-  ]));
-  grid.append(listBlock("Осторожность", report.cautions));
-  if (normalizedValues(input.unknownIngredients).length) {
-    grid.append(listBlock(
-      "Проверьте на этикетке",
-      normalizedValues(input.unknownIngredients).map((item) => `Не распознано: ${item}`),
-      "full-width",
-    ));
+  const primary = element("div", null, "report-primary");
+  const highlightSection = renderHighlights(highlights, registry);
+  if (highlightSection) primary.append(highlightSection);
+  if (report.status === "answered") {
+    const columns = element("div", null, "report-columns");
+    columns.append(
+      renderRoutineSection(routine, registry, input.productTypeSource),
+      renderGroundedList(
+        partial ? "Сигналы по распознанной части" : "Совместимость и профиль",
+        skinFit,
+        registry,
+        {
+          className: "skin-fit-section",
+          description: partial ? "Это не оценка совместимости всего продукта." : "Вывод основан только на подтверждённых карточках состава.",
+        },
+      ),
+    );
+    primary.append(columns);
+  } else if (skinFit.length) {
+    primary.append(renderGroundedList("Совпадения с профилем", skinFit, registry, {
+      className: "skin-fit-section",
+      description: "Это точные совпадения по распознанной части, а не оценка всего продукта.",
+    }));
   }
-  grid.append(listBlock("Ограничения", report.limitations, "full-width"));
-  root.append(grid, element("p", report.disclaimer, "disclaimer"));
+  if (keyIngredients.length) primary.append(renderIngredientSection(keyIngredients, registry));
+  if (cautions.length) {
+    primary.append(renderGroundedList("На что обратить внимание", cautions, registry, { className: "caution-section" }));
+  }
+  if (primary.childNodes.length) root.append(primary);
+  root.append(renderTechnicalDetails(report, input));
+  if (report.disclaimer) root.append(element("p", report.disclaimer, "disclaimer"));
 
-  renderSources(data.sources || []);
+  renderSources(registry);
   byId("metrics").textContent = data.model
     ? `${data.model.name} · ${data.model.latencyMs} ms · tokens ${data.model.promptTokens ?? "?"}/${data.model.completionTokens ?? "?"}`
     : "Модель не вызывалась: данных недостаточно.";
@@ -485,7 +744,7 @@ function renderReport(data) {
 
 function safeLink(source, label) {
   try {
-    const url = new URL(source.url, window.location.origin);
+    const url = new URL(source?.url, window.location.origin);
     if (!["http:", "https:"].includes(url.protocol)) return element("span", label);
     const link = element("a", label);
     link.href = url.href;
@@ -497,17 +756,28 @@ function safeLink(source, label) {
   }
 }
 
-function renderSources(sources) {
+function renderSources(registry) {
   const root = byId("sources");
-  root.replaceChildren(element("h3", "Источники"));
-  const list = element("ul", null, "sources-list");
-  normalizedValues(sources).forEach((source) => {
-    const item = element("li");
-    item.append(safeLink(source, `${source.organization}: ${source.title}`));
+  root.replaceChildren();
+  root.hidden = registry.entries.length === 0;
+  if (!registry.entries.length) return;
+  const details = element("details", null, "source-details");
+  const summary = element("summary");
+  summary.append(element("strong", "Источники"), element("span", String(registry.entries.length), "count-badge"));
+  details.append(summary, element("p", "Номер рядом с утверждением ведёт к источнику, который поддерживает именно это утверждение.", "sources-intro"));
+  const list = element("ol", null, "source-registry");
+  registry.entries.forEach((source) => {
+    const item = element("li", null, "source-entry");
+    const heading = element("div", null, "source-heading");
+    heading.append(safeLink(source, `${source.organization}: ${source.title}`));
+    const type = sourceTypeLabel(source.type);
+    if (type) heading.append(element("span", type, "source-type"));
+    item.append(heading);
+    if (source.notes) item.append(element("p", source.notes, "source-notes"));
     list.append(item);
   });
-  if (!sources.length) list.append(element("li", "Нет источников: анализ ожидает уточнения."));
-  root.append(list);
+  details.append(list);
+  root.append(details);
 }
 
 function renderWorkspaceList() {
@@ -519,15 +789,16 @@ function renderWorkspaceList() {
 
   productWorkspaces.forEach((workspace) => {
     const row = element("div", null, "workspace-row");
-    const select = element("button", null, `workspace-item${workspace.id === activeWorkspaceId ? " active" : ""}`);
+    const input = workspace.analysis.input || {};
+    const partial = isPartialAnalysis(workspace.analysis.report || {}, input);
+    const select = element("button", null, `workspace-item${workspace.id === activeWorkspaceId ? " active" : ""}${partial ? " partial" : ""}`);
     select.type = "button";
     select.setAttribute("aria-pressed", String(workspace.id === activeWorkspaceId));
-    select.append(element("span", productTypeInitials[workspace.productType] || "КС", "product-avatar"));
+    select.append(element("span", productTypeInitials[workspace.productType] || "КС", `product-avatar${partial ? " partial" : ""}`));
     const copy = element("span", null, "product-copy");
-    const input = workspace.analysis.input || {};
     copy.append(
       element("strong", workspace.title),
-      element("span", `${productTypeLabels[workspace.productType] || workspace.productType} · ${input.recognizedIngredientCount ?? 0}/${input.parsedIngredientCount ?? 0} ингредиентов`),
+      element("span", `${partial ? "Частичный разбор" : "Анализ готов"} · ${input.matchedFragmentCount ?? input.recognizedIngredientCount ?? 0}/${input.parsedIngredientCount ?? 0}`, `product-quality ${partial ? "partial" : "complete"}`),
     );
     select.append(copy, element("span", String(workspace.messages.filter((item) => item.role === "user").length), "message-count"));
     select.addEventListener("click", () => selectWorkspace(workspace.id));
@@ -568,6 +839,8 @@ function renderActiveWorkspace() {
     byId("sources").replaceChildren();
     byId("metrics").textContent = "";
     byId("chat-log").replaceChildren();
+    byId("chat-context").textContent = "";
+    byId("prompt-chips").replaceChildren();
     return;
   }
   renderReport(workspace.analysis);
@@ -578,24 +851,74 @@ function renderActiveWorkspace() {
 
 function renderChat(workspace) {
   byId("chat-title").textContent = workspace.title;
+  const coverage = analysisCoverage(workspace.analysis.input || {});
+  const partial = isPartialAnalysis(workspace.analysis.report || {}, workspace.analysis.input || {});
+  const lowConfidence = workspace.analysis.report?.confidence === "low";
+  byId("chat-context").textContent = coverage.recognized < coverage.parsed
+    ? `Частичный отчёт · сопоставлено ${coverage.recognized}/${coverage.parsed} фрагментов. Ответы не выходят за эти данные.`
+    : lowConfidence
+      ? `Состав сопоставлен полностью, но уверенность интерпретации низкая.`
+      : `Сопоставлено ${coverage.recognized}/${coverage.parsed} фрагментов состава.`;
+  renderPromptChips(workspace);
   const root = byId("chat-log");
   root.replaceChildren();
   if (!workspace.messages.length) {
-    root.append(element("p", "Отчёт готов. Спросите, когда использовать средство, кому оно может подойти или на что обратить внимание.", "chat-empty"));
+    const emptyText = partial
+      ? "Чат отвечает только по подтверждённой части состава и не будет угадывать непрочитанные ингредиенты."
+      : "Спросите, когда использовать средство, кому оно может подойти или на что обратить внимание.";
+    root.append(element("p", emptyText, "chat-empty"));
     return;
   }
   workspace.messages.forEach((message) => {
-    const item = element("div", null, `chat-message ${message.role}`);
+    const clarification = message.status === "needs_clarification" ? " needs-clarification" : "";
+    const item = element("div", null, `chat-message ${message.role}${clarification}`);
     const author = message.role === "user" ? "Вы" : message.role === "error" ? "Ошибка" : "Локальная модель";
     item.append(element("strong", author), element("p", message.text));
     if (message.sources?.length) {
-      const links = element("div", null, "chat-sources");
-      message.sources.slice(0, 3).forEach((source) => links.append(safeLink(source, source.organization || "Источник")));
-      item.append(links);
+      const evidence = element("details", null, "chat-evidence");
+      const summary = element("summary", `Источники ответа · ${message.sources.length}`);
+      const list = element("ul");
+      message.sources.forEach((source) => {
+        const row = element("li");
+        row.append(safeLink(source, `${source.organization}: ${source.title}`));
+        list.append(row);
+      });
+      evidence.append(summary, list);
+      item.append(evidence);
+    }
+    const limitations = uniqueStrings(message.limitations);
+    if (limitations.length) {
+      const note = element("details", null, "chat-limitations");
+      note.append(element("summary", "Ограничения ответа"));
+      const list = element("ul");
+      limitations.forEach((value) => list.append(element("li", value)));
+      note.append(list);
+      item.append(note);
     }
     root.append(item);
   });
   window.setTimeout(() => { root.scrollTop = root.scrollHeight; }, 0);
+}
+
+function renderPromptChips(workspace) {
+  const root = byId("prompt-chips");
+  root.replaceChildren();
+  const partial = isPartialAnalysis(workspace.analysis.report || {}, workspace.analysis.input || {});
+  const prompts = partial ? [
+    ["Какие ключевые ингредиенты удалось распознать?", "Что распознано?"],
+    ["Какие ограничения есть у этого анализа?", "Ограничения"],
+    ["Какие предосторожности и риски есть в распознанной части состава?", "Осторожность"],
+  ] : [
+    ["Для чего и когда использовать это средство?", "Краткий обзор"],
+    ["Когда и на каком шаге использовать это средство?", "Когда использовать?"],
+    ["Подойдёт ли это средство моему типу кожи?", "Подойдёт моей коже?"],
+  ];
+  prompts.forEach(([prompt, label]) => {
+    const button = element("button", label);
+    button.type = "button";
+    button.dataset.chatPrompt = prompt;
+    root.append(button);
+  });
 }
 
 byId("chat-form").addEventListener("submit", async (event) => {
@@ -606,7 +929,7 @@ byId("chat-form").addEventListener("submit", async (event) => {
   const message = input.value.trim();
   if (!message) return;
   const submit = event.submitter || event.currentTarget.querySelector("button[type='submit']");
-  appendWorkspaceMessage(workspace, { role: "user", text: message, sources: [] });
+  appendWorkspaceMessage(workspace, { role: "user", text: message, sources: [], limitations: [] });
   input.value = "";
   renderChat(workspace);
   renderWorkspaceList();
@@ -617,9 +940,15 @@ byId("chat-form").addEventListener("submit", async (event) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sessionId: workspace.sessionId, message }),
     });
-    appendWorkspaceMessage(workspace, { role: "assistant", text: result.reply.answer, sources: result.sources || [] });
+    appendWorkspaceMessage(workspace, {
+      role: "assistant",
+      status: result.reply.status,
+      text: result.reply.answer,
+      sources: result.sources || [],
+      limitations: result.reply.limitations || [],
+    });
   } catch (error) {
-    if (!(error instanceof AuthTransitionError)) appendWorkspaceMessage(workspace, { role: "error", text: error.message, sources: [] });
+    if (!(error instanceof AuthTransitionError)) appendWorkspaceMessage(workspace, { role: "error", text: error.message, sources: [], limitations: [] });
   } finally {
     setButtonBusy(submit, false);
     renderWorkspaceList();
@@ -627,11 +956,11 @@ byId("chat-form").addEventListener("submit", async (event) => {
   }
 });
 
-all("[data-chat-prompt]").forEach((button) => {
-  button.addEventListener("click", () => {
-    byId("chat-message").value = button.dataset.chatPrompt;
-    byId("chat-message").focus();
-  });
+byId("prompt-chips").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-chat-prompt]");
+  if (!button || !byId("prompt-chips").contains(button)) return;
+  byId("chat-message").value = button.dataset.chatPrompt;
+  byId("chat-message").focus();
 });
 
 function startNewAnalysis() {

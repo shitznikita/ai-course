@@ -19,7 +19,7 @@ object IngredientsSectionExtractor {
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
     private val waterListStart = Regex(
-        """^[^\n]{0,40}?(\b(?:water|aqua)[ \t]*,)""",
+        """^[^\n]{0,120}?(\b(?:water|aqua)[ \t]*,)""",
         setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE),
     )
 
@@ -33,8 +33,12 @@ object IngredientsSectionExtractor {
             val waterStart = waterListStart.find(normalized)?.groups?.get(1)?.range?.first ?: return normalized
             normalized.substring(waterStart)
         }.trimStart('\n', ' ', '\t', ':', '-', ';')
-        val stop = stopMarker.find(afterStart)
-        val section = (stop?.let { afterStart.substring(0, it.range.first) } ?: afterStart)
+        val anchoredStart = waterListStart.find(afterStart)?.groups?.get(1)?.range?.first
+            ?.takeIf { it <= 120 }
+            ?.let(afterStart::substring)
+            ?: afterStart
+        val stop = stopMarker.find(anchoredStart)
+        val section = (stop?.let { anchoredStart.substring(0, it.range.first) } ?: anchoredStart)
             .trim(' ', '\t', '\n', ',', ';', ':', '-')
         return section.takeIf { it.length >= 3 } ?: normalized
     }

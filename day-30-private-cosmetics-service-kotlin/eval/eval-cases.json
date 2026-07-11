@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "updatedAt": "2026-07-11",
   "statusDefinitions": {
     "ok": "Вход обработан на основе локальных данных без существенных неизвестных.",
@@ -135,6 +135,70 @@
         "expectedProductType": "face_moisturizer",
         "expectedIngredientIds": ["aqua", "glycerin", "phenoxyethanol"],
         "expectedStatus": "partial"
+      }
+    },
+    {
+      "id": "ocr-noisy-cream-manual-review",
+      "type": "text",
+      "input": {
+        "mode": "text",
+        "value": "Склад/Курамы/СотрогШе: Aqua, Olea Europaea\n(Olive) Oil, Glycerin, Isopropy! Myristate, ке Stearate,\nmum Parkii Oil, Propylene ee ene Cetearyl fis\ncohol, ntasiloxane, Trilaureth-4 Phosphate, Tc\ntate, р и Sales eee Trea,\nPhenoxyethanol, paraben, Ргору, 2-Вгото- -Nitro-\n0 1,3-diol, Parfum, Bulygheny Methyipropionl, Citronellol,\nLinaloo Benzyl Salicylate, Amyl Cinnamal, Geraniol, Limonene,\n5 ы и Зе =, (Элесоммемоли",
+        "nameHint": "крем для лица"
+      },
+      "expectations": {
+        "expectedProductType": "face_moisturizer",
+        "expectedIngredientIds": [
+          "aqua",
+          "olea-europaea-fruit-oil",
+          "glycerin",
+          "trilaureth-4-phosphate",
+          "phenoxyethanol",
+          "parfum",
+          "citronellol",
+          "amyl-cinnamal",
+          "geraniol",
+          "limonene"
+        ],
+        "expectedStatus": "partial"
+      }
+    },
+    {
+      "id": "text-confirmed-cream-formula",
+      "type": "text",
+      "input": {
+        "mode": "text",
+        "value": "AQUA, OLEA EUROPAEA (OLIVE) FRUIT OIL, GLYCERIN, ISOPROPYL MYRISTATE, GLYCERYL STEARATE, BUTYROSPERMUM PARKII (SHEA) BUTTER, PROPYLENE GLYCOL, CETEARYL ALCOHOL, CYCLOPENTASILOXANE, TRILAURETH-4 PHOSPHATE, TOCOPHERYL ACETATE, TRIETHANOLAMINE, PHENOXYETHANOL, METHYLPARABEN, PROPYLPARABEN, 2-BROMO-2-NITROPROPANE-1,3-DIOL, PARFUM, BUTYLPHENYL METHYLPROPIONAL, CITRONELLOL, LINALOOL, BENZYL SALICYLATE, AMYL CINNAMAL, GERANIOL, LIMONENE",
+        "nameHint": "крем для лица"
+      },
+      "expectations": {
+        "expectedProductType": "face_moisturizer",
+        "expectedIngredientIds": [
+          "aqua",
+          "olea-europaea-fruit-oil",
+          "glycerin",
+          "isopropyl-myristate",
+          "glyceryl-stearate",
+          "butyrospermum-parkii-butter",
+          "propylene-glycol",
+          "cetearyl-alcohol",
+          "cyclopentasiloxane",
+          "trilaureth-4-phosphate",
+          "tocopheryl-acetate",
+          "triethanolamine",
+          "phenoxyethanol",
+          "methylparaben",
+          "propylparaben",
+          "bronopol",
+          "parfum",
+          "butylphenyl-methylpropional",
+          "citronellol",
+          "linalool",
+          "benzyl-salicylate",
+          "amyl-cinnamal",
+          "geraniol",
+          "limonene"
+        ],
+        "expectedStatus": "ok"
       }
     },
     {

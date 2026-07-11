@@ -18,7 +18,7 @@ LLM_MODEL=meta-llama/llama-3.3-70b-instruct
 ```
 
 - Do not use high-level LLM SDKs or ready-made agents as a replacement for the required REST request.
-- Days 26-30 use local Ollama through a loopback-only HTTP API. Day 30 targets a CPU VPS with `qwen3:4b`, Tesseract OCR, strict JSON, local evidence IDs and bounded chat; Caddy may expose only the Ktor UI/API over HTTPS behind a persistent browser-stored access token.
+- Days 26-30 use local Ollama through a loopback-only HTTP API. Day 30 targets a CPU VPS with `qwen3:4b`, Tesseract OCR, strict JSON, a `<50%` coverage gate before LLM, claim-level source IDs, deterministic allergy/regulatory checks and bounded chat; Caddy may expose only the Ktor UI/API over HTTPS behind a persistent browser-stored access token.
 - The best Day 30 offline smoke tests are:
 
 ```bash

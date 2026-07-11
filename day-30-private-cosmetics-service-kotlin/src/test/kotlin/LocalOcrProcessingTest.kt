@@ -30,6 +30,12 @@ class LocalOcrProcessingTest {
             "Water, Glycerin, Niacinamide",
             IngredientsSectionExtractor.extract("OCR noise f dients Water, Glycerin, Niacinamide"),
         )
+        assertEquals(
+            "Aqua, Olea Europaea\n(Olive) Oil, Glycerin",
+            IngredientsSectionExtractor.extract(
+                "Ingredients: Склад / Құрамы / Sostav: Aqua, Olea Europaea\n(Olive) Oil, Glycerin",
+            ),
+        )
     }
 
     @Test

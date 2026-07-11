@@ -1,5 +1,6 @@
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import java.nio.file.Files
@@ -41,6 +42,278 @@ class KnowledgeAndServiceTest {
         assertTrue(pack.recognized.any { it.card.id == "tranexamic-acid" })
         assertTrue(pack.recognized.any { it.card.id == "sodium-hyaluronate-crosspolymer" })
         assertTrue(pack.corrections.any { it.rawName == "Focophersi" && it.canonicalInci == "TOCOPHEROL" })
+    }
+
+    @Test
+    fun `raw noisy cream OCR is gated before model instead of producing a product verdict`() = runBlocking {
+        val gateway = FakeGateway(AppJson.strict.encodeToString(validDecision()))
+        val analysis = service(gateway).analyzeText(
+            AnalyzeTextRequest(
+                inciText = NOISY_CREAM_OCR,
+                productTypeHint = "face_moisturizer",
+            ),
+        )
+
+        assertEquals("needs_clarification", analysis.report.status)
+        assertEquals("low", analysis.report.confidence)
+        assertEquals(null, analysis.sessionId)
+        assertEquals(null, analysis.model)
+        assertEquals(0, gateway.chatCalls)
+        assertTrue(analysis.input.matchedFragmentCount * 2 < analysis.input.parsedIngredientCount)
+        assertTrue(analysis.report.summary.contains("остановил полный вывод"))
+        assertTrue(analysis.report.routine.timeOfDay.isEmpty())
+        assertTrue(analysis.report.skinFit.isEmpty())
+    }
+
+    @Test
+    fun `fully matched technical-only formula is gated with the correct reason`() = runBlocking {
+        val gateway = FakeGateway(AppJson.strict.encodeToString(validDecision()))
+        val analysis = service(gateway).analyzeText(
+            AnalyzeTextRequest(
+                inciText = "AQUA, PHENOXYETHANOL",
+                productTypeHint = "face_moisturizer",
+            ),
+        )
+
+        assertEquals("needs_clarification", analysis.report.status)
+        assertEquals(2, analysis.input.matchedFragmentCount)
+        assertEquals(2, analysis.input.parsedIngredientCount)
+        assertEquals(0, gateway.chatCalls)
+        assertTrue("только базовые или технические" in analysis.report.summary)
+        assertTrue(analysis.report.limitations.any { "Покрытие состава достаточное" in it })
+        assertTrue(analysis.report.limitations.none { "Покрытие ниже 50%" in it })
+    }
+
+    @Test
+    fun `technical emulsifier never becomes a cleanser benefit or key ingredient`() = runBlocking {
+        val gateway = FakeGateway(AppJson.strict.encodeToString(validDecision()))
+        val analysis = service(gateway).analyzeText(
+            AnalyzeTextRequest(
+                inciText = "AQUA, TRILAURETH-4 PHOSPHATE, PHENOXYETHANOL",
+                productTypeHint = "face_moisturizer",
+            ),
+        )
+
+        assertEquals("needs_clarification", analysis.report.status)
+        assertEquals(0, gateway.chatCalls)
+        assertTrue(analysis.report.keyIngredients.none { it.ingredientId == "trilaureth-4-phosphate" })
+        assertTrue(analysis.report.highlights.none { "очищающ" in it.text })
+    }
+
+    @Test
+    fun `deterministic profile checks use all recognized cards beyond model evidence cap`() = runBlocking {
+        val config = testConfig(mapOf("MAX_KNOWLEDGE_CARDS" to "1"))
+        val gateway = FakeGateway(
+            AppJson.strict.encodeToString(
+                ModelAnalysisDecision("answered", "face_moisturizer", listOf("glycerin"), "medium"),
+            ),
+        )
+        val service = LocalCosmeticsService(config, IngredientKnowledgeBase.load(config), gateway, FakeOcr())
+        val analysis = service.analyzeText(
+            AnalyzeTextRequest(
+                inciText = "AQUA, GLYCERIN, PHENOXYETHANOL",
+                productTypeHint = "face_moisturizer",
+                profile = SkinProfile(allergies = listOf("phenoxyethanol")),
+            ),
+        )
+
+        assertEquals(1, analysis.input.evidenceIngredientCount)
+        assertEquals(3, analysis.input.recognizedIngredientCount)
+        val conflict = assertNotNull(analysis.report.skinFit.firstOrNull { "PHENOXYETHANOL" in it.text })
+        assertTrue(conflict.sourceIds.isNotEmpty())
+        assertTrue(conflict.sourceIds.all { it in analysis.report.sourceIds })
+        service.close()
+    }
+
+    @Test
+    fun `sensitive skin selection triggers fragrance caution without duplicate checkbox`() = runBlocking {
+        val gateway = FakeGateway(
+            AppJson.strict.encodeToString(
+                ModelAnalysisDecision("answered", "face_moisturizer", listOf("glycerin"), "medium"),
+            ),
+        )
+        val analysis = service(gateway).analyzeText(
+            AnalyzeTextRequest(
+                inciText = "AQUA, GLYCERIN, PARFUM",
+                productTypeHint = "face_moisturizer",
+                profile = SkinProfile(skinType = "sensitive", sensitive = false),
+            ),
+        )
+
+        assertTrue(analysis.report.skinFit.any { "чувствительной кожи" in it.text })
+    }
+
+    @Test
+    fun `sensitive profile warning survives multiple formula and goal signals`() = runBlocking {
+        val gateway = FakeGateway(
+            AppJson.strict.encodeToString(
+                ModelAnalysisDecision("answered", "face_moisturizer", listOf("glycerin"), "medium"),
+            ),
+        )
+        val analysis = service(gateway).analyzeText(
+            AnalyzeTextRequest(
+                inciText = "AQUA, GLYCERIN, SQUALANE, COCAMIDOPROPYL BETAINE, PARFUM",
+                productTypeHint = "face_moisturizer",
+                profile = SkinProfile(skinType = "sensitive", goals = listOf("увлажнение", "мягкое очищение")),
+            ),
+        )
+
+        assertTrue("чувствительной кожи" in analysis.report.skinFit.first().text)
+    }
+
+    @Test
+    fun `active-only formula is reportable instead of mislabeled technical`() = runBlocking {
+        val gateway = FakeGateway(
+            AppJson.strict.encodeToString(
+                ModelAnalysisDecision("answered", "face_serum", listOf("niacinamide"), "medium"),
+            ),
+        )
+        val analysis = service(gateway).analyzeText(
+            AnalyzeTextRequest("AQUA, NIACINAMIDE", productTypeHint = "face_serum"),
+        )
+
+        assertEquals("answered", analysis.report.status)
+        assertEquals(1, gateway.chatCalls)
+        assertTrue(analysis.report.keyIngredients.any { it.ingredientId == "niacinamide" })
+    }
+
+    @Test
+    fun `regulatory warning stays ahead of many profile matches`() = runBlocking {
+        val gateway = FakeGateway(
+            AppJson.strict.encodeToString(
+                ModelAnalysisDecision("answered", "face_moisturizer", listOf("glycerin"), "medium"),
+            ),
+        )
+        val analysis = service(gateway).analyzeText(
+            AnalyzeTextRequest(
+                inciText = CONFIRMED_CREAM_INCI,
+                productTypeHint = "face_moisturizer",
+                profile = SkinProfile(allergies = listOf("fragrance", "limonene", "linalool", "citronellol", "geraniol")),
+            ),
+        )
+
+        assertEquals(5, analysis.report.cautions.size)
+        assertTrue("Annex II" in analysis.report.cautions.first().text)
+    }
+
+    @Test
+    fun `ingredient lookup never mines aliases from marketing or residual OCR prose`() {
+        val pack = IngredientKnowledgeBase.load(testConfig()).retrieve(
+            "FRAGRANCE FREE unreadable text PARFUM LIMONENE, GLYCERIN",
+            maxCards = 12,
+        )
+
+        assertEquals(listOf("glycerin"), pack.recognized.map { it.card.id })
+        assertEquals(1, pack.matchedFragmentCount)
+        assertTrue(pack.unknown.single().startsWith("FRAGRANCE FREE"))
+    }
+
+    @Test
+    fun `medical pregnancy question remains out of scope when model refuses`() = runBlocking {
+        val gateway = FakeGateway(AppJson.strict.encodeToString(validDecision()))
+        val service = service(gateway)
+        val analysis = service.analyzeText(
+            AnalyzeTextRequest("AQUA, GLYCERIN, NIACINAMIDE", productTypeHint = "face_serum"),
+        )
+        listOf(
+            ModelChatDecision("needs_clarification", "unknown"),
+            ModelChatDecision("answered", "cautions"),
+        ).forEach { modelDecision ->
+            gateway.content = AppJson.strict.encodeToString(modelDecision)
+            val chat = service.chat(
+                ChatRequest(assertNotNull(analysis.sessionId), "Опасно ли использовать это средство при беременности?"),
+            )
+            assertEquals("needs_clarification", chat.reply.status)
+            assertTrue(chat.reply.sourceIds.isEmpty())
+        }
+        service.close()
+    }
+
+    @Test
+    fun `missing global methodology source fails during knowledge load`() {
+        val base = testConfig()
+        val sources = AppJson.strict.decodeFromString<SourcesDocument>(Files.readString(base.sourcesFile))
+        val temp = Files.createTempFile("day30-sources-without-methodology", ".json")
+        try {
+            Files.writeString(
+                temp,
+                AppJson.strict.encodeToString(sources.copy(sources = sources.sources.filterNot { it.id == "eu-cosmetic-claims-655" })),
+            )
+            val broken = testConfig(mapOf("SOURCES_FILE" to temp.toString()))
+
+            val error = assertFailsWith<KnowledgeException> { IngredientKnowledgeBase.load(broken) }
+            assertTrue("Required methodology source" in (error.message ?: ""))
+        } finally {
+            Files.deleteIfExists(temp)
+        }
+    }
+
+    @Test
+    fun `confirmed cream formula separates benefits warnings and exact profile conflicts`() = runBlocking {
+        val decision = ModelAnalysisDecision(
+            status = "answered",
+            productType = "face_moisturizer",
+            keyIngredientIds = listOf("parfum", "limonene", "glycerin"),
+            confidence = "high",
+        )
+        val gateway = FakeGateway(AppJson.strict.encodeToString(decision))
+        val service = service(gateway)
+        val analysis = service.analyzeText(
+            AnalyzeTextRequest(
+                inciText = CONFIRMED_CREAM_INCI,
+                productTypeHint = "face_moisturizer",
+                profile = SkinProfile(allergies = listOf("fragrance", "limonene"), sensitive = true),
+            ),
+        )
+
+        assertEquals("answered", analysis.report.status)
+        assertEquals(1, gateway.chatCalls)
+        assertTrue(analysis.report.keyIngredients.any { it.ingredientId == "glycerin" })
+        assertTrue(analysis.report.keyIngredients.none { it.ingredientId in setOf("phenoxyethanol", "parfum", "limonene") })
+        assertTrue(analysis.report.skinFit.any { "не считает продукт совместимым" in it.text })
+        assertTrue(analysis.report.cautions.any { "Прямое совпадение" in it.text })
+        assertTrue(analysis.report.cautions.any { "Annex II" in it.text })
+        assertTrue(analysis.sources.any { it.id == "eu-bmhca-ban-2021" })
+        assertTrue((analysis.report.highlights + analysis.report.skinFit + analysis.report.cautions).all { it.sourceIds.isNotEmpty() })
+        assertTrue(analysis.sources.all { source ->
+            source.id in ReportSourceIds.from(analysis.report)
+        })
+
+        gateway.content = AppJson.strict.encodeToString(ModelChatDecision("answered", "overview"))
+        val overview = service.chat(ChatRequest(assertNotNull(analysis.sessionId), "Дай краткий обзор"))
+        val expectedOverviewSources = (
+            analysis.report.summarySourceIds +
+                analysis.report.highlights.take(2).flatMap { it.sourceIds } +
+                analysis.report.keyIngredients.take(3).flatMap { it.sourceIds }
+            ).toSet()
+        assertEquals(expectedOverviewSources, overview.reply.sourceIds.toSet())
+        assertEquals(expectedOverviewSources, overview.sources.map { it.id }.toSet())
+        assertTrue(analysis.report.summarySourceIds.any { it in overview.reply.sourceIds })
+
+        gateway.content = AppJson.strict.encodeToString(ModelChatDecision("answered", "cautions"))
+        val chat = service.chat(ChatRequest(assertNotNull(analysis.sessionId), "Есть ли совпадения с моими аллергиями?"))
+        assertTrue("Прямое совпадение" in chat.reply.answer)
+        assertTrue(chat.sources.isNotEmpty())
+        assertTrue(chat.sources.all { it.id in analysis.report.cautions.flatMap(GroundedClaim::sourceIds) })
+        service.close()
+    }
+
+    @Test
+    fun `parser joins wrapped INCI but preserves one ingredient per line layouts`() {
+        val wrapped = InciParser.parse(
+            """
+            Склад/Курамы/СотрогШе: Aqua, Olea Europaea
+            (Olive) Oil, Glycerin, 2-Bromo-2-Nitro-
+            propane-1,3-diol
+            """.trimIndent(),
+        )
+        assertEquals(
+            listOf("Aqua", "Olea Europaea (Olive) Oil", "Glycerin", "2-Bromo-2-Nitro-propane-1,3-diol"),
+            wrapped.ingredients,
+        )
+
+        val onePerLine = InciParser.parse("AQUA\nGLYCERIN\nNIACINAMIDE")
+        assertEquals(listOf("AQUA", "GLYCERIN", "NIACINAMIDE"), onePerLine.ingredients)
     }
 
     @Test
@@ -335,7 +608,40 @@ class KnowledgeAndServiceTest {
             Sodium Acetylated Hyaluronate, Hyaluronic Acid, Sodium Hyaluronate
             Crosspalymer, Hydrolyzed Sodium Hyaluronate, Potassium Hyaluronate
         """.trimIndent()
+
+        val NOISY_CREAM_OCR = """
+            Склад/Курамы/СотрогШе: Aqua, Olea Europaea
+            (Olive) Oil, Glycerin, Isopropy! Myristate, ке Stearate,
+            mum Parkii Oil, Propylene ee ene Cetearyl fis
+            cohol, ntasiloxane, Trilaureth-4 Phosphate, Tc
+            tate, р и Sales eee Trea,
+            Phenoxyethanol, paraben, Ргору, 2-Вгото- -Nitro-
+            0 1,3-diol, Parfum, Bulygheny Methyipropionl, Citronellol,
+            Linaloo Benzyl Salicylate, Amyl Cinnamal, Geraniol, Limonene,
+            5 ы и Зе =, (Элесоммемоли
+        """.trimIndent()
+
+        val CONFIRMED_CREAM_INCI = """
+            AQUA, OLEA EUROPAEA (OLIVE) FRUIT OIL, GLYCERIN, ISOPROPYL MYRISTATE,
+            GLYCERYL STEARATE, BUTYROSPERMUM PARKII (SHEA) BUTTER, PROPYLENE GLYCOL,
+            CETEARYL ALCOHOL, CYCLOPENTASILOXANE, TRILAURETH-4 PHOSPHATE,
+            TOCOPHERYL ACETATE, TRIETHANOLAMINE, PHENOXYETHANOL, METHYLPARABEN,
+            PROPYLPARABEN, 2-BROMO-2-NITROPROPANE-1,3-DIOL, PARFUM,
+            BUTYLPHENYL METHYLPROPIONAL, CITRONELLOL, LINALOOL, BENZYL SALICYLATE,
+            AMYL CINNAMAL, GERANIOL, LIMONENE
+        """.trimIndent()
     }
+}
+
+private object ReportSourceIds {
+    fun from(report: CosmeticsReport): Set<String> = (
+        report.summarySourceIds +
+            report.highlights.flatMap { it.sourceIds } +
+            report.skinFit.flatMap { it.sourceIds } +
+            report.cautions.flatMap { it.sourceIds } +
+            report.routine.sourceIds +
+            report.keyIngredients.flatMap { it.sourceIds }
+        ).toSet()
 }
 
 private class FakeGateway(var content: String) : LocalLlmGateway {

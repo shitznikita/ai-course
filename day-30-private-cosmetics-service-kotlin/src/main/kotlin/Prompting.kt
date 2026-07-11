@@ -35,6 +35,7 @@ keyIngredientIds могут содержать только ingredientId из FA
             input.productName?.let { put("productName", JsonPrimitive(it)) }
             input.productTypeHint?.let { put("productTypeHint", JsonPrimitive(it)) }
             put("parsedIngredientCount", JsonPrimitive(input.parsedIngredientCount))
+            put("matchedFragmentCount", JsonPrimitive(input.matchedFragmentCount))
             put("unknownIngredientCount", JsonPrimitive(input.unknownIngredients.size))
             put("profile", AppJson.strict.parseToJsonElement(AppJson.strict.encodeToString(profile)))
             put("ingredientCards", buildJsonArray {
@@ -42,8 +43,8 @@ keyIngredientIds могут содержать только ingredientId из FA
                     add(buildJsonObject {
                         put("ingredientId", JsonPrimitive(card.id))
                         put("inci", JsonPrimitive(card.inciName))
+                        put("presentationRole", JsonPrimitive(card.presentationRole))
                         put("functions", buildJsonArray { card.functions.forEach { add(JsonPrimitive(it)) } })
-                        put("suitableFor", buildJsonArray { card.suitableFor.forEach { add(JsonPrimitive(it)) } })
                     })
                 }
             })

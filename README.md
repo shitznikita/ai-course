@@ -637,7 +637,7 @@ day-29-local-llm-optimization-kotlin/scripts/run-optimization.sh
 
 ## Запуск дня 30
 
-Day 30 превращает локальную LLM в приватный web/API-сервис для анализа косметики. Основной VPS-профиль — `qwen3:4b`, один inference одновременно, bounded queue, Bearer auth, rate/context limits и RAM-only chat. Фото распознаётся локальным Tesseract; внешние AI/OCR API не используются.
+Day 30 превращает локальную LLM в приватный web/API-сервис для анализа косметики. Основной VPS-профиль — `qwen3:4b`, один inference одновременно, bounded queue, Bearer auth, rate/context limits и RAM-only chat. Фото распознаётся локальным Tesseract; внешние AI/OCR API не используются. Недостаточное OCR-покрытие останавливается до LLM, а выводы и ссылки собираются как проверяемые claim → source пары.
 
 Offline-проверки без Ollama:
 

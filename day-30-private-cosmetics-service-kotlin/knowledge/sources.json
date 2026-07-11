@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "updatedAt": "2026-07-11",
   "sources": [
     {
@@ -95,7 +95,7 @@
       "title": "SCCS Final Opinion on Phenoxyethanol",
       "organization": "European Commission, Scientific Committee on Consumer Safety",
       "type": "scientific_opinion",
-      "url": "https://health.ec.europa.eu/latest-updates/sccs-final-opinion-phenoxyethanol-2016-10-14_en",
+      "url": "https://health.ec.europa.eu/publications/phenoxyethanol_en",
       "notes": "Научное заключение SCCS о phenoxyethanol как консерванте; применимость вывода зависит от концентрации и условий использования."
     },
     {
@@ -137,6 +137,46 @@
       "type": "scientific_opinion",
       "url": "https://health.ec.europa.eu/publications/safety-alpha-arbutin-and-beta-arbutin-cosmetic-products_en",
       "notes": "Заключение относится к alpha- и beta-arbutin и заданным условиям применения; одна строка ARBUTIN на этикетке не позволяет переносить эти выводы на готовый продукт."
+    },
+    {
+      "id": "eu-cosmetic-claims-655",
+      "title": "Common criteria for cosmetic product claims (EU No 655/2013)",
+      "organization": "EUR-Lex",
+      "type": "regulation",
+      "url": "https://eur-lex.europa.eu/eli/reg/2013/655/oj/eng",
+      "notes": "Подтверждает методологическое ограничение: свойства ингредиента нельзя переносить на готовый продукт без адекватных проверяемых доказательств и эффективной концентрации."
+    },
+    {
+      "id": "eu-bmhca-ban-2021",
+      "title": "Commission Regulation (EU) 2021/1902, Annex II entry 1666",
+      "organization": "EUR-Lex",
+      "type": "regulation",
+      "url": "https://eur-lex.europa.eu/eli/reg/2021/1902/oj/eng",
+      "notes": "Включает 2-(4-tert-butylbenzyl) propionaldehyde (Butylphenyl Methylpropional, CAS 80-54-6) в Annex II; применяется с 1 марта 2022 года в ЕС."
+    },
+    {
+      "id": "eu-sccs-bmhca-2019",
+      "title": "Safety of Butylphenyl methylpropional in cosmetic products, SCCS/1591/17",
+      "organization": "European Commission, Scientific Committee on Consumer Safety",
+      "type": "scientific_opinion",
+      "url": "https://health.ec.europa.eu/publications/safety-butylphenyl-methylpropional-p-bmhca-cosmetic-products-submission-ii_en",
+      "notes": "SCCS concluded that aggregate exposure at proposed concentrations could not be considered safe; this source is ingredient-specific and not a verdict about an OCR guess."
+    },
+    {
+      "id": "pubmed-niacinamide-5pct-2008",
+      "title": "5% niacinamide moisturizer: randomized split-face study",
+      "organization": "PubMed",
+      "type": "clinical_study",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/18492135/",
+      "notes": "Исследование относится к конкретной 5% формуле и 12-недельному применению; его нельзя автоматически переносить на продукт с неизвестной концентрацией."
+    },
+    {
+      "id": "pubmed-tranexamic-topical-2012",
+      "title": "Topical 5% tranexamic acid split-face trial",
+      "organization": "PubMed",
+      "type": "clinical_study",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/22506692/",
+      "notes": "Небольшое исследование конкретной 5% формулы дало неоднозначный результат; источник не подтверждает эффективность любого продукта с TRANEXAMIC ACID в INCI."
     }
   ]
 }
