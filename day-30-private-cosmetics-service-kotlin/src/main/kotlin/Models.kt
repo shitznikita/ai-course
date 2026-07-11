@@ -196,6 +196,10 @@ data class OcrResponse(
     val height: Int,
     val extractedText: String,
     val quality: String,
+    val provider: String = "local_tesseract",
+    val externalProcessing: Boolean = false,
+    val uncertainFragments: List<String> = emptyList(),
+    val notice: String? = null,
     val reviewRequired: Boolean = true,
 )
 
@@ -235,6 +239,8 @@ data class HealthResponse(
     val ocrReady: Boolean,
     val ingredientCards: Int,
     val catalogProducts: Int,
+    val photoOcrProvider: String = "local_tesseract",
+    val externalPhotoProcessing: Boolean = false,
 )
 
 @Serializable
@@ -277,6 +283,10 @@ data class UploadedPhoto(
 data class OcrResult(
     val text: String,
     val quality: String,
+    val provider: String = "local_tesseract",
+    val externalProcessing: Boolean = false,
+    val uncertainFragments: List<String> = emptyList(),
+    val notice: String? = null,
 )
 
 data class OllamaModel(

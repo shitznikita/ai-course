@@ -20,7 +20,7 @@
     <div class="access-card">
       <p class="eyebrow">DAY 30 · LOCAL LLM SERVICE</p>
       <h1>Private Cosmetics AI</h1>
-      <p class="lead">Фото этикетки, INCI или название — с локальной моделью на приватном VPS.</p>
+      <p class="lead">Локальный анализ косметики на VPS с проверяемым распознаванием этикеток.</p>
       <form id="login-form" class="login-form" method="post" novalidate>
         <label for="login-token">Постоянный код доступа</label>
         <input
@@ -48,7 +48,7 @@
       <div>
         <p class="eyebrow">DAY 30 · LOCAL LLM SERVICE</p>
         <h1>Private Cosmetics AI</h1>
-        <p class="lead">Фото этикетки, INCI или название из локального каталога — без облачной LLM.</p>
+        <p class="lead">Фото этикетки, INCI или название — локальный анализ и чат на приватном VPS.</p>
       </div>
       <div class="hero-controls">
         <div id="health" class="health">Проверяем сервис…</div>
@@ -57,8 +57,9 @@
     </header>
 
     <section class="panel privacy">
-      <strong>Приватность:</strong> Ollama доступен только на сервере. Фото обрабатывается без сохранения,
-      чат живёт временно в RAM. Сервис не ставит диагнозы и не гарантирует безопасность продукта.
+      <strong>Приватность:</strong> анализ и чат выполняет локальная Ollama. Если включён Eliza Vision, загруженное фото отправляется
+      во внешний API только для распознавания текста и не сохраняется этим приложением; не загружайте
+      чувствительные изображения. Чат живёт временно в RAM. Сервис не ставит диагнозы и не гарантирует безопасность продукта.
     </section>
 
     <section class="panel">
@@ -89,7 +90,7 @@
       <div class="input-grid">
         <form id="photo-form" class="input-card">
           <h3>Фото этикетки</h3>
-          <p>JPEG/PNG до 5 МБ. OCR не отправляет изображение в модель.</p>
+          <p>JPEG/PNG до 5 МБ. Внешний Eliza Vision используется только при включённом серверном режиме; состав нужно проверить вручную.</p>
           <input id="photo" name="photo" type="file" accept="image/jpeg,image/png" required>
           <button type="submit">Распознать INCI</button>
           <small id="ocr-note"></small>

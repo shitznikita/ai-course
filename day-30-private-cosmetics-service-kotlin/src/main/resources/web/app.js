@@ -4,6 +4,7 @@ const loopbackHosts = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
 let accessToken = "";
 let sessionId = null;
+let activePhotoOcrProvider = "local_tesseract";
 let authEpoch = 0;
 let requestController = new AbortController();
 
@@ -34,6 +35,11 @@ const productTypeLabels = {
 const statusLabels = { answered: "Анализ готов", needs_clarification: "Нужно уточнение" };
 const confidenceLabels = { low: "Низкая уверенность", medium: "Средняя уверенность", high: "Высокая уверенность" };
 const rinseLabels = { yes: "да", no: "нет", unknown: "уточнить по этикетке" };
+const ocrProviderLabels = {
+  eliza_vision: "Eliza Vision (внешний сервис)",
+  local_tesseract: "локальный Tesseract",
+  local_tesseract_fallback: "локальный Tesseract (резерв)",
+};
 
 function trustedTransport() {
   return window.location.protocol === "https:" || loopbackHosts.has(window.location.hostname);
@@ -102,7 +108,9 @@ function showLogin(message = "", error = false, clearStored = false) {
 
 function updateHealth(health) {
   const node = byId("health");
-  node.textContent = `${health.status} · ${health.model} · OCR ${health.ocrReady ? "ok" : "нет"}`;
+  activePhotoOcrProvider = health.photoOcrProvider || "local_tesseract";
+  const photoOcr = ocrProviderLabels[activePhotoOcrProvider] || activePhotoOcrProvider;
+  node.textContent = `${health.status} · ${health.model} · OCR ${health.ocrReady ? "ok" : "нет"} · ${photoOcr}`;
   node.classList.toggle("ready", health.status === "ready");
 }
 
@@ -196,12 +204,19 @@ byId("photo-form").addEventListener("submit", async (event) => {
   if (!file) return;
   const data = new FormData();
   data.append("photo", file);
-  setStatus("Распознаём этикетку локальным OCR…");
+  setStatus(activePhotoOcrProvider === "eliza_vision"
+    ? "Eliza Vision внимательно читает этикетку…"
+    : "Локальный OCR обрабатывает этикетку…");
   try {
     const result = await api("/api/ocr", { method: "POST", body: data });
     byId("inci").value = result.extractedText;
-    byId("ocr-note").textContent = `Качество: ${result.quality}. Обязательно проверьте текст перед анализом.`;
-    setStatus("OCR готов. Исправьте ошибки в INCI и запустите анализ.");
+    const provider = ocrProviderLabels[result.provider] || result.provider || "OCR";
+    const uncertain = result.uncertainFragments?.length
+      ? ` Неразборчивые фрагменты: ${result.uncertainFragments.join(", ")}.`
+      : "";
+    const notice = result.notice ? `${result.notice} ` : "";
+    byId("ocr-note").textContent = `${notice}Источник: ${provider}. Качество: ${result.quality}.${uncertain} Обязательно проверьте текст перед анализом.`;
+    setStatus("Распознавание готово. Сверьте INCI с упаковкой и запустите локальный анализ.");
   } catch (error) {
     if (!(error instanceof AuthTransitionError)) setStatus(error.message, true);
   }

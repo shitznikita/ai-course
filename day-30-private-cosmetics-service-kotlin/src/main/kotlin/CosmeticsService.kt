@@ -20,10 +20,14 @@ class LocalCosmeticsService(
     private val config: AppConfig,
     private val knowledge: IngredientKnowledgeBase,
     private val gateway: LocalLlmGateway = OllamaClient(config),
-    private val ocr: OcrEngine = TesseractOcrEngine(config),
+    private val ocr: OcrEngine = HybridOcrEngine(config),
     private val inferenceGate: InferenceGate = InferenceGate(
         config.maxConcurrentInference,
         config.inferenceQueueCapacity,
+    ),
+    private val ocrGate: InferenceGate = InferenceGate(
+        maxConcurrent = 1,
+        maxQueued = config.inferenceQueueCapacity,
     ),
     private val sessions: AnalysisSessionStore = AnalysisSessionStore(
         config.maxSessions,
@@ -56,6 +60,8 @@ class LocalCosmeticsService(
                 ocrReady = ocrReady,
                 ingredientCards = knowledge.ingredientCount,
                 catalogProducts = knowledge.productCount,
+                photoOcrProvider = ocr.currentProvider(),
+                externalPhotoProcessing = ocr.externalProcessingAvailable(),
             ).also { response ->
                 cachedReadiness = CachedReadiness(
                     response,
@@ -108,7 +114,7 @@ class LocalCosmeticsService(
 
     override suspend fun recognizePhoto(photo: UploadedPhoto): OcrResponse {
         val result = try {
-            ocr.recognize(photo)
+            ocrGate.withPermit { ocr.recognize(photo) }
         } catch (error: ApiProblem) {
             throw error
         } catch (error: OcrUnavailableException) {
@@ -134,6 +140,10 @@ class LocalCosmeticsService(
             height = photo.height,
             extractedText = result.text,
             quality = result.quality,
+            provider = result.provider,
+            externalProcessing = result.externalProcessing,
+            uncertainFragments = result.uncertainFragments,
+            notice = result.notice,
         )
     }
 

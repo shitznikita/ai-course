@@ -191,6 +191,20 @@ class KnowledgeAndServiceTest {
                 ),
             )
         }
+        assertFailsWith<ConfigurationException> {
+            testConfig(mapOf("ELIZA_VISION_ENABLED" to "true"))
+        }
+        assertFailsWith<ConfigurationException> {
+            testConfig(mapOf("ELIZA_VISION_API_URL" to "https://example.com/chat/completions"))
+        }
+        val visionConfig = testConfig(
+            mapOf(
+                "ELIZA_VISION_ENABLED" to "true",
+                "ELIZA_VISION_API_KEY" to "test-oauth-token-with-at-least-32-characters",
+            ),
+        )
+        assertTrue(visionConfig.elizaVisionEnabled)
+        assertEquals("<redacted>", visionConfig.elizaVisionApiKey.toString())
     }
 
     @Test
