@@ -184,7 +184,7 @@ object OcrCandidateSelector {
                 .trim()
             if (cleaned.endsWith('.') && cleaned.count { it == ',' } >= 2) cleaned.dropLast(1) + ',' else cleaned
         }.filter(String::isNotBlank).toMutableList()
-        while (lines.size > 1 && lines.last().length > 70 && ',' !in lines.last() && ';' !in lines.last()) {
+        while (lines.size > 1 && lines.last().length > 50 && ',' !in lines.last() && ';' !in lines.last()) {
             lines.removeLast()
         }
         return lines.joinToString("\n").trim()
