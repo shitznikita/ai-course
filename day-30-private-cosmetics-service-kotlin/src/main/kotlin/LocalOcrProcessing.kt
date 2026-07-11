@@ -184,10 +184,20 @@ object OcrCandidateSelector {
                 .trim()
             if (cleaned.endsWith('.') && cleaned.count { it == ',' } >= 2) cleaned.dropLast(1) + ',' else cleaned
         }.filter(String::isNotBlank).toMutableList()
-        while (lines.size > 1 && lines.last().length > 50 && ',' !in lines.last() && ';' !in lines.last()) {
+        while (lines.size > 1 && isTrailingNoise(lines.last())) {
             lines.removeLast()
         }
         return lines.joinToString("\n").trim()
+    }
+
+    private fun isTrailingNoise(line: String): Boolean {
+        if (line.length <= 70) return false
+        val separators = line.count { it == ',' || it == ';' }
+        if (separators == 0) return true
+        if (separators > 1) return false
+        val words = Regex("""\p{L}{2,}""").findAll(line).map { it.value }.toList()
+        if (words.size < 8) return false
+        return words.sumOf(String::length).toDouble() / words.size < 4.0
     }
 
     private data class ScoredText(

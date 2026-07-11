@@ -81,4 +81,17 @@ class LocalOcrProcessingTest {
 
         assertEquals("Water, Glycerin, Niacinamide,\nPanthenol, Allantoin, Caffeine", result.text)
     }
+
+    @Test
+    fun `candidate selector removes long short-token artifact with one accidental comma`() {
+        val artifact = "OE EST Eee Rae ee Te OEE By 0 Nil Fae el, SU Te Se reer ey Tein ae SOREL Se ase ay See ee Cee Oe oe er Sa"
+        val raw = "Water, Glycerin, Niacinamide\nCrosspolymer, Hydrolyzed Sodium Hyaluronate, Potassium Hyaluronate\n$artifact"
+
+        val result = assertNotNull(OcrCandidateSelector.select(listOf(raw)))
+
+        assertEquals(
+            "Water, Glycerin, Niacinamide\nCrosspolymer, Hydrolyzed Sodium Hyaluronate, Potassium Hyaluronate",
+            result.text,
+        )
+    }
 }
