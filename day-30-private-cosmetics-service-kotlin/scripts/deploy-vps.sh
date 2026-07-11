@@ -190,7 +190,7 @@ sudo systemctl enable --now ollama.service
 sudo systemctl restart ollama.service
 
 for _ in {1..30}; do
-  if curl --fail --silent --show-error http://127.0.0.1:11434/api/tags >/dev/null; then
+  if curl --fail --silent http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
     break
   fi
   sleep 1
