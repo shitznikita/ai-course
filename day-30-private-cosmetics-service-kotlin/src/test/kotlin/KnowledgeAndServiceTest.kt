@@ -79,6 +79,8 @@ class KnowledgeAndServiceTest {
         assertEquals("answered", chat.reply.status)
         assertTrue("после очищения" in chat.reply.answer)
         assertTrue("Тип — тоник" in chat.reply.answer)
+        assertTrue("TRANEXAMIC ACID" in chat.reply.answer)
+        assertTrue("tranexamic-acid:" !in chat.reply.answer)
         service.close()
     }
 

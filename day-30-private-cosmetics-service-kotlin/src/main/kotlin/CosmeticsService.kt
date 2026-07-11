@@ -385,11 +385,20 @@ class LocalCosmeticsService(
     }
 
     private fun assembleChatAnswer(decision: ModelChatDecision, session: AnalysisSession): ChatAnswer {
+        val cardsById = session.cards.associateBy { it.id }
+        fun keyIngredientText(limit: Int): String = session.report.keyIngredients.take(limit).joinToString("; ") { insight ->
+            val name = cardsById[insight.ingredientId]?.inciName ?: insight.ingredientId
+            val detail = insight.whyItMatters
+                .removePrefix("Функции в локальной карточке: ")
+                .substringBefore(". Роль зависит")
+                .trimEnd('.')
+            "$name — $detail"
+        }
         val answer = when (decision.topic) {
             "overview" -> listOf(
                 session.report.summary,
-                session.report.keyIngredients.joinToString(" ") { "${it.ingredientId}: ${it.whyItMatters}" },
-                "Использование: ${session.report.routine.step}; ${session.report.routine.directions}",
+                keyIngredientText(3).takeIf(String::isNotBlank)?.let { "Ключевое: $it." }.orEmpty(),
+                "Когда и как: ${session.report.routine.step}; ${session.report.routine.directions}",
             ).filter(String::isNotBlank).joinToString(" ")
             "routine" -> listOf(
                 "Время: ${session.report.routine.timeOfDay.joinToString().ifBlank { "уточните по этикетке" }}.",
@@ -400,9 +409,7 @@ class LocalCosmeticsService(
             "skin_fit" -> session.report.suitableSkinTypes.joinToString(" ").ifBlank {
                 "По локальным фактам нельзя обоснованно выделить тип кожи; ориентируйтесь на этикетку и переносимость."
             }
-            "key_ingredients" -> session.report.keyIngredients.joinToString(" ") {
-                "${it.ingredientId}: ${it.whyItMatters}"
-            }.ifBlank { "В текущем отчёте нет выбранных ключевых ингредиентов." }
+            "key_ingredients" -> keyIngredientText(6).ifBlank { "В текущем отчёте нет выбранных ключевых ингредиентов." }
             "cautions" -> session.report.cautions.joinToString(" ").ifBlank {
                 "Специальных оговорок в локальных карточках нет; индивидуальная реакция всё равно возможна."
             }
