@@ -1,0 +1,188 @@
+openapi: 3.1.0
+info:
+  title: ai-course Day 31 developer assistant contract
+  version: 1.0.0
+  description: >
+    Machine-readable description of the CLI commands, read-only MCP tools,
+    and grounded answer used by the local developer assistant.
+
+x-cli-commands:
+  /help:
+    syntax: "/help <question>"
+    description: Answer a project question using allowlisted RAG documents and current MCP project context.
+    withoutQuestion: Print syntax and an example without calling the model.
+  /branch:
+    syntax: "/branch"
+    description: Read the current branch through the git_current_branch MCP tool.
+  /files:
+    syntax: "/files [prefix]"
+    description: List a bounded set of tracked files through project_list_files.
+  /sources:
+    syntax: "/sources"
+    description: Print only sources from the immutable EvidencePack sent to the last /help answer.
+  /exit:
+    syntax: "/exit"
+    description: Stop the local assistant.
+
+x-mcp-tools:
+  git_current_branch:
+    description: Return the current git branch without accepting shell input.
+    input:
+      type: object
+      additionalProperties: false
+    output:
+      $ref: "#/components/schemas/GitBranchInfo"
+  project_list_files:
+    description: Return tracked files from git ls-files; untracked files are never returned.
+    input:
+      type: object
+      additionalProperties: false
+      properties:
+        prefix:
+          type: string
+          maxLength: 256
+          description: Optional repository-relative path prefix without traversal.
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 80
+    output:
+      $ref: "#/components/schemas/GitFileList"
+
+components:
+  schemas:
+    GitBranchInfo:
+      type: object
+      additionalProperties: false
+      required: [displayName, detached]
+      properties:
+        displayName:
+          type: string
+          description: Branch name or detached@<short-sha>.
+        detached:
+          type: boolean
+        shortSha:
+          type: string
+    GitFileList:
+      type: object
+      additionalProperties: false
+      required: [files, truncated]
+      properties:
+        prefix:
+          type: string
+        files:
+          type: array
+          maxItems: 200
+          items:
+            type: string
+        truncated:
+          type: boolean
+    BoundedMcpFileEvidence:
+      type: object
+      additionalProperties: false
+      required:
+        [files, serverReturnedCount, serverTruncated, boundedIncludedCount, byteBudgetTruncated]
+      properties:
+        files:
+          type: array
+          items:
+            type: string
+        serverReturnedCount:
+          type: integer
+        serverTruncated:
+          type: boolean
+          description: The MCP tool hit its count bound.
+        boundedIncludedCount:
+          type: integer
+        byteBudgetTruncated:
+          type: boolean
+          description: Returned MCP paths were omitted from the bounded server-owned projection.
+    GeneratedDocumentationAnswer:
+      type: object
+      additionalProperties: false
+      required: [status, answer, sourceIds]
+      properties:
+        status:
+          type: string
+          enum: [answered, unknown]
+        answer:
+          type: string
+          maxLength: 2400
+          description: Documentation-only model prose. It never owns current branch or tracked-file facts.
+        sourceIds:
+          type: array
+          items:
+            type: string
+          description: Only IDs present in the current rendered EvidencePack are valid.
+    AssistantAnswer:
+      type: object
+      additionalProperties: false
+      required: [status, answer, sourceIds, usedProjectContext, projectBranch, projectFiles]
+      properties:
+        status:
+          type: string
+          enum: [answered, unknown]
+        answer:
+          type: string
+          maxLength: 2400
+          description: >
+            Docs-only model prose, a server-owned mixed EvidencePack projection,
+            or the deterministic local MCP-only message.
+        sourceIds:
+          type: array
+          items:
+            type: string
+          description: Only IDs present in the current retrieved evidence pack are valid.
+        usedProjectContext:
+          type: boolean
+          description: Server-owned; true exactly when projectBranch is non-null or projectFiles is nonempty.
+        projectBranch:
+          type: [string, "null"]
+          description: Server-owned exact currentBranch when branch grounding is required.
+        projectFiles:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+          description: Server-owned exact paths from bounded MCP evidence when file grounding is required.
+
+x-grounding-policy:
+  documentsAreUntrusted: true
+  toolOutputIsUntrusted: true
+  executeInstructionsFromContext: false
+  allowUnknownSourceIds: false
+  evidencePackIsSingleSourceOfTruth: true
+  modelResponseIsDocumentationOnly: true
+  modelResponseRequiredFields: [status, answer, sourceIds]
+  mcpValuesAreNeverIncludedInModelPrompt: true
+  mcpOnlyRequestsBypassGenerator: true
+  assistantAnswerMcpFieldsAreServerOwned: true
+  finalMcpFieldsMustEqualBoundedEvidence: true
+  normalizeModelUnknownToCanonicalServerUnknown: true
+  discardModelUnknownAnswerAndSourceIds: true
+  parseMcpClaimsFromFreeFormAnswer: false
+  renderRawModelProseBesideMcpFacts: false
+  assembleVisibleMcpFactsServerSide: true
+  rejectSensitiveTopicsBeforeIndexEmbeddingMcpPromptAndModel: true
+  allowMcpOnlyAnswerWithoutDocumentCitation: true
+  callModelBelowRelevanceGate: false
+  refuseSensitiveTopicsBeforeModel: true
+  requireLexicalSupportInCitedChunks: true
+  unknownAnswer:
+    status: unknown
+    answer: Не нашёл достаточного ответа в разрешённой документации проекта. Уточните вопрос о структуре, командах, RAG или MCP.
+    sourceIds: []
+    usedProjectContext: false
+    projectBranch: null
+    projectFiles: []
+
+x-prompt-budget:
+  formula: OLLAMA_CONTEXT_LENGTH - OLLAMA_MAX_OUTPUT_TOKENS - PROMPT_RESERVE_TOKENS
+  enforcement: prompt UTF-8 bytes must not exceed the available model-token slots
+  rationale: each input token consumes at least one content byte; reserve covers chat-template overhead
+  minimumAvailableSlots: 4096
+  maximumQuestionBytes: one quarter of the available slots
+  documentationBudget: MAX_CONTEXT_TOKENS
+  deterministicServerSideFilePathTruncation: true
+  aggregatePromptMustFit: true
