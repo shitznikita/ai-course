@@ -7,20 +7,23 @@ description: Use when continuing this AI course repository after context compact
 
 Use this skill as the durable memory for the AI course repo. Keep future work consistent with these decisions unless the user explicitly changes direction.
 
-## Current Actual Snapshot (2026-07-11)
+## Current Actual Snapshot (2026-07-14)
 
-- `main` contains completed days 1-29. Historical snapshot text below documents earlier decisions but is no longer the source of truth for the latest day number.
-- Day 30 is `day-30-private-cosmetics-service-kotlin` on branch `codex/day-30-private-cosmetics-service`.
+- `main` contains completed days 1-30. Historical snapshot text below documents earlier decisions but is no longer the source of truth for the latest day number.
+- Day 30 is merged as `day-30-private-cosmetics-service-kotlin`.
 - Day 30 deploys `qwen3:4b` through loopback Ollama on a CPU VPS. Ktor remains on loopback and is published through Caddy automatic HTTPS; the permanent access token is verified by the API and stored only in the authorized browser's `localStorage` until logout.
 - Photo input uses local Tesseract OCR followed by user confirmation; the LLM receives text only.
 - Quality comes from exact INCI retrieval, a `<50%` pre-LLM coverage gate, 63 curated local cards, claim-level primary/official sources, deterministic allergy/regulatory checks, strict enum/ID model decisions, server-side product-level report assembly and bounded RAM chat rather than fine-tuning. Technical ingredients no longer backfill «key ingredients», and ingredient `suitableFor` tags are not unioned into a product verdict.
 - Raw Ollama port `11434`, VPS API tokens, SSH private keys, uploaded photos and chat history must never be committed or publicly exposed.
+- Day 31 is `day-31-developer-assistant-kotlin` in the managed `AICOURSE-1` workflow worktree. Sensitive topics stop before index/embedding/MCP/prompt/model work. It indexes only root `README.md`, two reviewed root docs and its own README; one immutable bounded EvidencePack is the source of truth for prompt/fixture/validator/citations. MCP-only questions bypass generation, mixed model responses are docs-only, and strict typed `projectBranch`/`projectFiles` values are assembled server-side from bounded MCP evidence withheld from the model prompt. `/help` uses local `qwen3:4b`, aggregate context/output/reserve budgets and independent RAG/MCP grounding. Hash retrieval and fixture/eval modes stay deterministic and offline.
+- Day 31 generated indexes/reports, `.env`, `.certs` directories or symlinks, and all real secrets remain ignored. Project docs must not be sent to cloud LLMs.
 - Best offline checks:
 
 ```bash
-./gradlew :day-30-private-cosmetics-service-kotlin:test
-day-30-private-cosmetics-service-kotlin/scripts/run-local.sh fixture-demo
-day-30-private-cosmetics-service-kotlin/scripts/run-local.sh eval-dry-run
+./gradlew :day-31-developer-assistant-kotlin:test
+day-31-developer-assistant-kotlin/scripts/run-assistant.sh --args="mcp-smoke"
+day-31-developer-assistant-kotlin/scripts/run-assistant.sh --args="fixture-demo"
+day-31-developer-assistant-kotlin/scripts/run-assistant.sh --args="eval-dry-run"
 ```
 
 ## Current Snapshot

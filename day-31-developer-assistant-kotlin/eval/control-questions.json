@@ -1,0 +1,45 @@
+[
+  {
+    "id": "project-structure",
+    "question": "Как устроены Gradle-модули проекта и как добавить новый день?",
+    "expectedSources": ["docs/project-architecture.md"],
+    "expectedTerms": ["include", "day-"]
+  },
+  {
+    "id": "assistant-commands",
+    "question": "Какие команды поддерживает ассистент разработчика?",
+    "expectedSources": ["docs/developer-assistant-api.yaml"],
+    "expectedTerms": ["/help", "/branch"]
+  },
+  {
+    "id": "rag-corpus",
+    "question": "Какие документы входят в RAG-корпус?",
+    "expectedSources": ["day-31-developer-assistant-kotlin/README.md"],
+    "expectedTerms": ["README.md", "docs"]
+  },
+  {
+    "id": "mcp-branch",
+    "question": "Какой MCP tool возвращает текущую git-ветку?",
+    "expectedSources": ["docs/developer-assistant-api.yaml"],
+    "expectedTerms": ["git_current_branch"]
+  },
+  {
+    "id": "run-offline",
+    "question": "Как проверить Day 31 без Ollama?",
+    "expectedSources": ["day-31-developer-assistant-kotlin/README.md"],
+    "expectedTerms": ["fixture-demo", "eval-dry-run"]
+  },
+  {
+    "id": "privacy",
+    "question": "Отправляется ли документация проекта в облако?",
+    "expectedSources": ["docs/project-architecture.md"],
+    "expectedTerms": ["loopback", "cloud"]
+  },
+  {
+    "id": "unsupported-weather",
+    "question": "Какая погода завтра в Токио?",
+    "expectedSources": [],
+    "expectedTerms": [],
+    "expectUnknown": true
+  }
+]

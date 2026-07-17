@@ -4,18 +4,19 @@
 
 ## Current Snapshot
 
-- Статус на `2026-07-11`: `main` содержит завершённые дни 1-29; Day 30 разрабатывает приватный VPS-сервис анализа косметики с HTTP API, OCR, локальным retrieval и чатом.
+- Статус на `2026-07-14`: `main` содержит завершённые дни 1-30; Day 31 реализует локального ассистента разработчика с RAG по документации проекта и read-only MCP-контекстом git.
 - Основной стек всех последних заданий: Kotlin CLI + Gradle + прямой REST через `java.net.http.HttpClient`.
-- Основной провайдер: Eliza API, OpenRouter-compatible endpoint `https://api.eliza.yandex.net/openrouter/v1/chat/completions`.
-- Основная модель для последних LLM-дней: `meta-llama/llama-3.3-70b-instruct`.
+- Для cloud-заданий основной провайдер: Eliza API, OpenRouter-compatible endpoint `https://api.eliza.yandex.net/openrouter/v1/chat/completions`.
+- Основная cloud-модель: `meta-llama/llama-3.3-70b-instruct`; локальные дни 26-31 используют Ollama-модели из README конкретного задания.
 - Реальный API-ключ хранится только в `.env` или переменных окружения. `.env`, `.certs/`, build outputs, history/summary/tmp-файлы не коммитятся.
 - Для продолжения после сжатия контекста сначала читать [AGENTS.md](AGENTS.md), затем [skills/course-continuity/SKILL.md](skills/course-continuity/SKILL.md).
-- Для проверки текущего состояния полезнее всего запускать день 25 в `fixture-demo`, потому что он офлайн показывает chat history, task state, RAG, sources и quotes без секретов.
+- Для проверки текущего состояния полезнее всего запускать Day 31 в `fixture-demo` и `eval-dry-run`: они офлайн показывают allowlisted project-doc RAG, реальную git-ветку через MCP, source IDs и unknown gate без секретов.
 - День 26 не использует Eliza: он обращается только к loopback Ollama API `http://127.0.0.1:11434` и требует один раз скачать локальную модель.
 - День 27 принимает `.txt`/`.md` заметку через браузер, держит её только в памяти и показывает локальный структурированный анализ через Ollama.
 - День 28 использует локальные `nomic-embed-text` и `qwen3:14b`: Day 21 structured index → cosine retrieval → grounded ответ с sources/quotes; cloud нужен только для осознанного сравнения на том же контексте.
 - День 29 измеряет baseline/optimized Q4 и Q8 на одинаковом локальном RAG-контексте.
 - День 30 рассчитан на CPU VPS: локальный multi-pass Tesseract → подтверждённый INCI → exact retrieval и allowlist OCR corrections → локальная `qwen3:4b` → server-side grounded report; Ollama и приложение остаются на loopback, а web-вход публикуется через Caddy HTTPS с access token.
+- День 31 индексирует только allowlisted root README/docs, получает текущую ветку и tracked files через embedded MCP, а `/help` формирует grounded ответ через локальную `qwen3:4b`; fixture/eval режимы работают офлайн.
 
 ## Структура
 
@@ -53,6 +54,7 @@ ai-course/
   day-28-local-rag-kotlin/       # День 28: local RAG + cloud comparison
   day-29-local-llm-optimization-kotlin/ # День 29: оптимизация local RAG на Qwen3
   day-30-private-cosmetics-service-kotlin/ # День 30: приватный LLM-сервис анализа косметики
+  day-31-developer-assistant-kotlin/ # День 31: RAG + MCP ассистент разработчика
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -90,6 +92,7 @@ ai-course/
 - [День 28: Локальная LLM + RAG](day-28-local-rag-kotlin/README.md)
 - [День 29: Оптимизация локальной LLM](day-29-local-llm-optimization-kotlin/README.md)
 - [День 30: Приватный сервис анализа косметики](day-30-private-cosmetics-service-kotlin/README.md)
+- [День 31: Ассистент разработчика с RAG и MCP](day-31-developer-assistant-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -125,6 +128,7 @@ ai-course/
 | 28 | `day-28-local-rag-kotlin` | Day 21 index -> local embeddings/retrieval -> Qwen3 grounded RAG, optional cloud compare | `day-28-local-rag-kotlin/scripts/run-local-rag.sh --args="diagnose"` |
 | 29 | `day-29-local-llm-optimization-kotlin` | baseline Q4 -> optimized Q4 -> Q8 на одинаковом local RAG context | `day-29-local-llm-optimization-kotlin/scripts/run-optimization.sh --args="diagnose"` |
 | 30 | `day-30-private-cosmetics-service-kotlin` | private VPS API: OCR -> INCI retrieval -> local LLM -> grounded report/chat | `day-30-private-cosmetics-service-kotlin/scripts/run-local.sh fixture-demo` |
+| 31 | `day-31-developer-assistant-kotlin` | allowlisted project-doc RAG + read-only git MCP + grounded `/help` | `day-31-developer-assistant-kotlin/scripts/run-assistant.sh --args="fixture-demo"` |
 
 ## Запуск дня 1
 
@@ -663,12 +667,48 @@ VPS systemd assets, HTTP examples, smoke/load/rate-limit checks и video scenari
 ./gradlew :day-30-private-cosmetics-service-kotlin:build
 ```
 
+## Запуск дня 31
+
+Day 31 — локальный CLI-ассистент разработчика. RAG индексирует корневой README, `docs/project-architecture.md`, `docs/developer-assistant-api.yaml` и README самого дня. Embedded MCP возвращает реальную текущую git-ветку и bounded tracked file list. MCP-only вопросы обходят generator; mixed model prompt содержит только документацию, а exact `projectBranch`/`projectFiles` финально присваиваются server-side. Sensitive topics о secrets/certificates отклоняются до index, embeddings, MCP, prompt и model. Live `/help` использует только loopback Ollama; cloud API не вызывается.
+
+Offline-проверки:
+
+```bash
+./gradlew :day-31-developer-assistant-kotlin:test
+day-31-developer-assistant-kotlin/scripts/run-assistant.sh --args="mcp-smoke"
+day-31-developer-assistant-kotlin/scripts/run-assistant.sh --args="fixture-demo"
+day-31-developer-assistant-kotlin/scripts/run-assistant.sh --args="eval-dry-run"
+```
+
+Live запуск требует двух терминалов. В **Terminal A** сначала запустите Ollama server и оставьте его работающим:
+
+```bash
+ollama serve
+```
+
+Если Ollama desktop app уже запущен, отдельный `ollama serve` не нужен. Пока server работает, в **Terminal B**:
+
+```bash
+ollama pull qwen3:4b
+day-31-developer-assistant-kotlin/scripts/run-assistant.sh --args="diagnose"
+day-31-developer-assistant-kotlin/scripts/run-assistant.sh
+```
+
+Полный corpus allowlist, MCP schemas, expected output, privacy boundary и video scenario — в [README дня 31](day-31-developer-assistant-kotlin/README.md).
+
+Обычная Gradle-команда:
+
+```bash
+./gradlew :day-31-developer-assistant-kotlin:build
+```
+
 ## Правила безопасности
 
 - Не коммитить `.env`.
 - Не коммитить `.certs/`.
 - Не публиковать реальные API-ключи, OAuth-токены и приватные сертификаты.
 - Не коммитить VPS Bearer token, SSH private keys или заполненный `/etc/cosmetics-ai/cosmetics-ai.env`.
+- Не коммитить Day 31 RAG index/runtime и не расширять его corpus за пределы reviewed allowlist без отдельной проверки.
 - Для публичного репозитория внимательно проверить, что внутренние корпоративные URL допустимо показывать наружу.
 
 ## GitHub Workflow

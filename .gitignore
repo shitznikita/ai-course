@@ -3,6 +3,8 @@
 build/
 .env
 .certs/
+.certs
+**/.certs
 .idea/
 .DS_Store
 *.iml
@@ -68,3 +70,6 @@ day-29-local-llm-optimization-kotlin/*.tmp
 day-30-private-cosmetics-service-kotlin/reports/
 day-30-private-cosmetics-service-kotlin/runtime/
 day-30-private-cosmetics-service-kotlin/*.tmp
+day-31-developer-assistant-kotlin/runtime/
+day-31-developer-assistant-kotlin/reports/
+day-31-developer-assistant-kotlin/*.tmp
