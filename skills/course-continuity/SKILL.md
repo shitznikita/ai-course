@@ -9,7 +9,7 @@ Use this skill as the durable memory for the AI course repo. Keep future work co
 
 ## Current Actual Snapshot (2026-07-17)
 
-- `main` contains completed days 1-31. Historical snapshot text below documents earlier decisions but is no longer the source of truth for the latest day number.
+- `main` contains completed days 1-32. Historical snapshot text below documents earlier decisions but is no longer the source of truth for the latest day number.
 - Day 30 is merged as `day-30-private-cosmetics-service-kotlin`.
 - Day 30 deploys `qwen3:4b` through loopback Ollama on a CPU VPS. Ktor remains on loopback and is published through Caddy automatic HTTPS; the permanent access token is verified by the API and stored only in the authorized browser's `localStorage` until logout.
 - Photo input uses local Tesseract OCR followed by user confirmation; the LLM receives text only.
@@ -20,6 +20,9 @@ Use this skill as the durable memory for the AI course repo. Keep future work co
 - Day 32 is `day-32-ai-code-review-kotlin`: a Kotlin CLI that turns bounded PR metadata, patches and changed blobs into a structured Russian review, then updates one sticky PR comment. One reusable fail-closed cloud policy scans allowlisted base corpus and raw changed paths/provider patches/bounded full diff/decoded blobs, including plain/quoted/backslash-escaped `Authorization` with schemes accepted by `AppConfig` such as OAuth and quoted credential values with special characters such as `$`; only exact known placeholders and structural references are exempt. A match makes zero model calls and emits a non-echo coverage-0 diagnostic. A PR above the configured changed-file cap also stops before partial review. Prompt budgeting selects only whole file/evidence items into typed `TransmittedReviewInput`; validator path/line/source authorization and reviewed coverage use only that exact successful-call subset. Model-controlled title/detail/recommendation are policy-checked before rendering or publishing. Local `fixture-demo`, `eval-dry-run`, and `prompt-dry-run` stay deterministic/offline. Live mode uses direct REST to Eliza/OpenRouter with OAuth from `.env` or environment variables.
 - Day 32 CI is deliberately a `pull_request_target` workflow because it must use `LLM_API_KEY` and post a comment. It has only `contents: read` and `pull-requests: write`; is guarded to non-draft same-repository PRs targeting the repository default branch; pins official actions to immutable full commit SHAs; checks out **only** that `github.event.pull_request.base.sha` with credentials disabled; fetches PR metadata/files through GitHub REST as inert data; and never checks out, sources, runs, builds, or tests the head revision. No secret-bearing `.env` reaches CI.
 - The workflow cannot review the PR that introduces or changes the reviewer itself: `pull_request_target` executes the workflow from the base branch. Merge the reviewer first, then demonstrate it on a later same-repository non-draft PR. Fork PRs and drafts are intentionally skipped.
+- Day 33 is `day-33-support-assistant-kotlin` in the managed `AICOURSE-3` workflow worktree. It uses committed `synthetic=true` ticket/user JSON, never real CRM data. An embedded loopback MCP SDK 0.13.0 server exposes exactly two read-only tools: exact ticket lookup and exact linked-user lookup. The client performs `tools/list`, fetches one ticket, then only `ticket.userId`; missing records stop locally before RAG/LLM.
+- Day 33 RAG uses only `faq.md`, `authentication.md`, `billing.md`, and `escalation.md`, stable heading-derived source IDs, SHA fingerprints, deterministic `hash-v1` embeddings and hybrid retrieval. Fresh reviewed chunks are authoritative: cache count/unique IDs/path/heading/text/recomputed fingerprint and deterministic embedding must all match, otherwise the cache rebuilds; retrieval never receives cache-owned metadata or text. Cache persistence uses a unique atomically created no-follow temp inside a verified non-symlink directory, flushes before atomic replace/fallback, cleans in `finally`, and never touches the predictable legacy `.tmp`. The query contains the question plus typed current-ticket facts, so `ACCOUNT_LOCKED` and `INVALID_OTP/CLOCK_SKEW` produce different evidence and actions for the same question. One immutable bounded evidence pack controls prompt blocks, allowed IDs, deterministic fixture output, validation and citations.
+- Day 33 live mode uses direct `java.net.http.HttpClient` REST only to the pinned canonical Eliza URI; the run script validates it before shared Day 1 OAuth fallback. Fixture and four knowledge files must match reviewed paths/SHA-256 and transmitted evidence must match that corpus. Fixture/index bytes are bounded through `NOFOLLOW_LINKS` channels before decode; invalid/oversized/symlink/duplicate/tampered/stale caches rebuild. Decoded MCP records are revalidated, user question/history are scanned for sensitive-looking values before HTTP, and every bounded chat turn carries its ticket ID. Prompt construction removes whole evidence items until the aggregate limit fits. Strict JSON requires `answered|unknown`, bounded answer/actions, knowledge source IDs and current context fact IDs. `answered` requires null `clarifyingQuestion`; `unknown` requires a safe nonempty one. Forged/duplicate/cross-ticket/unsafe clarifying output or malformed/non-2xx responses fail closed to a canonical unknown; raw model output is never rendered. Critical ticket/user fields are printed from typed server context. Chat is RAM-only and changing `/ticket` clears history and last evidence.
 - Best offline checks:
 
 ```bash
@@ -36,6 +39,17 @@ Day 32 offline checks:
 day-32-ai-code-review-kotlin/scripts/run-review.sh --args="fixture-demo"
 day-32-ai-code-review-kotlin/scripts/run-review.sh --args="eval-dry-run"
 day-32-ai-code-review-kotlin/scripts/run-review.sh --args="prompt-dry-run"
+```
+
+Day 33 offline checks:
+
+```bash
+./gradlew :day-33-support-assistant-kotlin:test
+./gradlew :day-33-support-assistant-kotlin:build
+day-33-support-assistant-kotlin/scripts/run-support.sh --args="mcp-smoke"
+day-33-support-assistant-kotlin/scripts/run-support.sh --args="fixture-demo"
+day-33-support-assistant-kotlin/scripts/run-support.sh --args="eval-dry-run"
+day-33-support-assistant-kotlin/scripts/run-support.sh --args="prompt-dry-run TCK-1001 Почему не работает авторизация?"
 ```
 
 ## Current Snapshot
