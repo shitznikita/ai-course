@@ -7,7 +7,7 @@ For durable course memory after context compaction, read `skills/course-continui
 ## Current Snapshot For New Agents
 
 - Current date of this snapshot: 2026-07-17.
-- `main` contains completed course days 1-31; Day 32 adds a bounded AI pull-request reviewer driven by a secure GitHub Actions workflow.
+- `main` contains completed course days 1-32; Day 33 adds a grounded support assistant over synthetic ticket/user MCP context.
 - Preferred stack remains Kotlin CLI with direct REST calls through `java.net.http.HttpClient`.
 - Preferred provider remains Eliza API with OAuth token from `.env`/environment variables.
 - Cloud assignments still use the Eliza/OpenRouter endpoint when required:
@@ -21,6 +21,7 @@ LLM_MODEL=meta-llama/llama-3.3-70b-instruct
 - Days 26-31 use local Ollama through a loopback-only HTTP API when a model is required. Day 30 targets a CPU VPS with `qwen3:4b`, Tesseract OCR, strict JSON, a `<50%` coverage gate before LLM, claim-level source IDs, deterministic allergy/regulatory checks and bounded chat; Caddy may expose only the Ktor UI/API over HTTPS behind a persistent browser-stored access token.
 - Day 31 is a local developer-assistant CLI: sensitive topics are refused before index/embedding/MCP/prompt/model work; one bounded immutable EvidencePack is shared by prompt/fixture/validator/citations; MCP-only questions bypass generation; mixed model responses contain only `status`/`answer`/`sourceIds`; and exact `projectBranch`/`projectFiles` are assembled server-side from bounded MCP evidence that never enters the model prompt. Project documentation is never sent to cloud providers.
 - Day 32 uses Eliza only for bounded PR-review text. Its `pull_request_target` workflow runs only for non-draft same-repository PRs whose base is the repository default branch, checks out that immutable base SHA, obtains PR metadata/files as inert GitHub REST data, and never checks out or executes head code. One reusable fail-closed cloud policy scans allowlisted base corpus plus raw changed paths/provider patches/bounded full diff/decoded blobs—including plain/quoted/backslash-escaped `Authorization` with schemes accepted by `AppConfig` such as OAuth and quoted credential values with special characters such as `$`—before any model call; only exact known placeholders and structural references are exempt. A match produces a non-echo coverage-0 diagnostic, and a PR above the configured changed-file cap also stops before partial review. Prompt budgeting keeps only whole file/evidence items in a typed `TransmittedReviewInput`; validator authorization and `reviewedFiles` derive only from that exact successful-call subset. Model-controlled title/detail/recommendation pass the same policy before rendering/publishing. `LLM_API_KEY` is the only repository LLM secret; no `.env` is used in CI. The reviewer posts one Russian sticky comment and cannot review the PR that first introduces its own workflow until it is merged.
+- Day 33 is read-only and synthetic-only. Its loopback Streamable HTTP MCP advertises exactly `support_get_ticket` and `support_get_user`; the client discovers both, fetches one ticket, then only its linked user, and revalidates decoded records before context creation. Strict JSON rejects unknown fields, non-synthetic data, duplicate/bad IDs, broken references, symlinks and oversized values; fixture/index bytes are capped on `NOFOLLOW_LINKS` channels before decode. The RAG cache is untrusted: fresh reviewed chunks are authoritative for exact unique IDs, metadata, text and recomputed fingerprints, deterministic `hash-v1` embeddings are reverified, and any duplicate/tampered/stale cache rebuilds. Persistence uses an atomically created unique no-follow temp inside a verified non-symlink directory, flushes it, replaces the cache atomically where supported and always cleans the temp; the predictable legacy `.tmp` path is never touched. FAQ/auth/billing/escalation docs are structured into stable source IDs and deterministic `hash-v1` embeddings; retrieval is enriched only with current typed ticket/user facts. One bounded `KnowledgeEvidencePack` controls prompt evidence, fixture responses, validator allowlists and citations; evidence items are removed whole until the prompt fits. Live OAuth destination is pinned to the canonical Eliza URI, and the run script validates it before reading shared Day 1 credentials. Eliza uses one direct REST call only when the fixture and four knowledge files match reviewed paths/SHA-256, transmitted evidence matches that corpus, and cloud input has no sensitive-looking email/phone/card/OTP/password/token/CVC/auth/JWT/private-key value. Every chat turn is bound to its ticket ID. Invalid/forged/duplicate/cross-ticket/unsafe clarifying output fail-closes to canonical unknown; `answered` requires null clarifying question, `unknown` requires a safe nonempty one, server-owned context fields are rendered separately, and `/ticket` clears RAM history/evidence.
 - The best Day 30 offline smoke tests are:
 
 ```bash
@@ -36,6 +37,15 @@ day-30-private-cosmetics-service-kotlin/scripts/run-local.sh eval-dry-run
 day-31-developer-assistant-kotlin/scripts/run-assistant.sh --args="mcp-smoke"
 day-31-developer-assistant-kotlin/scripts/run-assistant.sh --args="fixture-demo"
 day-31-developer-assistant-kotlin/scripts/run-assistant.sh --args="eval-dry-run"
+```
+
+- The best Day 33 offline smoke tests are:
+
+```bash
+./gradlew :day-33-support-assistant-kotlin:test
+day-33-support-assistant-kotlin/scripts/run-support.sh --args="mcp-smoke"
+day-33-support-assistant-kotlin/scripts/run-support.sh --args="fixture-demo"
+day-33-support-assistant-kotlin/scripts/run-support.sh --args="eval-dry-run"
 ```
 
 ## Repository Layout
@@ -54,6 +64,7 @@ day-31-developer-assistant-kotlin/scripts/run-assistant.sh --args="eval-dry-run"
 - `day-30-private-cosmetics-service-kotlin/`: private VPS web/API with OCR, local evidence retrieval, grounded report and chat.
 - `day-31-developer-assistant-kotlin/`: project-documentation RAG plus read-only git MCP and grounded `/help`.
 - `day-32-ai-code-review-kotlin/`: bounded Eliza-backed PR reviewer with offline fixtures, evaluation cases, and a secure same-repository GitHub Actions entrypoint.
+- `day-33-support-assistant-kotlin/`: synthetic ticket/user MCP, FAQ/docs RAG, strict grounding and bounded support chat.
 - Add future assignments as `day-11-...`, `day-12-...`, and so on.
 - Keep Gradle Wrapper files at the repository root.
 
@@ -88,6 +99,9 @@ day-31-developer-assistant-kotlin/scripts/run-assistant.sh --args="eval-dry-run"
   - `day-32-ai-code-review-kotlin/reports/`
   - `day-32-ai-code-review-kotlin/runtime/`
   - `day-32-ai-code-review-kotlin/*.tmp`
+  - `day-33-support-assistant-kotlin/reports/`
+  - `day-33-support-assistant-kotlin/runtime/`
+  - `day-33-support-assistant-kotlin/*.tmp`
 
 ## Assignment Quality Bar
 
@@ -199,4 +213,15 @@ day-31-developer-assistant-kotlin/scripts/run-assistant.sh --args="eval-dry-run"
 day-32-ai-code-review-kotlin/scripts/run-review.sh --args="fixture-demo"
 day-32-ai-code-review-kotlin/scripts/run-review.sh --args="eval-dry-run"
 day-32-ai-code-review-kotlin/scripts/run-review.sh --args="prompt-dry-run"
+```
+
+- For Day 33:
+
+```bash
+./gradlew :day-33-support-assistant-kotlin:test
+./gradlew :day-33-support-assistant-kotlin:build
+day-33-support-assistant-kotlin/scripts/run-support.sh --args="mcp-smoke"
+day-33-support-assistant-kotlin/scripts/run-support.sh --args="fixture-demo"
+day-33-support-assistant-kotlin/scripts/run-support.sh --args="eval-dry-run"
+day-33-support-assistant-kotlin/scripts/run-support.sh --args="prompt-dry-run TCK-1001 Почему не работает авторизация?"
 ```
