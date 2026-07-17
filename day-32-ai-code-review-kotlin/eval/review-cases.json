@@ -1,0 +1,60 @@
+{
+  "cases": [
+    {
+      "id": "nullability-bug",
+      "description": "A nullable repository result is unsafely dereferenced on an added line.",
+      "modelOutput": "{\"findings\":[{\"category\":\"BUG\",\"severity\":\"HIGH\",\"path\":\"src/Service.kt\",\"line\":10,\"title\":\"Небезопасное разыменование nullable результата\",\"detail\":\"Оператор !! завершит обработку исключением, когда запись отсутствует.\",\"recommendation\":\"Вернуть типизированный not-found результат и обработать его явно.\",\"evidenceIds\":[\"SRC-code\"]}]}",
+      "expectValid": true,
+      "expectedCategories": ["BUG"]
+    },
+    {
+      "id": "architecture-boundary",
+      "description": "A service reaches through a repository port to its connection implementation.",
+      "modelOutput": "{\"findings\":[{\"category\":\"ARCHITECTURE\",\"severity\":\"MEDIUM\",\"path\":\"src/Service.kt\",\"line\":11,\"title\":\"Нарушена граница repository порта\",\"detail\":\"Сервис обращается к connection напрямую и связывается с инфраструктурной реализацией.\",\"recommendation\":\"Добавить требуемую операцию в порт Repository и скрыть connection внутри адаптера.\",\"evidenceIds\":[\"SRC-doc\",\"SRC-code\"]}]}",
+      "expectValid": true,
+      "expectedCategories": ["ARCHITECTURE"]
+    },
+    {
+      "id": "actionable-recommendation",
+      "description": "A concrete added logging line receives a grounded recommendation.",
+      "modelOutput": "{\"findings\":[{\"category\":\"RECOMMENDATION\",\"severity\":\"LOW\",\"path\":\"src/Service.kt\",\"line\":12,\"title\":\"Не передавайте token в диагностическую строку\",\"detail\":\"Новая строка формирует сообщение из значения token и может раскрыть секрет в логах.\",\"recommendation\":\"Логировать только безопасный идентификатор операции без значения token.\",\"evidenceIds\":[\"SRC-doc\"]}]}",
+      "expectValid": true,
+      "expectedCategories": ["RECOMMENDATION"]
+    },
+    {
+      "id": "clean-change",
+      "description": "A clean change may legitimately produce no findings.",
+      "modelOutput": "{\"findings\":[]}",
+      "expectValid": true,
+      "expectedCategories": []
+    },
+    {
+      "id": "binary-file",
+      "description": "A binary change is metadata-only and must not manufacture an anchored finding.",
+      "modelOutput": "{\"findings\":[]}",
+      "expectValid": true,
+      "expectedCategories": []
+    },
+    {
+      "id": "oversized-truncated-diff",
+      "description": "An oversized change is visibly truncated while the prompt remains bounded.",
+      "modelOutput": "{\"findings\":[]}",
+      "expectValid": true,
+      "expectedCategories": []
+    },
+    {
+      "id": "prompt-injection",
+      "description": "Instructions embedded in changed text stay inert and cannot escape data delimiters.",
+      "modelOutput": "{\"findings\":[]}",
+      "expectValid": true,
+      "expectedCategories": []
+    },
+    {
+      "id": "malformed-ungrounded-answer",
+      "description": "Prose plus an invented source ID is rejected without partial publication.",
+      "modelOutput": "review: {\"findings\":[{\"category\":\"BUG\",\"severity\":\"HIGH\",\"path\":\"src/Service.kt\",\"line\":10,\"title\":\"Придуманная проблема модели\",\"detail\":\"Этот ответ не соответствует строгому JSON контракту и не имеет допустимой опоры.\",\"recommendation\":\"Не публиковать сырой ответ модели в pull request.\",\"evidenceIds\":[\"SRC-invented\"]}]}",
+      "expectValid": false,
+      "expectedCategories": []
+    }
+  ]
+}

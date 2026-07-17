@@ -4,7 +4,7 @@
 
 ## Current Snapshot
 
-- Статус на `2026-07-14`: `main` содержит завершённые дни 1-30; Day 31 реализует локального ассистента разработчика с RAG по документации проекта и read-only MCP-контекстом git.
+- Статус на `2026-07-17`: `main` содержит завершённые дни 1-31; Day 32 добавляет bounded AI code review для PR через Eliza и защищённый GitHub Actions workflow.
 - Основной стек всех последних заданий: Kotlin CLI + Gradle + прямой REST через `java.net.http.HttpClient`.
 - Для cloud-заданий основной провайдер: Eliza API, OpenRouter-compatible endpoint `https://api.eliza.yandex.net/openrouter/v1/chat/completions`.
 - Основная cloud-модель: `meta-llama/llama-3.3-70b-instruct`; локальные дни 26-31 используют Ollama-модели из README конкретного задания.
@@ -17,6 +17,7 @@
 - День 29 измеряет baseline/optimized Q4 и Q8 на одинаковом локальном RAG-контексте.
 - День 30 рассчитан на CPU VPS: локальный multi-pass Tesseract → подтверждённый INCI → exact retrieval и allowlist OCR corrections → локальная `qwen3:4b` → server-side grounded report; Ollama и приложение остаются на loopback, а web-вход публикуется через Caddy HTTPS с access token.
 - День 31 индексирует только allowlisted root README/docs, получает текущую ветку и tracked files через embedded MCP, а `/help` формирует grounded ответ через локальную `qwen3:4b`; fixture/eval режимы работают офлайн.
+- День 32 получает PR только как inert GitHub REST data, применяет один fail-closed cloud policy к allowlisted corpus и changed paths/patches/full diff/blobs, а PR больше configured file cap останавливает до partial review. Eliza получает только целые typed file/evidence items; validator и coverage используют ровно этот transmitted subset. CI не исполняет head PR: он checkout-ит только base SHA, а secret доступен лишь для non-draft same-repository PR.
 
 ## Структура
 
@@ -55,6 +56,7 @@ ai-course/
   day-29-local-llm-optimization-kotlin/ # День 29: оптимизация local RAG на Qwen3
   day-30-private-cosmetics-service-kotlin/ # День 30: приватный LLM-сервис анализа косметики
   day-31-developer-assistant-kotlin/ # День 31: RAG + MCP ассистент разработчика
+  day-32-ai-code-review-kotlin/ # День 32: безопасный AI reviewer для PR
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -93,6 +95,7 @@ ai-course/
 - [День 29: Оптимизация локальной LLM](day-29-local-llm-optimization-kotlin/README.md)
 - [День 30: Приватный сервис анализа косметики](day-30-private-cosmetics-service-kotlin/README.md)
 - [День 31: Ассистент разработчика с RAG и MCP](day-31-developer-assistant-kotlin/README.md)
+- [День 32: AI code review для pull request](day-32-ai-code-review-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -129,6 +132,7 @@ ai-course/
 | 29 | `day-29-local-llm-optimization-kotlin` | baseline Q4 -> optimized Q4 -> Q8 на одинаковом local RAG context | `day-29-local-llm-optimization-kotlin/scripts/run-optimization.sh --args="diagnose"` |
 | 30 | `day-30-private-cosmetics-service-kotlin` | private VPS API: OCR -> INCI retrieval -> local LLM -> grounded report/chat | `day-30-private-cosmetics-service-kotlin/scripts/run-local.sh fixture-demo` |
 | 31 | `day-31-developer-assistant-kotlin` | allowlisted project-doc RAG + read-only git MCP + grounded `/help` | `day-31-developer-assistant-kotlin/scripts/run-assistant.sh --args="fixture-demo"` |
+| 32 | `day-32-ai-code-review-kotlin` | bounded PR patches -> direct Eliza review -> Russian sticky comment | `day-32-ai-code-review-kotlin/scripts/run-review.sh --args="fixture-demo"` |
 
 ## Запуск дня 1
 
@@ -702,6 +706,32 @@ day-31-developer-assistant-kotlin/scripts/run-assistant.sh
 ./gradlew :day-31-developer-assistant-kotlin:build
 ```
 
+## Запуск дня 32
+
+Day 32 — AI reviewer для pull request. CLI берёт bounded metadata, patches и
+changed blobs через GitHub REST, строит RAG по документации и коду trusted base,
+останавливает cloud review до HTTP при sensitive changed path/patch/blob,
+формирует prompt только из целых file/evidence items и проверяет structured
+result против exact transmitted subset до рендеринга. Офлайн fixtures показывают
+полный flow без GitHub token и live LLM.
+
+```bash
+./gradlew :day-32-ai-code-review-kotlin:test
+./gradlew :day-32-ai-code-review-kotlin:build
+day-32-ai-code-review-kotlin/scripts/run-review.sh --args="fixture-demo"
+day-32-ai-code-review-kotlin/scripts/run-review.sh --args="eval-dry-run"
+day-32-ai-code-review-kotlin/scripts/run-review.sh --args="prompt-dry-run"
+```
+
+Для live локального запуска скопируйте `.env.example` в `.env`, укажите OAuth token и при необходимости создайте truststore:
+
+```bash
+cp day-32-ai-code-review-kotlin/.env.example day-32-ai-code-review-kotlin/.env
+day-32-ai-code-review-kotlin/scripts/setup-yandex-ca.sh
+```
+
+GitHub workflow [ai-code-review.yml](.github/workflows/ai-code-review.yml) запускается только для non-draft PR из этого же репозитория в default branch. Он pin-ит official actions, checkout-ит только exact default-base SHA и получает данные PR через GitHub REST; head revision не checkout-ится и не выполняется. Поэтому он не может проверить PR, который впервые добавляет сам workflow: сначала merge Day 32, затем откройте отдельный same-repository PR для видео. Полная архитектура, expected sticky comment и сценарий записи — в [README дня 32](day-32-ai-code-review-kotlin/README.md).
+
 ## Правила безопасности
 
 - Не коммитить `.env`.
@@ -709,6 +739,14 @@ day-31-developer-assistant-kotlin/scripts/run-assistant.sh
 - Не публиковать реальные API-ключи, OAuth-токены и приватные сертификаты.
 - Не коммитить VPS Bearer token, SSH private keys или заполненный `/etc/cosmetics-ai/cosmetics-ai.env`.
 - Не коммитить Day 31 RAG index/runtime и не расширять его corpus за пределы reviewed allowlist без отдельной проверки.
+- Для Day 32 не передавать secret через PR text, logs или `.env` в CI; использовать только GitHub secret `LLM_API_KEY`. Никогда не менять base-only checkout на checkout head в `pull_request_target`.
+- Day 32 `reviewedFiles` означает только exact file items, реально переданные в
+  успешный model call; fetched/parsed/binary/incomplete/omitted files не входят.
+- Day 32 cloud policy извлекает quoted/escaped JSON credential values вместе со
+  special characters вроде `$` и проверяет plain/quoted/escaped
+  `Authorization` для scheme, принятой `AppConfig`, включая `OAuth`; model
+  title/detail/recommendation проходят тот же sensitive-content gate до
+  renderer/publisher.
 - Для публичного репозитория внимательно проверить, что внутренние корпоративные URL допустимо показывать наружу.
 
 ## GitHub Workflow
