@@ -1,0 +1,11 @@
+diff --git a/src/ReviewTarget.kt b/src/ReviewTarget.kt
+index 1111111..2222222 100644
+--- a/src/ReviewTarget.kt
++++ b/src/ReviewTarget.kt
+@@ -5,2 +5,4 @@ class ReviewTarget(
+     fun load(id: String): String {
+-        return repository.find(id) ?: "missing"
++        val entity = repository.find(id)!!
++        val raw = repository.connection().query(entity)
++        return "loaded=$raw secret=$apiKey"
+     }
