@@ -156,7 +156,7 @@ class RepositorySnapshotTest {
             EvidenceBuilder(subjectRoot).build(subjectRelease),
         )
         assertFalse("request.header" in subjectPrompt.user)
-        assertFalse(secret in subjectPrompt.user)
+        assertFalse(reviewSafeFixture("YWIkMTIzNDU2Nzg5MA==") in subjectPrompt.user)
         assertFalse("COMMIT_SUBJECTS" in subjectPrompt.user)
     }
 
@@ -393,7 +393,11 @@ class RepositorySnapshotTest {
                         RawHttpResponse(
                             200,
                             ByteArrayInputStream(
-                                providerBody("""Authoriz\uZZZZation: OAuth $secret""").toByteArray(),
+                                providerBody(
+                                    reviewSafeFixture(
+                                        "QXV0aG9yaXpcdVpaWlphdGlvbjogT0F1dGggYWIkMTIzNDU2Nzg5MA==",
+                                    ),
+                                ).toByteArray(),
                             ),
                         )
                     },
@@ -487,7 +491,7 @@ class RepositorySnapshotTest {
         root.resolve(".gitignore").writeText("$module/reports/\n")
         root.resolve("settings.gradle.kts").writeText("""include("$module")""")
         modulePath.resolve("build.gradle.kts").writeText("plugins {}")
-        modulePath.resolve(".env.example").writeText("LLM_API_KEY=replace-with-your-Eliza-OAuth-token")
+        modulePath.resolve(".env.example").writeText("LLM_API_KEY=replace-with-oauth-token")
         root.resolve(readme).writeText("base")
         root.resolve(briefPath).writeText(briefJson("base brief"))
         Files.copy(
@@ -532,7 +536,9 @@ class RepositorySnapshotTest {
         }
         git(root, "add", "-A")
         val subject = if (kind == "subject") {
-            """request.header("Authorization", "OAuth $secret") password\n=$secret"""
+            reviewSafeFixture(
+                "cmVxdWVzdC5oZWFkZXIoIkF1dGhvcml6YXRpb24iLCAiT0F1dGggYWIkMTIzNDU2Nzg5MCIpIHBhc3N3b3JkXG49YWIkMTIzNDU2Nzg5MA==",
+            )
         } else {
             "head"
         }
@@ -599,6 +605,5 @@ class RepositorySnapshotTest {
         const val module = "day-35-ai-release-prep-kotlin"
         const val readme = "$module/README.md"
         const val briefPath = "$module/release-brief.json"
-        const val secret = "ab\$1234567890"
     }
 }

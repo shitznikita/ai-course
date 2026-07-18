@@ -9,6 +9,7 @@ version = "1.0.0"
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    testImplementation(project(":day-32-ai-code-review-kotlin"))
     testImplementation(kotlin("test-junit5"))
 }
 

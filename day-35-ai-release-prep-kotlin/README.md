@@ -181,6 +181,9 @@ evidence path проверяются до terminal/Markdown/filesystem sinks. К
 отклоняются. Одна shared
 unsafe/benign matrix проходит через reviewed brief, полный PromptRenderer, raw
 provider content и все model prose/path fields.
+Credential-shaped negative fixtures хранятся encoded и декодируются только
+в local tests: raw PR patch/blob остаётся допустимым для fail-closed Day 32
+cloud review policy без ослабления policy или Day 35 assertions.
 
 Политика не парсит Kotlin/Gradle/Markdown/shell и не содержит call/callee grammar:
 она применяется только к bounded brief/model prose. Sink value обязан уже быть

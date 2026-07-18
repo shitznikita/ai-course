@@ -96,7 +96,7 @@ object ContentPolicy {
         "<token>",
         "<api-key>",
         "<password>",
-        "replace-with-your-Eliza-OAuth-token",
+        "replace-with-oauth-token",
         "YOUR_TOKEN",
         "YOUR_API_KEY",
         "YOUR_PASSWORD",

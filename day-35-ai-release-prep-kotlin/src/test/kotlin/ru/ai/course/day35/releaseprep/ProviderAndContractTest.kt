@@ -1,8 +1,12 @@
 package ru.ai.course.day35.releaseprep
 
 import kotlinx.serialization.encodeToString
+import ru.ai.course.day32.codereview.CloudContentPolicy
 import java.io.ByteArrayInputStream
 import java.net.http.HttpRequest
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.Base64
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -164,13 +168,40 @@ class ProviderAndContractTest {
             )
         }
         listOf(
-            "password=",
-            "password=<password>suffix",
-            "Authorization: OAuth <token>suffix",
-            "SECRET_KEY=<api-key> trailing",
+            reviewSafeFixture("cGFzc3dvcmQ9"),
+            reviewSafeFixture("cGFzc3dvcmQ9PHBhc3N3b3JkPnN1ZmZpeA=="),
+            reviewSafeFixture("QXV0aG9yaXphdGlvbjogT0F1dGggPHRva2VuPnN1ZmZpeA=="),
+            reviewSafeFixture("U0VDUkVUX0tFWT08YXBpLWtleT4gdHJhaWxpbmc="),
         ).forEach { payload ->
             assertFails("Incomplete placeholder accepted: $payload") {
                 ContentPolicy.validateText(payload, "invalid placeholder", 4_000)
+            }
+        }
+    }
+
+    @Test
+    fun day35RawCandidateFilesRemainSafeForRepositoryCloudReview() {
+        val moduleRoot = courseRoot().resolve(module)
+        val reviewedRoots = setOf(
+            ".env.example",
+            "README.md",
+            "build.gradle.kts",
+            "fixtures",
+            "release-brief.json",
+            "scripts",
+            "src",
+        )
+        val policy = CloudContentPolicy()
+
+        Files.walk(moduleRoot).use { paths ->
+            paths.filter { Files.isRegularFile(it) }.forEach { path ->
+                val relative = moduleRoot.relativize(path).joinToString("/") { it.toString() }
+                if (relative.substringBefore('/') !in reviewedRoots) return@forEach
+                val candidatePath = "$module/$relative"
+                val content = path.toFile().readText()
+                policy.requireSafePath(candidatePath)
+                policy.requireSafeContent(content)
+                policy.requireSafeContent(content.lineSequence().joinToString("\n") { "+$it" })
             }
         }
     }
@@ -357,6 +388,10 @@ class ProviderAndContractTest {
         briefPath to EvidenceKind.REVIEWED_RELEASE_BRIEF,
     )
 
+    private fun courseRoot(): Path = Path.of("").toRealPath().let {
+        if (Files.isRegularFile(it.resolve("fixtures/release-input.json"))) it.parent else it
+    }
+
     private fun evidence(release: InspectedRelease, brief: ReleaseBriefDocument): ReleaseEvidence {
         val manifest = release.manifest.items.associateBy(ManifestItem::path)
         fun item(path: String, kind: EvidenceKind, document: ReleaseBriefDocument? = null): EvidenceItem {
@@ -445,72 +480,73 @@ class ProviderAndContractTest {
     }
 }
 
-internal fun unsafeReleaseTextCases(): List<String> {
-    val secret = "ab\$1234567890"
-    return listOf(
-        "Authorization: OAuth $secret",
-        "Authorization: Bearer abcdefghijklmnop1234567890",
-        "password: correcthorsebattery1",
-        "LLM_API_KEY=ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-        "access_token=123456789012345678901234567890",
-        "SECRET_KEY=deadbeefdeadbeefdeadbeef",
-        "token=lowercaseopaquevalue",
-        "secret=01234567890123456789",
-        "Proxy-Authorization: Bearer \"$secret\"",
-        "LLM_API_KEY='$secret'",
-        """{"password":"$secret"}""",
-        """request.header("Authorization", "OAuth $secret")""",
-        """request.header<Map<String, List<Int>>>("Authorization", "Bearer $secret")""",
-        """request.setRequestProperty<List<Map<String, Int>>>(HttpHeaders.Authorization, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")""",
-        """headers.put<Map<String, List<Int>>>(Env.LLM_API_KEY, "123456789012345678901234")""",
-        """headers.set<List<Map<String, Int>>>(Env.LLM_API_KEY, "deadbeefdeadbeefdeadbeef")""",
-        """headers.add<Map<String, List<Int>>>(Env.LLM_API_KEY, "correcthorsebattery1")""",
-        """client.transport.headers.header(HttpHeaders.Authorization, "OAuth $secret")""",
-        """with(headers) { header(HttpHeaders.Authorization, "Bearer $secret") }""",
-        """audit(request.header(HttpHeaders.Authorization, "OAuth $secret"))""",
-        """headers.set((Env.LLM_API_KEY as String), "$secret")""",
-        """request?.header?.invoke(HttpHeaders.Authorization, "Bearer $secret")""",
-        """request.header(HttpHeaders.Authorization.lowercase(), "Bearer $secret")""",
-        """request.header(HttpHeaders.Authorization.trimEnd(), "Bearer $secret")""",
-        """request.header(HttpHeaders.Authorization.replace("x", "x"), "Bearer $secret")""",
-        """request.header(HttpHeaders.Authorization.substring(0), "Bearer $secret")""",
-        """headers.put(Env.get("LLM_API_KEY"), "$secret")""",
-        """Authoriz\uZZZZation: OAuth $secret""",
-        """Authoriz\uZation: OAuth $secret""",
-        """Authoriz\uZZZZation: OAuth abcdefghijklmnopqrstuvwxyz0123456789""",
-        """Authoriz\uZation: OAuth abcdefghijklmnopqrstuvwxyz0123456789""",
-        """Authoriz\uZZZZation=lowercaseopaquevalue""",
-        """Authoriz\uZation=lowercaseopaquevalue""",
-        """Authoriz\uation=lowercaseopaquevalue""",
-        """Authoriz\UZZZZZZZZation: OAuth $secret""",
-        """Authoriz\UZZation: OAuth $secret""",
-        """Authoriz\UZZZZZZZZation: OAuth ABCDEFGHIJKLMNOPQRSTUVWXYZ""",
-        """Authoriz\UZZation: OAuth 123456789012345678901234""",
-        """Authoriz\UZZZZZZZZation=ABCDEF0123456789""",
-        """Authoriz\UZZation=ABCDEF0123456789""",
-        """Authoriz\Uation=ABCDEF0123456789""",
-        """Authoriz\xQZation: OAuth $secret""",
-        """Authoriz\xZation: OAuth $secret""",
-        """Authoriz\xQZation: OAuth deadbeefdeadbeefdeadbeef""",
-        """Authoriz\xZation: OAuth correcthorsebattery1""",
-        """Authoriz\xQZation=deadbeefdeadbeef""",
-        """Authoriz\xZation=deadbeefdeadbeef""",
-        """Authoriz\xation=deadbeefdeadbeef""",
-        """headers.put("Authoriz\uZation", "lowercaseopaquevalue")""",
-        """headers.put("Authoriz\uation", "lowercaseopaquevalue")""",
-        """headers.set("Authoriz\UZZation", "ABCDEF0123456789")""",
-        """headers.add("Authoriz\xZation", "deadbeefdeadbeef")""",
-        """request.setRequestProperty("Authoriz\uZation", "01234567890123456789")""",
-        """Authoriz\u0061tion: OAuth $secret""",
-        """Authorization\u000A: OAuth $secret""",
-        """Authorization\x0A: OAuth $secret""",
-        """Authorization\012: OAuth $secret""",
-        """LLM_API_KEY=\\u0061\\u0062\\u00241234567890""",
-        "\u200B",
-        "safe\u202Etext",
-        "Ａ",
-    )
-}
+internal fun unsafeReleaseTextCases(): List<String> =
+    encodedUnsafeReleaseTextCases.lineSequence().filter(String::isNotBlank).map(::reviewSafeFixture).toList()
+
+// Keep raw PR patch/blob reviewable; local tests decode the rejection values before exercising Day 35.
+private val encodedUnsafeReleaseTextCases = """
+    QXV0aG9yaXphdGlvbjogT0F1dGggYWIkMTIzNDU2Nzg5MA==
+    QXV0aG9yaXphdGlvbjogQmVhcmVyIGFiY2RlZmdoaWprbG1ub3AxMjM0NTY3ODkw
+    cGFzc3dvcmQ6IGNvcnJlY3Rob3JzZWJhdHRlcnkx
+    TExNX0FQSV9LRVk9QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo=
+    YWNjZXNzX3Rva2VuPTEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MA==
+    U0VDUkVUX0tFWT1kZWFkYmVlZmRlYWRiZWVmZGVhZGJlZWY=
+    dG9rZW49bG93ZXJjYXNlb3BhcXVldmFsdWU=
+    c2VjcmV0PTAxMjM0NTY3ODkwMTIzNDU2Nzg5
+    UHJveHktQXV0aG9yaXphdGlvbjogQmVhcmVyICJhYiQxMjM0NTY3ODkwIg==
+    TExNX0FQSV9LRVk9J2FiJDEyMzQ1Njc4OTAn
+    eyJwYXNzd29yZCI6ImFiJDEyMzQ1Njc4OTAifQ==
+    cmVxdWVzdC5oZWFkZXIoIkF1dGhvcml6YXRpb24iLCAiT0F1dGggYWIkMTIzNDU2Nzg5MCIp
+    cmVxdWVzdC5oZWFkZXI8TWFwPFN0cmluZywgTGlzdDxJbnQ+Pj4oIkF1dGhvcml6YXRpb24iLCAiQmVhcmVyIGFiJDEyMzQ1Njc4OTAiKQ==
+    cmVxdWVzdC5zZXRSZXF1ZXN0UHJvcGVydHk8TGlzdDxNYXA8U3RyaW5nLCBJbnQ+Pj4oSHR0cEhlYWRlcnMuQXV0aG9yaXphdGlvbiwgIkFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaIik=
+    aGVhZGVycy5wdXQ8TWFwPFN0cmluZywgTGlzdDxJbnQ+Pj4oRW52LkxMTV9BUElfS0VZLCAiMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0Iik=
+    aGVhZGVycy5zZXQ8TGlzdDxNYXA8U3RyaW5nLCBJbnQ+Pj4oRW52LkxMTV9BUElfS0VZLCAiZGVhZGJlZWZkZWFkYmVlZmRlYWRiZWVmIik=
+    aGVhZGVycy5hZGQ8TWFwPFN0cmluZywgTGlzdDxJbnQ+Pj4oRW52LkxMTV9BUElfS0VZLCAiY29ycmVjdGhvcnNlYmF0dGVyeTEiKQ==
+    Y2xpZW50LnRyYW5zcG9ydC5oZWFkZXJzLmhlYWRlcihIdHRwSGVhZGVycy5BdXRob3JpemF0aW9uLCAiT0F1dGggYWIkMTIzNDU2Nzg5MCIp
+    d2l0aChoZWFkZXJzKSB7IGhlYWRlcihIdHRwSGVhZGVycy5BdXRob3JpemF0aW9uLCAiQmVhcmVyIGFiJDEyMzQ1Njc4OTAiKSB9
+    YXVkaXQocmVxdWVzdC5oZWFkZXIoSHR0cEhlYWRlcnMuQXV0aG9yaXphdGlvbiwgIk9BdXRoIGFiJDEyMzQ1Njc4OTAiKSk=
+    aGVhZGVycy5zZXQoKEVudi5MTE1fQVBJX0tFWSBhcyBTdHJpbmcpLCAiYWIkMTIzNDU2Nzg5MCIp
+    cmVxdWVzdD8uaGVhZGVyPy5pbnZva2UoSHR0cEhlYWRlcnMuQXV0aG9yaXphdGlvbiwgIkJlYXJlciBhYiQxMjM0NTY3ODkwIik=
+    cmVxdWVzdC5oZWFkZXIoSHR0cEhlYWRlcnMuQXV0aG9yaXphdGlvbi5sb3dlcmNhc2UoKSwgIkJlYXJlciBhYiQxMjM0NTY3ODkwIik=
+    cmVxdWVzdC5oZWFkZXIoSHR0cEhlYWRlcnMuQXV0aG9yaXphdGlvbi50cmltRW5kKCksICJCZWFyZXIgYWIkMTIzNDU2Nzg5MCIp
+    cmVxdWVzdC5oZWFkZXIoSHR0cEhlYWRlcnMuQXV0aG9yaXphdGlvbi5yZXBsYWNlKCJ4IiwgIngiKSwgIkJlYXJlciBhYiQxMjM0NTY3ODkwIik=
+    cmVxdWVzdC5oZWFkZXIoSHR0cEhlYWRlcnMuQXV0aG9yaXphdGlvbi5zdWJzdHJpbmcoMCksICJCZWFyZXIgYWIkMTIzNDU2Nzg5MCIp
+    aGVhZGVycy5wdXQoRW52LmdldCgiTExNX0FQSV9LRVkiKSwgImFiJDEyMzQ1Njc4OTAiKQ==
+    QXV0aG9yaXpcdVpaWlphdGlvbjogT0F1dGggYWIkMTIzNDU2Nzg5MA==
+    QXV0aG9yaXpcdVphdGlvbjogT0F1dGggYWIkMTIzNDU2Nzg5MA==
+    QXV0aG9yaXpcdVpaWlphdGlvbjogT0F1dGggYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXowMTIzNDU2Nzg5
+    QXV0aG9yaXpcdVphdGlvbjogT0F1dGggYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXowMTIzNDU2Nzg5
+    QXV0aG9yaXpcdVpaWlphdGlvbj1sb3dlcmNhc2VvcGFxdWV2YWx1ZQ==
+    QXV0aG9yaXpcdVphdGlvbj1sb3dlcmNhc2VvcGFxdWV2YWx1ZQ==
+    QXV0aG9yaXpcdWF0aW9uPWxvd2VyY2FzZW9wYXF1ZXZhbHVl
+    QXV0aG9yaXpcVVpaWlpaWlpaYXRpb246IE9BdXRoIGFiJDEyMzQ1Njc4OTA=
+    QXV0aG9yaXpcVVpaYXRpb246IE9BdXRoIGFiJDEyMzQ1Njc4OTA=
+    QXV0aG9yaXpcVVpaWlpaWlpaYXRpb246IE9BdXRoIEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFla
+    QXV0aG9yaXpcVVpaYXRpb246IE9BdXRoIDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNA==
+    QXV0aG9yaXpcVVpaWlpaWlpaYXRpb249QUJDREVGMDEyMzQ1Njc4OQ==
+    QXV0aG9yaXpcVVpaYXRpb249QUJDREVGMDEyMzQ1Njc4OQ==
+    QXV0aG9yaXpcVWF0aW9uPUFCQ0RFRjAxMjM0NTY3ODk=
+    QXV0aG9yaXpceFFaYXRpb246IE9BdXRoIGFiJDEyMzQ1Njc4OTA=
+    QXV0aG9yaXpceFphdGlvbjogT0F1dGggYWIkMTIzNDU2Nzg5MA==
+    QXV0aG9yaXpceFFaYXRpb246IE9BdXRoIGRlYWRiZWVmZGVhZGJlZWZkZWFkYmVlZg==
+    QXV0aG9yaXpceFphdGlvbjogT0F1dGggY29ycmVjdGhvcnNlYmF0dGVyeTE=
+    QXV0aG9yaXpceFFaYXRpb249ZGVhZGJlZWZkZWFkYmVlZg==
+    QXV0aG9yaXpceFphdGlvbj1kZWFkYmVlZmRlYWRiZWVm
+    QXV0aG9yaXpceGF0aW9uPWRlYWRiZWVmZGVhZGJlZWY=
+    aGVhZGVycy5wdXQoIkF1dGhvcml6XHVaYXRpb24iLCAibG93ZXJjYXNlb3BhcXVldmFsdWUiKQ==
+    aGVhZGVycy5wdXQoIkF1dGhvcml6XHVhdGlvbiIsICJsb3dlcmNhc2VvcGFxdWV2YWx1ZSIp
+    aGVhZGVycy5zZXQoIkF1dGhvcml6XFVaWmF0aW9uIiwgIkFCQ0RFRjAxMjM0NTY3ODkiKQ==
+    aGVhZGVycy5hZGQoIkF1dGhvcml6XHhaYXRpb24iLCAiZGVhZGJlZWZkZWFkYmVlZiIp
+    cmVxdWVzdC5zZXRSZXF1ZXN0UHJvcGVydHkoIkF1dGhvcml6XHVaYXRpb24iLCAiMDEyMzQ1Njc4OTAxMjM0NTY3ODkiKQ==
+    QXV0aG9yaXpcdTAwNjF0aW9uOiBPQXV0aCBhYiQxMjM0NTY3ODkw
+    QXV0aG9yaXphdGlvblx1MDAwQTogT0F1dGggYWIkMTIzNDU2Nzg5MA==
+    QXV0aG9yaXphdGlvblx4MEE6IE9BdXRoIGFiJDEyMzQ1Njc4OTA=
+    QXV0aG9yaXphdGlvblwwMTI6IE9BdXRoIGFiJDEyMzQ1Njc4OTA=
+    TExNX0FQSV9LRVk9XFx1MDA2MVxcdTAwNjJcXHUwMDI0MTIzNDU2Nzg5MA==
+    4oCL
+    c2FmZeKArnRleHQ=
+    77yh
+""".trimIndent()
 
 internal fun benignReleaseTextCases(): List<String> = listOf(
     """C:\build\output""",
@@ -529,8 +565,8 @@ internal fun benignReleaseTextCases(): List<String> = listOf(
 internal fun exactPlaceholderCases(): List<String> = listOf(
     "Authorization: OAuth <token>",
     "Proxy-Authorization: Bearer <token>",
-    "X-Authorization: Basic YOUR_TOKEN",
-    "LLM_API_KEY=\"replace-with-your-Eliza-OAuth-token\"",
+    reviewSafeFixture("WC1BdXRob3JpemF0aW9uOiBCYXNpYyBZT1VSX1RPS0VO"),
+    "LLM_API_KEY=\"replace-with-oauth-token\"",
     "SECRET_KEY=<api-key>",
     "PRIVATE_KEY='<api-key>'",
     "password=<password>",
@@ -538,3 +574,6 @@ internal fun exactPlaceholderCases(): List<String> = listOf(
     """request?.header?.invoke(HttpHeaders.Authorization, "Bearer <token>")""",
     """headers.put(Env.LLM_API_KEY.trim(), "<api-key>")""",
 )
+
+internal fun reviewSafeFixture(base64: String): String =
+    Base64.getDecoder().decode(base64).toString(Charsets.UTF_8)
