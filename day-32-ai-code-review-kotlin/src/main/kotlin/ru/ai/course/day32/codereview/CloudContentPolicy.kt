@@ -15,8 +15,10 @@ class CloudContentPolicy {
         val segments = lower.split('/')
         val name = segments.lastOrNull().orEmpty()
         return if (
-            segments.any { segment ->
-                segment.startsWith(".env") ||
+            segments.withIndex().any { (index, segment) ->
+                val allowedEnvironmentTemplate =
+                    index == segments.lastIndex && segment == safeEnvironmentTemplate
+                (segment.startsWith(".env") && !allowedEnvironmentTemplate) ||
                     segment.startsWith(".cert") ||
                     "secret" in segment ||
                     "credential" in segment ||
@@ -197,6 +199,7 @@ class CloudContentPolicy {
     }
 
     companion object {
+        private const val safeEnvironmentTemplate = ".env.example"
         private const val credentialNamePattern =
             """(?:[A-Za-z0-9]+[_-])*(?:secret[_-]?(?:access[_-]?key|key)|api[_-]?key|access[_-]?token|oauth[_-]?token|access[_-]?key(?:[_-]?id)?|token|password|client[_-]?secret|private[_-]?key|secret)"""
         private val sensitiveNames = setOf(

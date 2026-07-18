@@ -16,6 +16,56 @@ import kotlin.test.assertTrue
 
 class CloudContentBoundaryTest {
     @Test
+    fun `only env example basename is allowed while runtime env variants stay blocked`() {
+        val policy = CloudContentPolicy()
+
+        listOf(
+            ".env.example",
+            "day-35/.env.example",
+            "nested/.ENV.EXAMPLE",
+        ).forEach { path ->
+            assertEquals(null, policy.pathRejection(path), path)
+        }
+        listOf(
+            ".env",
+            ".env.local",
+            ".env.production",
+            "day-35/.env",
+            "day-35/.env.example.local",
+            "day-35/.environment",
+            ".env.example/config.txt",
+        ).forEach { path ->
+            assertEquals(CloudContentRejection.SENSITIVE_PATH, policy.pathRejection(path), path)
+        }
+    }
+
+    @Test
+    fun `env example content is still checked before cloud review`() {
+        val policy = CloudContentPolicy()
+        val safeTemplate = ChangedFile(
+            path = "day-35/.env.example",
+            status = "added",
+            additions = 1,
+            deletions = 0,
+            changes = 1,
+            patch = "@@ -0,0 +1 @@\n+LLM_API_KEY=replace-with-oauth-token",
+            content = "LLM_API_KEY=replace-with-oauth-token",
+        )
+
+        policy.requireSafe(safeTemplate)
+
+        val credential = "Actual" + "Credential-123456789"
+        val unsafeTemplate = safeTemplate.copy(
+            patch = "@@ -0,0 +1 @@\n+LLM_API_KEY=\"$credential\"",
+            content = "LLM_API_KEY=\"$credential\"",
+        )
+        val error = assertFailsWith<CloudContentRejectedException> {
+            policy.requireSafe(unsafeTemplate)
+        }
+        assertEquals(CloudContentRejection.SENSITIVE_CONTENT, error.rejection)
+    }
+
+    @Test
     fun `compiled cloud policy rejects OAuth and special-character credential matrix`() {
         val policy = CloudContentPolicy()
 
