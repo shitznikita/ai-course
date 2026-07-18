@@ -23,7 +23,9 @@ jobs:
       github.event.pull_request.base.repo.full_name == github.repository &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.draft == false
-    runs-on: ubuntu-24.04
+    # Eliza is reachable only from the developer's trusted network. Route this
+    # privileged base-only workflow to the dedicated Apple Silicon runner.
+    runs-on: [self-hosted, macOS, ARM64]
     timeout-minutes: 10
 
     steps:
@@ -38,6 +40,9 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
+
+      - name: Prepare Yandex Java truststore
+        run: day-32-ai-code-review-kotlin/scripts/setup-yandex-ca.sh
 
       # The reviewed Kotlin application uses GitHub REST itself. Event fields
       # below are IDs only; every PR title/file/patch/content is re-fetched and
