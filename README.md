@@ -738,7 +738,7 @@ cp day-32-ai-code-review-kotlin/.env.example day-32-ai-code-review-kotlin/.env
 day-32-ai-code-review-kotlin/scripts/setup-yandex-ca.sh
 ```
 
-GitHub workflow [ai-code-review.yml](.github/workflows/ai-code-review.yml) запускается только для non-draft PR из этого же репозитория в default branch. Он требует выделенный self-hosted runner с labels `[self-hosted, macOS, ARM64]`, доступом к Eliza и автоматически создаваемым Yandex Java truststore. Workflow pin-ит official actions, checkout-ит только exact default-base SHA и получает данные PR через GitHub REST; head revision не checkout-ится и не выполняется. Поэтому он не может проверить PR, который впервые добавляет или меняет сам workflow: сначала merge изменение Day 32, затем перезапустите более поздний same-repository PR. Полная архитектура, настройка runner, expected sticky comment и сценарий записи — в [README дня 32](day-32-ai-code-review-kotlin/README.md).
+GitHub workflow [ai-code-review.yml](.github/workflows/ai-code-review.yml) запускается только для non-draft PR из этого же репозитория в default branch. Он требует выделенный self-hosted runner с labels `[self-hosted, macOS, ARM64]`, доступом к Eliza и автоматически создаваемым Yandex Java truststore. Workflow pin-ит official actions, checkout-ит только exact default-base SHA и получает данные PR через GitHub REST; head revision не checkout-ится и не выполняется. Поэтому он не может проверить PR, который впервые добавляет или меняет сам workflow: сначала merge изменение Day 32, затем создайте новое событие в более позднем same-repository PR через reopen или новый push. Полная архитектура, настройка runner, expected sticky comment и сценарий записи — в [README дня 32](day-32-ai-code-review-kotlin/README.md).
 
 ## Запуск дня 33
 

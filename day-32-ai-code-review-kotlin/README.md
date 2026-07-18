@@ -236,8 +236,9 @@ LLM_API_KEY=<OAuth token for Eliza>
 Workflow использует self-hosted runner с labels `[self-hosted, macOS, ARM64]`.
 Сначала зарегистрируйте runner и дождитесь состояния `Idle`. Изменение самого
 workflow должно попасть в default branch: `pull_request_target` всегда читает
-workflow из base branch. После merge изменения перезапустите failed job PR №38
-или push-ните новый commit в его head branch.
+workflow из base branch. После merge создайте новое событие для PR №38:
+закройте и переоткройте PR либо push-ните новый commit в его head branch.
+Обычный re-run старого job может остаться привязан к прежнему base SHA.
 
 После настройки:
 
