@@ -9,7 +9,7 @@ Use this skill as the durable memory for the AI course repo. Keep future work co
 
 ## Current Actual Snapshot (2026-07-17)
 
-- `main` contains completed days 1-32. Historical snapshot text below documents earlier decisions but is no longer the source of truth for the latest day number.
+- `main` contains completed days 1-33. Historical snapshot text below documents earlier decisions but is no longer the source of truth for the latest day number.
 - Day 30 is merged as `day-30-private-cosmetics-service-kotlin`.
 - Day 30 deploys `qwen3:4b` through loopback Ollama on a CPU VPS. Ktor remains on loopback and is published through Caddy automatic HTTPS; the permanent access token is verified by the API and stored only in the authorized browser's `localStorage` until logout.
 - Photo input uses local Tesseract OCR followed by user confirmation; the LLM receives text only.
@@ -23,6 +23,9 @@ Use this skill as the durable memory for the AI course repo. Keep future work co
 - Day 33 is `day-33-support-assistant-kotlin` in the managed `AICOURSE-3` workflow worktree. It uses committed `synthetic=true` ticket/user JSON, never real CRM data. An embedded loopback MCP SDK 0.13.0 server exposes exactly two read-only tools: exact ticket lookup and exact linked-user lookup. The client performs `tools/list`, fetches one ticket, then only `ticket.userId`; missing records stop locally before RAG/LLM.
 - Day 33 RAG uses only `faq.md`, `authentication.md`, `billing.md`, and `escalation.md`, stable heading-derived source IDs, SHA fingerprints, deterministic `hash-v1` embeddings and hybrid retrieval. Fresh reviewed chunks are authoritative: cache count/unique IDs/path/heading/text/recomputed fingerprint and deterministic embedding must all match, otherwise the cache rebuilds; retrieval never receives cache-owned metadata or text. Cache persistence uses a unique atomically created no-follow temp inside a verified non-symlink directory, flushes before atomic replace/fallback, cleans in `finally`, and never touches the predictable legacy `.tmp`. The query contains the question plus typed current-ticket facts, so `ACCOUNT_LOCKED` and `INVALID_OTP/CLOCK_SKEW` produce different evidence and actions for the same question. One immutable bounded evidence pack controls prompt blocks, allowed IDs, deterministic fixture output, validation and citations.
 - Day 33 live mode uses direct `java.net.http.HttpClient` REST only to the pinned canonical Eliza URI; the run script validates it before shared Day 1 OAuth fallback. Fixture and four knowledge files must match reviewed paths/SHA-256 and transmitted evidence must match that corpus. Fixture/index bytes are bounded through `NOFOLLOW_LINKS` channels before decode; invalid/oversized/symlink/duplicate/tampered/stale caches rebuild. Decoded MCP records are revalidated, user question/history are scanned for sensitive-looking values before HTTP, and every bounded chat turn carries its ticket ID. Prompt construction removes whole evidence items until the aggregate limit fits. Strict JSON requires `answered|unknown`, bounded answer/actions, knowledge source IDs and current context fact IDs. `answered` requires null `clarifyingQuestion`; `unknown` requires a safe nonempty one. Forged/duplicate/cross-ticket/unsafe clarifying output or malformed/non-2xx responses fail closed to a canonical unknown; raw model output is never rendered. Critical ticket/user fields are printed from typed server context. Chat is RAM-only and changing `/ticket` clears history and last evidence.
+- Day 34 is `day-34-project-file-assistant-kotlin` in the managed `AICOURSE-4` workflow worktree. It accepts a goal rather than file names, runs a maximum-12-step observe/plan/tool loop and discovers exactly five loopback Streamable HTTP MCP tools: project file list, literal cross-file search, 1-6 file read with SHA-256, guarded create/replace and deterministic unified diff. The result paths and diff come from server-owned session state, not model prose.
+- Day 34 keeps source local. `OllamaPlanner` uses direct `java.net.http.HttpClient` REST only to loopback `/api/chat`, default `qwen3:4b`, temperature zero, `think=false` and JSON schema output. `FixturePlanner` executes the same real MCP loop for two offline goals: create a `LegacyPaymentsApi` migration report from implementation/service/test usages, and synchronize README/API docs plus changelog with public `refund`. `repro-check` compares normalized trace, changed paths and diff SHA-256 after independent resets.
+- Day 34 arbitrary workspaces default to preview. MCP server/client share a random in-memory per-run header token, and reads require discovery/search provenance. `ProjectFilePolicy` rejects traversal, absolute/symlink/secret/generated/whole-payload-NUL/malformed UTF-8/oversized paths and allows bounded text formats only. `SecureProjectFiles` prefers directory-relative handles and otherwise uses `NOFOLLOW_LINKS` plus parent/file identity snapshots around I/O. Existing files require same-session read plus matching SHA; apply writes through a unique `CREATE_NEW` temp, flush, POSIX permission preservation and atomic replace/fallback. Fixture/eval/repro use ephemeral MCP ports. Ollama observations keep whole typed read items with complete path/bytes/SHA/content; admission uses the conservative equation `UTF-8 content bytes + 512 framing + 1200 output <= 8192 context` and fails before HTTP rather than truncate. Unknown action keys are preserved for strict validation/retry. No delete, rename or shell tools exist. Keep `runtime/`, reports, `.env`, `.certs` and temp files ignored.
 - Best offline checks:
 
 ```bash
@@ -50,6 +53,17 @@ day-33-support-assistant-kotlin/scripts/run-support.sh --args="mcp-smoke"
 day-33-support-assistant-kotlin/scripts/run-support.sh --args="fixture-demo"
 day-33-support-assistant-kotlin/scripts/run-support.sh --args="eval-dry-run"
 day-33-support-assistant-kotlin/scripts/run-support.sh --args="prompt-dry-run TCK-1001 Почему не работает авторизация?"
+```
+
+Day 34 offline checks:
+
+```bash
+./gradlew :day-34-project-file-assistant-kotlin:test
+./gradlew :day-34-project-file-assistant-kotlin:build
+day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="mcp-smoke"
+day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="fixture-demo"
+day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="eval-dry-run"
+day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="repro-check"
 ```
 
 ## Current Snapshot

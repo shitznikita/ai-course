@@ -1,0 +1,31 @@
+[
+  {
+    "id": "legacy-usage",
+    "goal": "Найди все места, где используется LegacyPaymentsApi, и подготовь отчёт миграции",
+    "minimumReadFiles": 3,
+    "requiredReadPaths": [
+      "LegacyPaymentsApi.kt",
+      "CheckoutService.kt",
+      "CheckoutServiceTest.kt"
+    ],
+    "expectedChangedPaths": [
+      "docs/legacy-payments-usage.md"
+    ]
+  },
+  {
+    "id": "docs-sync",
+    "goal": "Проверь, соответствует ли документация публичному API проекта, и синхронизируй её",
+    "minimumReadFiles": 4,
+    "requiredReadPaths": [
+      "PaymentClient.kt",
+      "CheckoutService.kt",
+      "README.md",
+      "docs/api.md"
+    ],
+    "expectedChangedPaths": [
+      "CHANGELOG.md",
+      "README.md",
+      "docs/api.md"
+    ]
+  }
+]
