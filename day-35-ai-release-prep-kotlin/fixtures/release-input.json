@@ -1,0 +1,98 @@
+{
+    "source": "synthetic downstream fixture",
+    "branch": "fixture/day-35",
+    "base": "fixture-main",
+    "mergeBase": "1111111111111111111111111111111111111111",
+    "head": "2222222222222222222222222222222222222222",
+    "manifest": {
+        "baseSha": "1111111111111111111111111111111111111111",
+        "mergeBaseSha": "1111111111111111111111111111111111111111",
+        "headSha": "2222222222222222222222222222222222222222",
+        "items": [
+            {
+                "path": "day-35-ai-release-prep-kotlin/README.md",
+                "status": "A",
+                "additions": 250,
+                "deletions": 0,
+                "binary": false,
+                "newObjectId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "oldMode": "000000",
+                "newMode": "100644",
+                "fingerprint": "13370857b35254b885f2fb02f6fe4fa35a803f3b01828939a64b2c50dbd699a7"
+            },
+            {
+                "path": "day-35-ai-release-prep-kotlin/build.gradle.kts",
+                "status": "A",
+                "additions": 31,
+                "deletions": 0,
+                "binary": false,
+                "newObjectId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "oldMode": "000000",
+                "newMode": "100644",
+                "fingerprint": "83f1a9e603d5f480061ca8d15cabbe720eac6e37c9289c0c24f81a0af4d7378e"
+            },
+            {
+                "path": "day-35-ai-release-prep-kotlin/release-brief.json",
+                "status": "A",
+                "additions": 14,
+                "deletions": 0,
+                "binary": false,
+                "newObjectId": "dddddddddddddddddddddddddddddddddddddddd",
+                "oldMode": "000000",
+                "newMode": "100644",
+                "fingerprint": "6b8bd17656e56ad5951374a3599d269a126d491df4d57ab43d5beef3448793ef"
+            }
+        ],
+        "fingerprint": "e9b0d5036f1099707965b462a16e361470bffa8ce4596d882a22799a799d7d18"
+    },
+    "brief": {
+        "objective": "Подготовить проверяемый release candidate и AI-черновик материалов для ручного решения.",
+        "highlights": [
+            "Pipeline строит полный manifest, запускает deterministic checks и отделяет server-owned readiness от advisory AI prose.",
+            "Cloud evidence состоит только из typed README change facts и небольшого reviewed release brief."
+        ],
+        "operationalNotes": [
+            "Live AI-этап зависит от доступности корпоративного Eliza endpoint."
+        ],
+        "videoFocus": [
+            "Показать complete manifest, typed evidence, реальные checks и server-owned readiness."
+        ]
+    },
+    "ai": {
+        "summary": [
+            {
+                "text": "Добавлен pipeline подготовки релиза для реальной ветки ai-course.",
+                "evidencePaths": [
+                    "day-35-ai-release-prep-kotlin/release-brief.json"
+                ]
+            }
+        ],
+        "releaseNotes": [
+            {
+                "text": "Pipeline строит полный manifest, запускает проверки и формирует AI-черновик release notes.",
+                "evidencePaths": [
+                    "day-35-ai-release-prep-kotlin/release-brief.json"
+                ]
+            }
+        ],
+        "risks": [
+            {
+                "severity": "LOW",
+                "text": "Live AI-этап зависит от доступности корпоративного Eliza endpoint.",
+                "mitigation": "Prepare-dry-run не конструирует Day 35 Eliza credential source и не вызывает Eliza; installDist/build остаются non-hermetic.",
+                "evidencePaths": [
+                    "day-35-ai-release-prep-kotlin/release-brief.json"
+                ]
+            }
+        ],
+        "videoSteps": [
+            {
+                "text": "Показать отдельно полный manifest, реальные Gradle checks и ограниченный AI evidence set.",
+                "evidencePaths": [
+                    "day-35-ai-release-prep-kotlin/release-brief.json"
+                ]
+            }
+        ],
+        "recommendation": "PROCEED"
+    }
+}

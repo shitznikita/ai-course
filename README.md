@@ -4,13 +4,13 @@
 
 ## Current Snapshot
 
-- Статус на `2026-07-17`: `main` содержит завершённые дни 1-33; Day 34 добавляет локального project-file assistant с goal-level planner loop, пятью MCP tools, безопасной записью и deterministic diff.
+- Статус на `2026-07-18`: `main` содержит завершённые дни 1-34; Day 35 добавляет реальный release-preparation pipeline с полным Git manifest, Gradle checks и grounded AI prose.
 - Основной стек всех последних заданий: Kotlin CLI + Gradle + прямой REST через `java.net.http.HttpClient`.
 - Для cloud-заданий основной провайдер: Eliza API, OpenRouter-compatible endpoint `https://api.eliza.yandex.net/openrouter/v1/chat/completions`.
 - Основная cloud-модель: `meta-llama/llama-3.3-70b-instruct`; локальные дни 26-31 и 34 используют Ollama-модели из README конкретного задания.
 - Реальный API-ключ хранится только в `.env` или переменных окружения. `.env`, `.certs/`, build outputs, history/summary/tmp-файлы не коммитятся.
 - Для продолжения после сжатия контекста сначала читать [AGENTS.md](AGENTS.md), затем [skills/course-continuity/SKILL.md](skills/course-continuity/SKILL.md).
-- Для проверки текущего состояния полезнее всего запускать Day 34 в `fixture-demo`, `eval-dry-run` и `repro-check`: они офлайн показывают настоящий loopback MCP, autonomous multi-file read/search/write, safety guards и deterministic diff без секретов.
+- Для Day 35 сначала запускайте `fixture-demo` и `eval-dry-run`, затем обязательный `prepare-dry-run --base origin/main`: во всех трёх режимах нет Day 35 Eliza credential-source construction, HTTP или LLM call. `prepare-dry-run` не создаёт, не заменяет и не удаляет live report, поэтому старый ignored report может сохраниться и относится только к указанному внутри snapshot. Launcher всегда выполняет non-hermetic `installDist`, а real dry-run ещё и derived Gradle build; эти процессы могут читать HOME files/caches/configuration и обращаться к repositories/network.
 - День 26 не использует Eliza: он обращается только к loopback Ollama API `http://127.0.0.1:11434` и требует один раз скачать локальную модель.
 - День 27 принимает `.txt`/`.md` заметку через браузер, держит её только в памяти и показывает локальный структурированный анализ через Ollama.
 - День 28 использует локальные `nomic-embed-text` и `qwen3:14b`: Day 21 structured index → cosine retrieval → grounded ответ с sources/quotes; cloud нужен только для осознанного сравнения на том же контексте.
@@ -20,6 +20,7 @@
 - День 32 получает PR только как inert GitHub REST data, применяет один fail-closed cloud policy к allowlisted corpus и changed paths/patches/full diff/blobs, а PR больше configured file cap останавливает до partial review. Eliza получает только целые typed file/evidence items; validator и coverage используют ровно этот transmitted subset. CI не исполняет head PR: он checkout-ит только base SHA, а secret доступен лишь для non-draft same-repository PR.
 - День 33 читает committed synthetic tickets/users только через два read-only MCP tools, обогащает retrieval query текущими typed facts и fail-closes в canonical unknown при weak retrieval, malformed/forged model JSON или cross-ticket ссылках. RAG cache недоверенный: fresh chunks задают exact IDs/metadata/text/fingerprints/`hash-v1` embeddings, poisoned cache rebuild-ится, а persistence использует unique no-follow temp в проверенной non-symlink директории. Offline fixture задаёт одинаковый auth-вопрос `ACCOUNT_LOCKED` и `INVALID_OTP/CLOCK_SKEW` тикетам и получает разные grounded ответы при `LLM calls=0`.
 - День 34 принимает цель, а не список файлов. Bounded planner сам вызывает ровно пять discovered MCP tools: list, literal search, multi-file read, guarded write и unified diff. Произвольный workspace работает в preview по умолчанию; `--apply` требует read-before-write, matching SHA-256 и atomic replace. FixturePlanner детерминированно создаёт migration report и синхронизирует README/API/changelog, а live planner использует прямой REST только к loopback Ollama.
+- День 35 автоматизирует подготовку релиза для `ai-course`: deterministic pipeline владеет Git facts, checks и readiness, а Eliza получает только typed README change facts и небольшой reviewed `release-brief.json`; произвольные README/build/source/test patches не передаются.
 
 ## Структура
 
@@ -61,6 +62,7 @@ ai-course/
   day-32-ai-code-review-kotlin/ # День 32: безопасный AI reviewer для PR
   day-33-support-assistant-kotlin/ # День 33: support assistant с RAG + MCP
   day-34-project-file-assistant-kotlin/ # День 34: goal-level ассистент для файлов проекта
+  day-35-ai-release-prep-kotlin/ # День 35: AI-подготовка реального релиза
   gradle/                   # Gradle Wrapper
   gradlew
   settings.gradle.kts
@@ -102,6 +104,7 @@ ai-course/
 - [День 32: AI code review для pull request](day-32-ai-code-review-kotlin/README.md)
 - [День 33: Ассистент поддержки пользователей](day-33-support-assistant-kotlin/README.md)
 - [День 34: Ассистент для работы с файлами проекта](day-34-project-file-assistant-kotlin/README.md)
+- [День 35: AI-подготовка реального релиза](day-35-ai-release-prep-kotlin/README.md)
 
 ## Быстрая Карта Дней
 
@@ -141,6 +144,7 @@ ai-course/
 | 32 | `day-32-ai-code-review-kotlin` | bounded PR patches -> direct Eliza review -> Russian sticky comment | `day-32-ai-code-review-kotlin/scripts/run-review.sh --args="fixture-demo"` |
 | 33 | `day-33-support-assistant-kotlin` | synthetic ticket/user MCP -> ticket-aware RAG -> grounded support answer | `day-33-support-assistant-kotlin/scripts/run-support.sh --args="fixture-demo"` |
 | 34 | `day-34-project-file-assistant-kotlin` | goal -> MCP list/search/read/write -> server-owned unified diff | `day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="fixture-demo"` |
+| 35 | `day-35-ai-release-prep-kotlin` | complete Git manifest + real checks -> bounded AI release prose | `day-35-ai-release-prep-kotlin/scripts/run-release-prep.sh fixture-demo` |
 
 ## Запуск дня 1
 
@@ -805,6 +809,63 @@ day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="live-
 с явным `--apply`. MCP schemas, safety policy, expected tool trace, два fixture
 сценария и video plan — в [README дня 34](day-34-project-file-assistant-kotlin/README.md).
 
+## Запуск дня 35
+
+Day 35 — Kotlin CLI для реальной подготовки release candidate. Он строит полный
+manifest `merge-base..HEAD`, принимает только один changed day-модуль и пять
+точных root metadata paths, запускает `git diff --check` и derived Gradle build,
+а затем формирует две whole typed evidence items: server-owned README change
+facts и reviewed `release-brief.json`. README/build/source/test patches остаются
+локальными и в prompt не входят.
+
+Fixture/evaluation с нулевыми Day 35 Eliza credential/HTTP/LLM counters:
+
+```bash
+./gradlew :day-35-ai-release-prep-kotlin:test
+./gradlew :day-35-ai-release-prep-kotlin:build
+day-35-ai-release-prep-kotlin/scripts/run-release-prep.sh fixture-demo
+day-35-ai-release-prep-kotlin/scripts/run-release-prep.sh eval-dry-run
+```
+
+Обе launcher-команды всё равно выполняют non-hermetic `installDist`, который
+может читать HOME files/caches/configuration и использовать repositories/network.
+
+Обязательный real dry-run на clean committed branch:
+
+```bash
+git fetch origin main
+day-35-ai-release-prep-kotlin/scripts/run-release-prep.sh \
+  prepare-dry-run --base origin/main
+```
+
+Optional live mode делает максимум один прямой Eliza REST call и пишет ignored
+atomic report только после финального stable-snapshot gate:
+
+```bash
+cp day-35-ai-release-prep-kotlin/.env.example \
+  day-35-ai-release-prep-kotlin/.env
+# заменить LLM_API_KEY placeholder реальным Eliza OAuth token
+day-35-ai-release-prep-kotlin/scripts/setup-yandex-ca.sh
+git fetch origin main
+day-35-ai-release-prep-kotlin/scripts/run-release-prep.sh \
+  prepare --base origin/main
+```
+
+`REPORT SHA-256` — SHA-256 фактически записанных UTF-8 bytes. Dry-run не создаёт,
+не заменяет и не удаляет live report; ранее созданный ignored report может
+остаться и должен сверяться со snapshot fingerprint внутри него.
+Live failure на provider/Git/check/credential/HTTP/model/final-drift этапах тоже
+сохраняет предыдущие bytes; replacement разрешён только успешным финальным gate.
+Commit subjects не собираются и не передаются Eliza.
+
+Вывод `DAY 35 ELIZA CREDENTIAL/HTTP/LLM ...` считает только Eliza boundary.
+Launcher `installDist` и derived Gradle build выполняются отдельно, не входят в
+эти counters, могут читать local files/caches/configuration и использовать
+repositories/network.
+
+Полный trust boundary, expected output и video plan — в
+[README дня 35](day-35-ai-release-prep-kotlin/README.md).
+
 ## Правила безопасности
 
 - Не коммитить `.env`.
@@ -836,6 +897,12 @@ day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="live-
   read-before-write + expected SHA-256. Для произвольного workspace сохранять
   preview default; `runtime/`, reports, `.env`, `.certs` и temp files не
   коммитить.
+- Day 35 запускается только на собственной trusted clean release-candidate
+  ветке. Не использовать его для arbitrary PR head/CI без sandbox. Не отправлять
+  README/build/source/test patches в cloud, не ослаблять exact provider/model,
+  typed whole-evidence
+  admission, repeated snapshot gates и server-owned readiness. Day 35 reports,
+  `.env`, `.certs` и temp files не коммитить.
 - Для публичного репозитория внимательно проверить, что внутренние корпоративные URL допустимо показывать наружу.
 
 ## GitHub Workflow

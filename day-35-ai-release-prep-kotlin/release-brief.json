@@ -1,0 +1,16 @@
+{
+    "objective": "Подготовить проверяемый release candidate ai-course и безопасный AI-черновик материалов для ручного релизного решения.",
+    "highlights": [
+        "Pipeline строит полный Git manifest и принимает ровно один day-модуль вместе с разрешёнными root metadata files.",
+        "Git diff check, derived Gradle build и повторные snapshot gates остаются server-owned release facts.",
+        "Eliza получает только typed README change facts и этот небольшой reviewed release brief; README, build, source и test patches не передаются."
+    ],
+    "operationalNotes": [
+        "Запуск предназначен только для trusted clean local branch; Gradle execution не является sandbox.",
+        "Prepare-dry-run не конструирует credential source или Eliza client, а failed live run сохраняет прежний report byte-for-byte."
+    ],
+    "videoFocus": [
+        "Показать complete manifest, две typed evidence items, PASS checks и одинаковые snapshot, manifest и prompt fingerprints.",
+        "Объяснить, что AI пишет только cited advisory prose, а readiness и atomic report replacement контролирует сервер."
+    ]
+}
