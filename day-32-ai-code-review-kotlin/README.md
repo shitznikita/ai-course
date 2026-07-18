@@ -54,6 +54,9 @@ prompt/model, а
 `ElizaLlmClient` повторяет final prompt gate. При совпадении весь cloud review
 останавливается: model HTTP calls = 0, coverage = 0, а diagnostic не содержит
 путь, matched value, patch или blob.
+Только basename `.env.example` разрешён как шаблон конфигурации, но его patch и
+decoded content всё равно проходят credential scanning. `.env`, остальные
+`.env*` варианты и директории с таким именем остаются запрещёнными путями.
 Policy извлекает целые quoted/escaped object values, поэтому распознаёт
 `apiKey`, `password`, prefixed AWS secret keys и значения с обычными password
 символами вроде `$`. `Authorization` проверяется для scheme, принятой узкой
