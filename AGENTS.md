@@ -6,8 +6,8 @@ For durable course memory after context compaction, read `skills/course-continui
 
 ## Current Snapshot For New Agents
 
-- Current date of this snapshot: 2026-07-17.
-- `main` contains completed course days 1-33; Day 34 adds a local goal-driven project-file assistant with guarded writes and deterministic diffs.
+- Current date of this snapshot: 2026-07-18.
+- `main` contains completed course days 1-34; Day 35 adds a real release-preparation pipeline with deterministic Git/check facts and bounded AI-authored release prose.
 - Preferred stack remains Kotlin CLI with direct REST calls through `java.net.http.HttpClient`.
 - Preferred provider remains Eliza API with OAuth token from `.env`/environment variables.
 - Cloud assignments still use the Eliza/OpenRouter endpoint when required:
@@ -23,6 +23,7 @@ LLM_MODEL=meta-llama/llama-3.3-70b-instruct
 - Day 32 uses Eliza only for bounded PR-review text. Its `pull_request_target` workflow runs on a dedicated `[self-hosted, macOS, ARM64]` runner with Eliza network access, creates an ignored Yandex Java truststore on every job, and accepts only non-draft same-repository PRs whose base is the repository default branch. It checks out that immutable base SHA, obtains PR metadata/files as inert GitHub REST data, and never checks out or executes head code. One reusable fail-closed cloud policy scans allowlisted base corpus plus raw changed paths/provider patches/bounded full diff/decoded blobs—including plain/quoted/backslash-escaped `Authorization` with schemes accepted by `AppConfig` such as OAuth and quoted credential values with special characters such as `$`—before any model call; only exact known placeholders and structural references are exempt. A match produces a non-echo coverage-0 diagnostic, and a PR above the configured changed-file cap also stops before partial review. Prompt budgeting keeps only whole file/evidence items in a typed `TransmittedReviewInput`; validator authorization and `reviewedFiles` derive only from that exact successful-call subset. Model-controlled title/detail/recommendation pass the same policy before rendering/publishing. `LLM_API_KEY` is the only repository LLM secret; no `.env` is used in CI. The reviewer posts one Russian sticky comment and cannot review the PR that first introduces or changes its own workflow until that change is merged into the default branch.
 - Day 33 is read-only and synthetic-only. Its loopback Streamable HTTP MCP advertises exactly `support_get_ticket` and `support_get_user`; the client discovers both, fetches one ticket, then only its linked user, and revalidates decoded records before context creation. Strict JSON rejects unknown fields, non-synthetic data, duplicate/bad IDs, broken references, symlinks and oversized values; fixture/index bytes are capped on `NOFOLLOW_LINKS` channels before decode. The RAG cache is untrusted: fresh reviewed chunks are authoritative for exact unique IDs, metadata, text and recomputed fingerprints, deterministic `hash-v1` embeddings are reverified, and any duplicate/tampered/stale cache rebuilds. Persistence uses an atomically created unique no-follow temp inside a verified non-symlink directory, flushes it, replaces the cache atomically where supported and always cleans the temp; the predictable legacy `.tmp` path is never touched. FAQ/auth/billing/escalation docs are structured into stable source IDs and deterministic `hash-v1` embeddings; retrieval is enriched only with current typed ticket/user facts. One bounded `KnowledgeEvidencePack` controls prompt evidence, fixture responses, validator allowlists and citations; evidence items are removed whole until the prompt fits. Live OAuth destination is pinned to the canonical Eliza URI, and the run script validates it before reading shared Day 1 credentials. Eliza uses one direct REST call only when the fixture and four knowledge files match reviewed paths/SHA-256, transmitted evidence matches that corpus, and cloud input has no sensitive-looking email/phone/card/OTP/password/token/CVC/auth/JWT/private-key value. Every chat turn is bound to its ticket ID. Invalid/forged/duplicate/cross-ticket/unsafe clarifying output fail-closes to canonical unknown; `answered` requires null clarifying question, `unknown` requires a safe nonempty one, server-owned context fields are rendered separately, and `/ticket` clears RAM history/evidence.
 - Day 34 is local-only for source content. A bounded planner receives a goal and discovers exactly five loopback Streamable HTTP MCP tools: list, literal search, read 1-6 files, guarded create/replace and deterministic unified diff. Server/client share a random in-memory per-run MCP header token; unauthenticated local requests fail. `ProjectFilePolicy` owns canonical-path, symlink, secret/generated path, text-format, whole-payload UTF-8/NUL and size checks, while reads require discovery/search provenance. `SecureProjectFiles` uses directory-relative handles when the provider exposes `SecureDirectoryStream`; otherwise it combines `NOFOLLOW_LINKS` channels with parent/file identity snapshots before and after I/O. Existing files require a same-session read and matching SHA-256; arbitrary workspaces default to preview, while apply uses a unique `CREATE_NEW` temp, flush, POSIX permission preservation and atomic replace/fallback. Fixture/eval/repro gateways always use ephemeral ports. Live observations preserve complete read path/bytes/SHA/content items. Admission conservatively treats each UTF-8 byte as at most one token and enforces `contentBytes + 512 framing + 1200 output <= 8192 context`, failing before HTTP when whole items do not fit; unknown action keys survive decoding and are rejected by `PlanValidator`. Delete, rename and shell tools do not exist. Offline `FixturePlanner` runs two committed multi-file goals through the same MCP loop; live planning uses direct `java.net.http.HttpClient` REST only to loopback Ollama and never sends project source to cloud.
+- Day 35 is `day-35-ai-release-prep-kotlin`. On a trusted clean local branch it builds a complete max-80-file `--no-renames` manifest from three agreeing NUL Git streams, accepts exactly one changed day module plus five exact root metadata paths, derives one Gradle build task and binds PASS to repeated HEAD/tree/index/status fingerprints. Required README and `release-brief.json` must be non-binary A/M text changes with positive numstat. Eliza receives only a server-owned typed README change fact plus the bounded strict reviewed brief; arbitrary README/build/source/test/root patches and commit subjects are not transmitted. Brief/model sink values must be NFKC-canonical, FORMAT-free, canonically nonblank/unique and free of any non-placeholder value in explicit credential assignment/call/auth-scheme context. Recursive duplicate JSON keys are rejected before brief/fixture/model typed decode, and every AI-authored item must cite `REVIEWED_RELEASE_BRIEF`, not only README facts. Provider/model/auth are pinned before delayed credential access; launcher/application/Git/Gradle children use a minimal environment with JVM/Gradle startup and Git selector channels removed. Dry-run constructs no credential source and performs no Eliza HTTP; live mode allows one direct Eliza call, strict evidence-path model validation, and validates the final snapshot after report temp force immediately before replacement. Failed provider/Git/check/credential/HTTP/model/drift attempts preserve any prior report byte-for-byte; only a successful final gate may atomically replace it. `DAY 35 ELIZA ...` counters exclude non-hermetic `installDist` and derived Gradle build. AI prose is advisory; readiness is server-owned. This is not a sandbox and arbitrary PR heads/CI are out of scope.
 - The best Day 30 offline smoke tests are:
 
 ```bash
@@ -59,6 +60,16 @@ day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="eval-
 day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="repro-check"
 ```
 
+- The best Day 35 zero-Eliza and real-branch checks are:
+
+```bash
+./gradlew :day-35-ai-release-prep-kotlin:test
+day-35-ai-release-prep-kotlin/scripts/run-release-prep.sh fixture-demo
+day-35-ai-release-prep-kotlin/scripts/run-release-prep.sh eval-dry-run
+git fetch origin main
+day-35-ai-release-prep-kotlin/scripts/run-release-prep.sh prepare-dry-run --base origin/main
+```
+
 ## Repository Layout
 
 - `day-01-llm-rest-kotlin/`: Day 1 Kotlin CLI that sends a direct REST request to an LLM API.
@@ -77,6 +88,7 @@ day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="repro
 - `day-32-ai-code-review-kotlin/`: bounded Eliza-backed PR reviewer with offline fixtures, evaluation cases, and a secure same-repository GitHub Actions entrypoint.
 - `day-33-support-assistant-kotlin/`: synthetic ticket/user MCP, FAQ/docs RAG, strict grounding and bounded support chat.
 - `day-34-project-file-assistant-kotlin/`: local goal-level planner over safe project list/search/read/write/diff MCP tools.
+- `day-35-ai-release-prep-kotlin/`: trusted-branch release manifest/check pipeline plus bounded grounded Eliza release prose.
 - Add future assignments as `day-11-...`, `day-12-...`, and so on.
 - Keep Gradle Wrapper files at the repository root.
 
@@ -117,6 +129,8 @@ day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="repro
   - `day-34-project-file-assistant-kotlin/reports/`
   - `day-34-project-file-assistant-kotlin/runtime/`
   - `day-34-project-file-assistant-kotlin/*.tmp`
+  - `day-35-ai-release-prep-kotlin/reports/`
+  - `day-35-ai-release-prep-kotlin/*.tmp`
 
 ## Assignment Quality Bar
 
@@ -250,4 +264,15 @@ day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="mcp-s
 day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="fixture-demo"
 day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="eval-dry-run"
 day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="repro-check"
+```
+
+- For Day 35:
+
+```bash
+./gradlew :day-35-ai-release-prep-kotlin:test
+./gradlew :day-35-ai-release-prep-kotlin:build
+day-35-ai-release-prep-kotlin/scripts/run-release-prep.sh fixture-demo
+day-35-ai-release-prep-kotlin/scripts/run-release-prep.sh eval-dry-run
+git fetch origin main
+day-35-ai-release-prep-kotlin/scripts/run-release-prep.sh prepare-dry-run --base origin/main
 ```

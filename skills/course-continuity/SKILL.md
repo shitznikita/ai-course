@@ -7,9 +7,9 @@ description: Use when continuing this AI course repository after context compact
 
 Use this skill as the durable memory for the AI course repo. Keep future work consistent with these decisions unless the user explicitly changes direction.
 
-## Current Actual Snapshot (2026-07-17)
+## Current Actual Snapshot (2026-07-18)
 
-- `main` contains completed days 1-33. Historical snapshot text below documents earlier decisions but is no longer the source of truth for the latest day number.
+- `main` contains completed days 1-34. Historical snapshot text below documents earlier decisions but is no longer the source of truth for the latest day number.
 - Day 30 is merged as `day-30-private-cosmetics-service-kotlin`.
 - Day 30 deploys `qwen3:4b` through loopback Ollama on a CPU VPS. Ktor remains on loopback and is published through Caddy automatic HTTPS; the permanent access token is verified by the API and stored only in the authorized browser's `localStorage` until logout.
 - Photo input uses local Tesseract OCR followed by user confirmation; the LLM receives text only.
@@ -26,6 +26,8 @@ Use this skill as the durable memory for the AI course repo. Keep future work co
 - Day 34 is `day-34-project-file-assistant-kotlin` in the managed `AICOURSE-4` workflow worktree. It accepts a goal rather than file names, runs a maximum-12-step observe/plan/tool loop and discovers exactly five loopback Streamable HTTP MCP tools: project file list, literal cross-file search, 1-6 file read with SHA-256, guarded create/replace and deterministic unified diff. The result paths and diff come from server-owned session state, not model prose.
 - Day 34 keeps source local. `OllamaPlanner` uses direct `java.net.http.HttpClient` REST only to loopback `/api/chat`, default `qwen3:4b`, temperature zero, `think=false` and JSON schema output. `FixturePlanner` executes the same real MCP loop for two offline goals: create a `LegacyPaymentsApi` migration report from implementation/service/test usages, and synchronize README/API docs plus changelog with public `refund`. `repro-check` compares normalized trace, changed paths and diff SHA-256 after independent resets.
 - Day 34 arbitrary workspaces default to preview. MCP server/client share a random in-memory per-run header token, and reads require discovery/search provenance. `ProjectFilePolicy` rejects traversal, absolute/symlink/secret/generated/whole-payload-NUL/malformed UTF-8/oversized paths and allows bounded text formats only. `SecureProjectFiles` prefers directory-relative handles and otherwise uses `NOFOLLOW_LINKS` plus parent/file identity snapshots around I/O. Existing files require same-session read plus matching SHA; apply writes through a unique `CREATE_NEW` temp, flush, POSIX permission preservation and atomic replace/fallback. Fixture/eval/repro use ephemeral MCP ports. Ollama observations keep whole typed read items with complete path/bytes/SHA/content; admission uses the conservative equation `UTF-8 content bytes + 512 framing + 1200 output <= 8192 context` and fails before HTTP rather than truncate. Unknown action keys are preserved for strict validation/retry. No delete, rename or shell tools exist. Keep `runtime/`, reports, `.env`, `.certs` and temp files ignored.
+- Day 35 is `day-35-ai-release-prep-kotlin` in the managed `AICOURSE-5` workflow worktree. It automates release preparation for the real `ai-course` branch: a max-80 complete Git manifest, exact one-module/five-root-path policy, `git diff --check`, one derived Gradle build and repeated clean snapshot fingerprints are authoritative. AI receives exactly two whole typed items: server-owned README change facts and a bounded strict reviewed `release-brief.json`. Arbitrary README/build/source/test/root patches and commit subjects are not transmitted; all other paths are inventory-only. Brief/model sink values must be NFKC-canonical, FORMAT-free, canonically nonblank/unique and contain no non-placeholder value in an explicit credential assignment/call/auth-scheme context. Recursive duplicate JSON keys fail before fixture/brief/model typed decode.
+- Day 35 provider/model/auth are pinned to Eliza/OpenRouter before credential access. Every AI-authored item must cite `REVIEWED_RELEASE_BRIEF`; README-only semantic claims fail. The launcher, application and in-app Git/Gradle checks use a minimal allowlisted environment, never source `.env`, ignore JVM/Gradle startup options and Git repository/index/object/ref selectors, and use `--no-daemon`. Required README evidence is non-binary A/M text with positive numstat; non-text/mode-only/deleted/type-only optional evidence is omitted. `prepare-dry-run` constructs no credential source and performs zero Eliza HTTP/LLM calls. Optional `prepare` does at most one direct REST call, rejects duplicate/unknown/unsafe/uncited model fields, then validates the final snapshot after temp report force immediately before atomic replacement. Provider/Git/check/credential/HTTP/model/final-drift failures preserve any prior live report byte-for-byte; only the successful final gate replaces it. `DAY 35 ELIZA ...` counters exclude non-hermetic `installDist` and derived Gradle build. AI recommendation is advisory; server-owned readiness is only `READY_FOR_HUMAN_REVIEW` or `BLOCKED`. Trusted local branches only: Gradle execution is not sandboxed, an in-flight request cannot be retracted after drift, and external fetch freshness remains caller-owned.
 - Best offline checks:
 
 ```bash
@@ -64,6 +66,17 @@ day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="mcp-s
 day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="fixture-demo"
 day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="eval-dry-run"
 day-34-project-file-assistant-kotlin/scripts/run-file-assistant.sh --args="repro-check"
+```
+
+Day 35 zero-Eliza and real-branch checks (launcher/build remain non-hermetic):
+
+```bash
+./gradlew :day-35-ai-release-prep-kotlin:test
+./gradlew :day-35-ai-release-prep-kotlin:build
+day-35-ai-release-prep-kotlin/scripts/run-release-prep.sh fixture-demo
+day-35-ai-release-prep-kotlin/scripts/run-release-prep.sh eval-dry-run
+git fetch origin main
+day-35-ai-release-prep-kotlin/scripts/run-release-prep.sh prepare-dry-run --base origin/main
 ```
 
 ## Current Snapshot
